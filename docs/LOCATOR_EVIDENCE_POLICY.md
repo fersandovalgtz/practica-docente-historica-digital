@@ -29,6 +29,16 @@ Examples include Google Books contents entries such as `Departamento de Supervis
 
 L2 supports a `locator_candidate`. It does **not** support `frozen` status by itself.
 
+### Reproduced-facsimile rule
+
+A scholarly thesis, article or institutional publication may reproduce a visible facsimile page of the historical object. This is stronger than a bare page citation because the historical page itself can be inspected, but the reproduction is still being accessed through a secondary container rather than through PDHD's registered primary object.
+
+Such rows use `embedded_facsimile_primary_check_pending`. They may support a highly targeted locator candidate and provisional boundary planning, but they do not become `frozen` until the page is cross-checked against the registered primary object or an equivalent first-party digital surrogate.
+
+Therefore:
+
+`visible_reproduced_facsimile != primary_object_crosscheck`
+
 ### L3 — scholarly page pointer to the primary object
 
 A peer-reviewed or high-quality scholarly source cites a specific page or page range in the historical primary source, while PDHD has not yet inspected that page in the primary digital object.
@@ -48,6 +58,8 @@ L4 belongs in source discovery or issue-lead infrastructure, not in the fixed-fr
 `L4 -> L3` when scholarship or a catalog yields a page/section pointer.
 
 `L3 -> L2/L1` only after the primary object is inspected.
+
+`embedded_facsimile_primary_check_pending -> L1` only after cross-checking the reproduced page against the registered primary object or equivalent first-party surrogate.
 
 `L2 -> L1` when a concrete passage is identified in the primary object.
 
@@ -76,6 +88,7 @@ The current pilot queue contains examples of all useful pre-freeze states:
 - direct Google Books page-level passages for *Las misiones culturales, 1932-1933*;
 - direct Google Books section starts for the 1932 and 1938 SEP memories;
 - HathiTrust section/page candidates for *Las misiones culturales en 1927*;
-- scholarly page pointers into the 1934 SEP memory that remain explicitly pending primary-page verification.
+- reproduced facsimile pages of the 1923 *Proyecto para la organización de las misiones federales de educación* embedded in a UNAM thesis, pending cross-check against HathiTrust;
+- scholarly page pointers into *El sistema de escuelas rurales en México* and the 1934 SEP memory that remain explicitly pending primary-page verification.
 
 No locator is treated as a human-coded historical claim merely because it has a page number.
