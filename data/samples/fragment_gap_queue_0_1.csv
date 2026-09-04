@@ -6,9 +6,7 @@ PDHD-F000004,PDHD-D000065,D,medium,HNDM_or_UNAM_issue_page_recovery,"No page-lev
 PDHD-F000005,PDHD-D000064,A,high,HNDM_alias_page_recovery,"UNAM-RI to HNDM crosswalk is resolved; only p. 8 is currently page-resolved and it fills slot B",direct_primary_instructional_or_prescriptive_passage
 PDHD-F000007,PDHD-D000064,C,medium,HNDM_alias_page_recovery,"Selected issue lacks a second page-level content pointer beyond the Liceo de Niñas item",direct_primary_source_criticism_passage
 PDHD-F000008,PDHD-D000064,D,medium,HNDM_alias_page_recovery,"Issue opening/front matter has not been inspected at page level",direct_primary_control_region
-PDHD-F000009,PDHD-D000063,A,high,HNDM_alias_page_recovery,"México Intelectual has a p. 2 programmatic pointer for slot B but no explicit-act span is page-resolved",direct_primary_pedagogical_passage
-PDHD-F000011,PDHD-D000063,C,medium,HNDM_alias_page_recovery,"No second historically salient page span in the selected inaugural object has been directly resolved",direct_primary_source_criticism_passage
-PDHD-F000012,PDHD-D000063,D,medium,HNDM_alias_page_recovery,"The inaugural issue's administrative/front-matter control region remains uninspected",direct_primary_control_region
+PDHD-F000011,PDHD-D000063,C,medium,HNDM_alias_page_recovery,"No second historically salient page span beyond the p. 2 and p. 5 programmatic material has been directly resolved",direct_primary_source_criticism_passage
 PDHD-F000021,PDHD-D000058,A,high,UNAM_RI_issue_page_recovery,"Rébsamen's La Pedagogía Moderna at pp. 17-18 fills slot C only; an explicit teaching-act span is still missing",direct_primary_pedagogical_passage
 PDHD-F000022,PDHD-D000058,B,medium,UNAM_RI_issue_page_recovery,"Professional/editorial or institutional-relations span not yet localized in the 31 October 1889 issue",direct_primary_professional_region
 PDHD-F000024,PDHD-D000058,D,medium,UNAM_RI_issue_page_recovery,"No administrative or other low-pedagogical-content control span is page-resolved",direct_primary_control_region
