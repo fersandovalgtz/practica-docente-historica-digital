@@ -27,7 +27,7 @@ Corte de referencia: **4 de septiembre de 2026**.
 | Conflictos cronológicos preservados | **4** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
-| Slots con localizador candidato/resuelto | **47 / 96** |
+| Slots con localizador candidato/resuelto | **50 / 96** |
 | Fragmentos completamente congelados | **8 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
@@ -136,9 +136,9 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **47/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **8/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **50/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **8/96** fragmentos.
 
-Cinco de los nuevos localizadores provienen de referencias de página explícitas en investigación histórica o publicaciones institucionales: *El Instructor* (1 de enero de 1889, p. 8), *México intelectual* (1889, p. 2), *La Escuela moderna* (31 de octubre de 1889, pp. 17–18), *Revista de la Instrucción Pública Mexicana* (15 de marzo de 1896, p. 31) y *La Enseñanza Normal* (15 de septiembre de 1904, p. 4). Son candidatos de recuperación, no fragmentos congelados: todavía requieren cotejo directo con la página primaria y delimitación exacta.
+Cinco localizadores recientes provienen de referencias de página explícitas en investigación histórica o publicaciones institucionales: *El Instructor* (1 de enero de 1889, p. 8), *México intelectual* (1889, p. 2), *La Escuela moderna* (31 de octubre de 1889, pp. 17–18), *Revista de la Instrucción Pública Mexicana* (15 de marzo de 1896, p. 31) y *La Enseñanza Normal* (15 de septiembre de 1904, p. 4). Otros tres slots de *La Enseñanza Moderna* del 1 de julio de 1907 se localizaron directamente sobre la imagen primaria de la primera página expuesta por BVMC. Ninguno de esos ocho nuevos slots se declara congelado hasta fijar límites de alta resolución y, cuando corresponda, comprobar directamente la página histórica.
 
 La fuerza de la evidencia se interpreta conforme a [`docs/LOCATOR_EVIDENCE_POLICY.md`](docs/LOCATOR_EVIDENCE_POLICY.md): un pasaje primario directo, un inicio de sección, un facsímil histórico reproducido dentro de una fuente secundaria y una cita académica con página no tienen el mismo estatus metodológico.
 
@@ -168,7 +168,7 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. La tarea es llevar los **47/96 localizadores** actuales hacia **96/96** y aumentar la proporción de pasajes primarios directamente inspeccionados hasta convertirlos en verdaderos fragmentos congelados. Los primeros **8/96** muestran que el pipeline funciona en dos publicaciones pedagógicas distintas de HNDM.
+La selección documental ya está lista. La tarea es llevar los **50/96 localizadores** actuales hacia **96/96** y aumentar la proporción de pasajes primarios directamente inspeccionados hasta convertirlos en verdaderos fragmentos congelados. Los primeros **8/96** muestran que el pipeline funciona en dos publicaciones pedagógicas distintas de HNDM.
 
 Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
