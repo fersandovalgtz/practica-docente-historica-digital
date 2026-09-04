@@ -13,11 +13,11 @@ Reference cut: **2026-09-04**
 | Registered chronology conflicts | 5 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **75 / 96** | 78.1% of reliability slots localized |
+| Fragment locator rows resolved/candidate | **76 / 96** | 79.2% of reliability slots localized |
 | Fully frozen fragments | **15 / 96** | three complete batches plus one three-slot primary-image batch |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **75 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **76 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -45,7 +45,7 @@ Finally, `PDHD-F000083` completes the four-slot localization of the 1932 SEP mem
 
 ## México Intelectual and La Enseñanza Normal additions
 
-Three new page-resolved candidates move the pilot from 72 to **75 localized slots**.
+Three page-resolved candidates moved the pilot from 72 to 75 localized slots.
 
 `PDHD-F000009` uses *México intelectual*, tomo I, p. 5 for an explicit programmatic prescription centered on diffusion of teaching methods, systems and modern pedagogical approaches to the teaching profession. A recent historical study identifies that page explicitly; direct inspection of the historical page remains pending.
 
@@ -56,6 +56,12 @@ Three new page-resolved candidates move the pilot from 72 to **75 localized slot
 These additions preserve the rule:
 
 `secondary_page_pointer != directly_inspected_historical_page`
+
+## La Enseñanza Primaria page recovery
+
+`PDHD-F000025` moves the pilot from 75 to **76 localized slots**. A Universidad Pedagógica Nacional publication gives the exact historical citation for Ponciano Rodríguez's *El método en los libros de texto*, *La Enseñanza Primaria* 1(11), pp. 167–168. Independent historical scholarship identifies the issue as 1 December 1901 and confirms the article's focus on textbook method.
+
+The page range is therefore resolved as a secondary page pointer for the explicit-pedagogical-act slot. It is **not frozen**: the historical HNDM page still has to be directly inspected and the coder span structurally bounded.
 
 ## El Maestro expansion
 
@@ -73,7 +79,7 @@ The Mistral citation exposed the fifth registered chronology conflict. Signos Hi
 
 ## Fragment-localization progress
 
-The union of all `fragment_locator_progress*.csv` shards contains **75/96** pilot slots. Fifteen are frozen. The remaining **60** located rows include direct primary-page candidates, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **21 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **76/96** pilot slots. Fifteen are frozen. The remaining **61** located rows include direct primary-page candidates, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **20 slots remain without a locator.**
 
 The retrieval chain remains:
 
@@ -113,4 +119,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The project is now at **75/96 localized**. The next operational threshold remains **80/96 located**, while the stronger scientific priority is to raise the frozen count beyond **15/96**, especially by converting direct page/scan candidates into exact coder spans rather than adding weaker references.
+The project is now at **76/96 localized**. The next operational threshold remains **80/96 located**, while the stronger scientific priority is to raise the frozen count beyond **15/96**, especially by converting direct page/scan candidates into exact coder spans rather than adding weaker references.
