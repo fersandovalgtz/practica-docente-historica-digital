@@ -103,3 +103,38 @@ The same sweep strengthened the pre-1900 queue with HNDM primary descriptors. *E
 The corpus now satisfies the future pilot's minimum **geographic diversity** condition at object level, but it does not yet satisfy the stronger requirement for rural-teacher primary objects and documentary-type diversity. Accordingly, the human reliability protocol has been built and tested technically, but actual blind coding remains gated.
 
 The decision is deliberate: **a smaller, traceable and heterogeneous pilot is preferable to an apparently larger corpus whose rural evidence rests only on citations to inaccessible primary issues.**
+
+## 2026-09-03 — rural primary-source bottleneck resolved
+
+A new search strategy abandoned the attempt to solve the rural gap only through *El Maestro Rural* issue discovery and instead targeted **contemporary SEP monographs, memorias, guidance pamphlets and mission reports** with stable primary digital records. This produced a materially stronger result.
+
+### HathiTrust primary objects
+
+Four direct HathiTrust catalog records were added:
+
+- *El papel social del maestro rural* (SEP, 1925), an 8-page pamphlet with full-view access;
+- *El sistema de escuelas rurales en México* (SEP, 1927), xxvi + 358 pages, full view;
+- *Las misiones culturales en 1927: Las escuelas normales rurales* (SEP, 1928), xii + 470 pages, full view;
+- José Gálvez, *Proyecto para la organización de las misiones federales de educación* (1923), 26 pages, full view.
+
+These sources are contemporary institutional objects. They directly document rural teacher roles, mission organization, professional improvement, rural-normal education and planned educational intervention.
+
+HathiTrust's catalog and full-view status resolve **object identity and research access**, but automated retrieval of the Babel page-image endpoint returned HTTP 403 in the current research environment. PDHD therefore records the stable catalog object and does not pretend that machine-accessible page text has already been obtained. Fragment freezing for these objects may require manual browser consultation or another permitted local access route.
+
+### Google Books primary objects
+
+Five additional SEP objects were resolved through stable Google Books identifiers:
+
+- *Las misiones culturales, 1932-1933* (1933), 357 pages;
+- *Memoria relativa al estado que guarda el ramo de educación pública*, vol. 1 (1932);
+- the corresponding vol. 2 record published in 1934;
+- *Memoria de la Secretaría de Educación Pública*, vol. 2 (1937);
+- *Memoria de la Secretaría de Educación Pública*, vols. 1-2 (1938).
+
+Google Books exposes searchable internal metadata and, in several records, full-view or free-ebook access. The records include direct evidence of rural schools, missions, teacher preparation, inspectors, Escuelas Regionales Campesinas, supervision and institutional organization. PDHD uses these objects as **primary digital localizers**, while preserving a separate rights decision for any public transcription or image reuse.
+
+### Consequence for the pilot
+
+The hard pilot condition is now satisfied: PDHD has rural/postrevolutionary **primary objects with stable digital identities**, not merely citations to inaccessible issues. The project therefore froze a first 24-document pilot selection spanning E1, E3 and E4, multiple regions and six documentary types.
+
+Human coding still has not started. The new bottleneck is narrower and more operational: freeze 96 page-localized fragments in a rights-compatible way and then run the predeclared calibration and independent reliability protocol.
