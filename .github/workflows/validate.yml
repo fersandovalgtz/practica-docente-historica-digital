@@ -22,6 +22,8 @@ jobs:
         run: python scripts/validate_repository.py
       - name: Validate object alias crosswalk
         run: python scripts/validate_object_aliases.py
+      - name: Validate unresolved pilot content leads
+        run: python scripts/validate_content_leads.py
       - name: Validate locator and frozen fragment shards
         run: python scripts/validate_fragment_shards.py
       - name: Self-test annotation agreement calculator
