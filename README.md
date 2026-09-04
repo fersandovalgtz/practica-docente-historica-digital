@@ -2,7 +2,7 @@
 
 **Infraestructura abierta de investigación para estudiar históricamente la práctica docente en México mediante prensa pedagógica, manuales, revistas profesionales, publicaciones oficiales y otros impresos educativos.**
 
-> Estado: `v0.1.0-dev` · `PDHD-U1` en preparación del primer piloto de validación humana.
+> Estado: `v0.1.0-dev` · `PDHD-U1` en congelamiento activo del primer piloto de validación humana.
 
 ## Qué es PDHD
 
@@ -27,8 +27,8 @@ Corte de referencia: **4 de septiembre de 2026**.
 | Conflictos cronológicos preservados | **2** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
-| Slots con localizador candidato/resuelto | **27 / 96** |
-| Fragmentos completamente congelados | **0 / 96** |
+| Slots con localizador candidato/resuelto | **38 / 96** |
+| Fragmentos completamente congelados | **4 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -37,30 +37,13 @@ Los 75 objetos forman una **cohorte de estabilización y preparación metodológ
 
 El principal bloqueo previo era la falta de fuentes rurales/postrevolucionarias primarias con localizador estable. Ese problema ya no depende de localizar primero números digitalizados de *El Maestro Rural*.
 
-PDHD incorporó objetos contemporáneos de la SEP con identidad primaria verificable, entre ellos:
+PDHD incorporó objetos contemporáneos de la SEP con identidad primaria verificable, entre ellos *El papel social del maestro rural* (1925), *El sistema de escuelas rurales en México* (1927), *Las misiones culturales en 1927: Las escuelas normales rurales* (1928), *Proyecto para la organización de las misiones federales de educación* (1923), *Las misiones culturales, 1932-1933* (1933), *El esfuerzo educativo en México* (1928) y memorias de la Secretaría de Educación Pública de 1932, 1934, 1937 y 1938.
 
-- *El papel social del maestro rural* (1925);
-- *El sistema de escuelas rurales en México* (1927);
-- *Las misiones culturales en 1927: Las escuelas normales rurales* (1928);
-- *Proyecto para la organización de las misiones federales de educación* (1923);
-- *Las misiones culturales, 1932-1933* (1933);
-- memorias de la Secretaría de Educación Pública de 1932, 1934, 1937 y 1938.
-
-Estos objetos documentan directamente funciones del maestro rural, organización de misiones, formación normal, inspección, supervisión y administración educativa.
+El proyecto también cruzó la primera puerta de **fragment freezing**: `PDHD-F000013`–`PDHD-F000016`, derivados de la página directamente inspeccionada de *El Escolar Mexicano* del 2 de septiembre de 1888, tienen límites estructurales fijos. Como la fuente es HNDM, el repositorio conserva únicamente localizadores y metadatos de preparación; no publica el texto histórico ni la imagen de página.
 
 ## Ecosistema de fuentes
 
-La infraestructura registra, entre otras, las siguientes fuentes:
-
-- Hemeroteca Nacional Digital de México y sistemas hemerográficos UNAM;
-- Repositorio Institucional de la UNAM;
-- Biblioteca Virtual Miguel de Cervantes;
-- Internet Archive;
-- Fondo Reservado de la Biblioteca México;
-- HathiTrust Digital Library;
-- Google Books / Google Play Books;
-- colecciones históricas de la SEP;
-- fuentes universitarias secundarias utilizadas para descubrimiento y contextualización.
+La infraestructura registra, entre otras, HNDM y sistemas hemerográficos UNAM, Repositorio Institucional UNAM, Biblioteca Virtual Miguel de Cervantes, Internet Archive, Fondo Reservado de la Biblioteca México, HathiTrust, Google Books/Google Play Books y colecciones históricas de la SEP. Fuentes universitarias secundarias de alta calidad se utilizan para descubrimiento y contextualización cuando todavía falta cotejar una página en el objeto primario.
 
 La inclusión de una fuente **no implica permiso automático para redistribuir facsímiles, imágenes u OCR íntegro**. Los estados de derechos se registran explícitamente en `data/catalog/rights_registry.csv`.
 
@@ -100,6 +83,8 @@ PDHD adopta estas reglas:
 - `document_selection_ready != annotation_started`
 - `secondary_page_citation != primary_page_inspection`
 - `visible_reproduced_facsimile != primary_object_crosscheck`
+- `locator_candidate != frozen_fragment`
+- `fixed_boundary != public_text_permission`
 - `page_locator_resolved != fixed_coder_span`
 - `primary_source_resolved != source_text_republishable`
 - `absence_of_hit != demonstrated_absence`
@@ -126,8 +111,6 @@ Para muestreo y análisis se utilizan estratos no superpuestos documentados en [
 
 La primera selección de **24 documentos** está congelada en [`data/samples/pilot_document_selection_0_1.csv`](data/samples/pilot_document_selection_0_1.csv) y explicada en [`docs/PILOT_DOCUMENT_SELECTION_0_1.md`](docs/PILOT_DOCUMENT_SELECTION_0_1.md).
 
-Su composición es:
-
 | Era | Documentos |
 |---|---:|
 | E1 | 10 |
@@ -153,9 +136,9 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La estructura de 24 documentos / 96 slots se comprueba automáticamente en CI.
+La cola de trabajo vive en [`data/samples/fragment_locator_progress_0_1.csv`](data/samples/fragment_locator_progress_0_1.csv). En el corte actual hay **38/96** slots con una página o sección candidata o resuelta. Los fragmentos que ya cruzaron el gate completo se registran separadamente en [`data/samples/frozen_fragments_0_1.csv`](data/samples/frozen_fragments_0_1.csv); actualmente son **4/96**.
 
-La cola de localización se registra en [`data/samples/fragment_locator_progress_0_1.csv`](data/samples/fragment_locator_progress_0_1.csv). En el corte actual hay **27/96** slots con una página o sección candidata. La fuerza de esa evidencia se interpreta conforme a [`docs/LOCATOR_EVIDENCE_POLICY.md`](docs/LOCATOR_EVIDENCE_POLICY.md): un pasaje primario directo, un inicio de sección, un facsímil histórico reproducido dentro de una fuente secundaria y una cita académica con página no tienen el mismo estatus metodológico.
+La fuerza de la evidencia se interpreta conforme a [`docs/LOCATOR_EVIDENCE_POLICY.md`](docs/LOCATOR_EVIDENCE_POLICY.md): un pasaje primario directo, un inicio de sección, un facsímil histórico reproducido dentro de una fuente secundaria y una cita académica con página no tienen el mismo estatus metodológico.
 
 ## Taxonomía y confiabilidad
 
@@ -177,11 +160,13 @@ Cuando el texto no deba publicarse, el fragmento puede congelarse mediante pági
 
 El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `PDHD-X` y `PDHD-F`; registra discrepancias cronológicas; valida duplicados, fuentes, derechos y relaciones entre objetos; comprueba la selección de 24 documentos; auto-prueba el calculador de confiabilidad y verifica la generación de 96 slots en GitHub Actions.
 
-La política central es simple: **una discrepancia real se documenta; no se borra para que el catálogo parezca limpio.**
+El validador también cruza `frozen_fragments_0_1.csv` contra la cola de localizadores y el manifiesto determinista: un fragmento no puede declararse `frozen` sin límites fijos, campos de acceso y manejo público válidos, ni sin coincidir con su documento y slot esperados.
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. La siguiente tarea es llevar los **27/96 localizadores** actuales hasta **96/96** y convertirlos, tras inspección primaria y fijación de límites, en verdaderos fragmentos congelados. Solo después se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
+La selección documental ya está lista. La tarea es llevar los **38/96 localizadores** actuales hacia **96/96** y aumentar la proporción de pasajes primarios directamente inspeccionados hasta convertirlos en verdaderos fragmentos congelados. Los primeros **4/96** ya demuestran que el pipeline de congelamiento funciona.
+
+Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
 ## Autoría y citación
 
