@@ -137,6 +137,8 @@ def main() -> int:
         seen_source_identifiers,
     )
 
+    unresolved_leads = 0
+    resolved_leads = 0
     for row in issue_leads:
         lead_id = row.get("lead_id", "")
         if not re.fullmatch(r"PDHD-L\d{6}", lead_id):
@@ -145,6 +147,25 @@ def main() -> int:
             ERRORS.append(f"issue_leads: empty publication for {lead_id}")
         if not row.get("evidence_url", "").strip():
             ERRORS.append(f"issue_leads: empty evidence_url for {lead_id}")
+
+        status = row.get("primary_locator_status", "").strip()
+        resolved_document_id = row.get("resolved_document_id", "").strip()
+        if status.startswith("resolved"):
+            resolved_leads += 1
+            if not resolved_document_id:
+                ERRORS.append(
+                    f"issue_leads: {lead_id} is resolved but lacks resolved_document_id"
+                )
+            elif resolved_document_id not in seen_docs:
+                ERRORS.append(
+                    f"issue_leads: {lead_id} points to unknown document {resolved_document_id}"
+                )
+        else:
+            unresolved_leads += 1
+            if resolved_document_id:
+                ERRORS.append(
+                    f"issue_leads: {lead_id} has resolved_document_id but status {status!r}"
+                )
 
     for row in chronology_conflicts:
         conflict_id = row.get("conflict_id", "")
@@ -164,7 +185,8 @@ def main() -> int:
     print(
         "PDHD repository checks passed "
         f"({len(sources)} sources; {len(candidates)} candidates; "
-        f"{total_documents} documents; {len(issue_leads)} issue leads; "
+        f"{total_documents} documents; {len(issue_leads)} issue leads "
+        f"[{unresolved_leads} unresolved, {resolved_leads} resolved]; "
         f"{len(chronology_conflicts)} chronology conflicts)"
     )
     return 0
