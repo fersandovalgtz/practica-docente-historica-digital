@@ -16,7 +16,7 @@ PDHD distingue entre **fuente**, **identidad documental**, **derechos**, **proce
 
 ## Estado científico de PDHD-U1
 
-Corte de referencia: **3 de septiembre de 2026**.
+Corte de referencia: **4 de septiembre de 2026**.
 
 | Capa | Estado |
 |---|---:|
@@ -27,7 +27,8 @@ Corte de referencia: **3 de septiembre de 2026**.
 | Conflictos cronológicos preservados | **2** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
-| Fragmentos ya congelados con página/localizador | **0** |
+| Slots con localizador candidato/resuelto | **19 / 96** |
+| Fragmentos completamente congelados | **0 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -96,6 +97,8 @@ PDHD adopta estas reglas:
 - `prescription != observed_practice`
 - `object_count_threshold_reached != historical_representativeness`
 - `document_selection_ready != annotation_started`
+- `secondary_page_citation != primary_page_inspection`
+- `page_locator_resolved != fixed_coder_span`
 - `primary_source_resolved != source_text_republishable`
 - `absence_of_hit != demonstrated_absence`
 
@@ -150,6 +153,8 @@ python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 
 La estructura de 24 documentos / 96 slots se comprueba automáticamente en CI.
 
+La cola de localización se registra en [`data/samples/fragment_locator_progress_0_1.csv`](data/samples/fragment_locator_progress_0_1.csv). En el corte actual hay **19/96** slots con una página o sección candidata. La fuerza de esa evidencia se interpreta conforme a [`docs/LOCATOR_EVIDENCE_POLICY.md`](docs/LOCATOR_EVIDENCE_POLICY.md): un pasaje primario directo, un inicio de sección en la fuente y una cita secundaria con página no tienen el mismo estatus metodológico.
+
 ## Taxonomía y confiabilidad
 
 La taxonomía vigente incluye dimensiones como `teaching_method`, `teacher_authority`, `discipline`, `assessment`, `materials`, `lesson_organization`, `teacher_training`, `inspection_supervision`, `rurality`, `indigenous_education`, `inclusion_difference`, `gender`, `student_conception`, `professional_identity`, `school_community` y `pedagogical_change`.
@@ -174,7 +179,7 @@ La política central es simple: **una discrepancia real se documenta; no se borr
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. La siguiente tarea es congelar **96/96 fragmentos** con página o localizador, estado de transcripción y manejo de derechos. Solo después se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
+La selección documental ya está lista. La siguiente tarea es llevar los **19/96 localizadores** actuales hasta **96/96** y convertirlos, tras inspección primaria y fijación de límites, en verdaderos fragmentos congelados. Solo después se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
 ## Autoría y citación
 
