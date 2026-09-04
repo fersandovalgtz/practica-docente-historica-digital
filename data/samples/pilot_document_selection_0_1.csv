@@ -9,10 +9,10 @@ selection_order,document_id,era_code,publication,place,document_type,fragment_ta
 8,PDHD-D000006,E1,Revista de la Instrucción Pública Mexicana,México,issue,4,official_pedagogical_press,selected
 9,PDHD-D000011,E1,La Enseñanza Normal,México,issue,4,normalist_training_press,selected
 10,PDHD-D000031,E1,La Enseñanza Moderna,"México, D.F.",issue,4,pedagogical_press_comparator,selected
-11,PDHD-D000051,E3,El Maestro,México,issue,4,early_sep_cultural_project,selected
-12,PDHD-D000052,E3,El Maestro,México,issue,4,early_sep_cultural_project,selected
-13,PDHD-D000053,E3,El Maestro,México,issue,4,early_sep_cultural_project,selected
-14,PDHD-D000055,E3,El Maestro,México,issue,4,early_sep_cultural_project,selected
+11,PDHD-D000051,E3,El Maestro. Revista de Cultura Nacional,México,issue,4,early_sep_cultural_project,selected
+12,PDHD-D000052,E3,El Maestro. Revista de Cultura Nacional,México,issue,4,early_sep_cultural_project,selected
+13,PDHD-D000053,E3,El Maestro. Revista de Cultura Nacional,México,issue,4,early_sep_cultural_project,selected
+14,PDHD-D000055,E3,El Maestro. Revista de Cultura Nacional,México,issue,4,early_sep_cultural_project,selected
 15,PDHD-D000066,E3,El esfuerzo educativo en México,México,official_report,4,federal_policy_report,selected
 16,PDHD-D000067,E3,El papel social del maestro rural,México,teacher_guidance,4,rural_teacher_primary,selected
 17,PDHD-D000068,E3,El sistema de escuelas rurales en México,México,institutional_monograph,4,rural_school_system_primary,selected
