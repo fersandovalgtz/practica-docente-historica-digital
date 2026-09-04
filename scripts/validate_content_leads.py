@@ -10,7 +10,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
 
-EVIDENCE_STATES = {"secondary_issue_content_verified", "primary_contents_verified", "review_required"}
+EVIDENCE_STATES = {
+    "secondary_issue_content_verified",
+    "secondary_page_pointer_verified",
+    "primary_contents_verified",
+    "review_required",
+}
 PAGE_STATES = {"page_unresolved", "page_candidate_unverified", "page_resolved"}
 PROMOTION_STATES = {
     "not_eligible_for_fragment_locator",
@@ -66,6 +71,10 @@ def main() -> int:
         if page_status == "page_unresolved" and promotion_status != "not_eligible_for_fragment_locator":
             ERRORS.append(
                 f"{lead_id}: page-unresolved content cannot be eligible for fragment-locator promotion"
+            )
+        if promotion_status == "promoted_to_fragment_locator" and page_status != "page_resolved":
+            ERRORS.append(
+                f"{lead_id}: promoted content must have page_status=page_resolved"
             )
 
     if ERRORS:
