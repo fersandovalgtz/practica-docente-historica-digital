@@ -1,0 +1,25 @@
+selection_order,document_id,era_code,publication,place,document_type,fragment_target_count,selection_role,status
+1,PDHD-D000065,E1,El Periquito,"Campeche, Campeche",issue,4,regional_pre1900,selected
+2,PDHD-D000064,E1,El Instructor,"Aguascalientes, Aguascalientes",hemerographic_object,4,regional_pre1900,selected
+3,PDHD-D000063,E1,México intelectual,"Xalapa, Veracruz",hemerographic_object,4,regional_pre1900,selected
+4,PDHD-D000002,E1,El Escolar Mexicano,México,issue,4,school_teacher_press,selected
+5,PDHD-D000001,E1,La Enseñanza Objetiva,Ciudad de México,issue,4,pedagogical_act_rich,selected
+6,PDHD-D000058,E1,La Escuela moderna,México,issue,4,professional_pedagogical_press,selected
+7,PDHD-D000003,E1,La Enseñanza primaria,México,issue,4,primary_teacher_press,selected
+8,PDHD-D000006,E1,Revista de la Instrucción Pública Mexicana,México,issue,4,official_pedagogical_press,selected
+9,PDHD-D000011,E1,La Enseñanza Normal,México,issue,4,normalist_training_press,selected
+10,PDHD-D000031,E1,La Enseñanza Moderna,"México, D.F.",issue,4,pedagogical_press_comparator,selected
+11,PDHD-D000051,E3,El Maestro,México,issue,4,early_sep_cultural_project,selected
+12,PDHD-D000052,E3,El Maestro,México,issue,4,early_sep_cultural_project,selected
+13,PDHD-D000053,E3,El Maestro,México,issue,4,early_sep_cultural_project,selected
+14,PDHD-D000055,E3,El Maestro,México,issue,4,early_sep_cultural_project,selected
+15,PDHD-D000066,E3,El esfuerzo educativo en México,México,official_report,4,federal_policy_report,selected
+16,PDHD-D000067,E3,El papel social del maestro rural,México,teacher_guidance,4,rural_teacher_primary,selected
+17,PDHD-D000068,E3,El sistema de escuelas rurales en México,México,institutional_monograph,4,rural_school_system_primary,selected
+18,PDHD-D000069,E3,Las misiones culturales en 1927: Las escuelas normales rurales,México,institutional_monograph,4,rural_missions_normalism,selected
+19,PDHD-D000070,E3,Proyecto para la organización de las misiones federales de educación,México,policy_proposal,4,policy_design_vs_practice,selected
+20,PDHD-D000071,E3,"Las misiones culturales, 1932-1933",México,institutional_monograph,4,rural_mission_reports,selected
+21,PDHD-D000072,E3,Memoria relativa al estado que guarda el ramo de educación pública,México,official_report,4,missions_normal_schools_report,selected
+22,PDHD-D000073,E3,Memoria relativa al estado que guarda el ramo de educación pública,México,official_report,4,rural_inspection_report,selected
+23,PDHD-D000074,E4,Memoria de la Secretaría de Educación Pública,México,official_report,4,cardenista_rural_policy,selected
+24,PDHD-D000075,E4,Memoria de la Secretaría de Educación Pública,México,official_report,4,supervision_rural_normal_policy,selected
