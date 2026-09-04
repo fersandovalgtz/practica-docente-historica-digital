@@ -10,7 +10,6 @@ PDHD-F000011,PDHD-D000063,C,medium,HNDM_alias_page_recovery,"No second historica
 PDHD-F000021,PDHD-D000058,A,high,UNAM_RI_issue_page_recovery,"Rébsamen's La Pedagogía Moderna at pp. 17-18 fills slot C only; an explicit teaching-act span is still missing",direct_primary_pedagogical_passage
 PDHD-F000022,PDHD-D000058,B,medium,UNAM_RI_issue_page_recovery,"Professional/editorial or institutional-relations span not yet localized in the 31 October 1889 issue",direct_primary_professional_region
 PDHD-F000024,PDHD-D000058,D,medium,UNAM_RI_issue_page_recovery,"No administrative or other low-pedagogical-content control span is page-resolved",direct_primary_control_region
-PDHD-F000025,PDHD-D000003,A,high,HNDM_crosswalk_article_page_recovery,"Ponciano Rodríguez's El método en los libros de texto is issue-resolved but its original page remains unknown",direct_primary_pedagogical_passage
 PDHD-F000026,PDHD-D000003,B,medium,HNDM_crosswalk_page_recovery,"No page-level professional/editorial or institutional span has been recovered",direct_primary_professional_region
 PDHD-F000027,PDHD-D000003,C,high,HNDM_crosswalk_article_page_recovery,"Issue content is known at article level but no second source-critical page span is resolved",direct_primary_source_criticism_passage
 PDHD-F000028,PDHD-D000003,D,medium,HNDM_crosswalk_page_recovery,"No page-level administrative/control region has been inspected",direct_primary_control_region
