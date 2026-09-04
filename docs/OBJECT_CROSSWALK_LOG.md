@@ -12,7 +12,7 @@ PDHD may encounter the same historical object through more than one repository l
 
 The Repositorio Institucional UNAM records used by PDHD for *La Enseñanza primaria* expose a `Texto completo` link. Following that link resolves to the HNDM digital-serial object `558075be7d1e63c9fea1a250` with issue-specific date parameters.
 
-The crosswalks now registered in `data/catalog/object_aliases.csv` are:
+The first three crosswalks registered in `data/catalog/object_aliases.csv` are:
 
 | PDHD document | UNAM-RI object | Issue date | Underlying HNDM serial object |
 |---|---|---|---|
@@ -23,6 +23,19 @@ The crosswalks now registered in `data/catalog/object_aliases.csv` are:
 The shared HNDM identifier represents the serial container; the URL date parameters distinguish the requested issue. Automated retrieval of the HNDM interface returned HTTP 502 during this pass. PDHD therefore records the bridge as `repository_fulltext_link_resolved_interface_fetch_failed` and does not infer a page number, page image identifier or OCR availability.
 
 This is useful because the selected pilot object `PDHD-D000003` can now be targeted through its underlying HNDM serial identity rather than searched again from scratch.
+
+## 2026-09-04 — regional pilot objects
+
+The same method resolved the underlying HNDM serial target for two selected regional objects. UNAM-RI marks both records as `Contenido completo`, identifies their originating HNDM collection and exposes the full-text link.
+
+| PDHD document | UNAM-RI object | Issue date | Underlying HNDM serial object | Region |
+|---|---|---|---|---|
+| `PDHD-D000064` | `750865` | 1889-01-01 | `558075be7d1e63c9fea1a307` | Aguascalientes |
+| `PDHD-D000063` | `897145` | 1889-01-01 | `558075be7d1e63c9fea1a356` | Xalapa, Veracruz |
+
+For `PDHD-D000064`, UNAM-RI describes *El Instructor* as an education object and records the Imp. de Trinidad Pedroza. For `PDHD-D000063`, it identifies *México intelectual* as a primary-education object and records the Imprenta del Gobierno del Estado. Both digital resources carry the repository's CC BY-NC-ND 4.0 statement.
+
+Following the `Texto completo` links resolved the HNDM serial identifiers above, but the HNDM interface again returned HTTP 502 to the automated research client. These are therefore object-level crosswalks only. No page locator has been inferred and neither selected document has been advanced toward `frozen` status on the basis of this bridge alone.
 
 ## Content lead inside PDHD-D000003
 
