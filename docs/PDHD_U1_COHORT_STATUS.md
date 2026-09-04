@@ -12,7 +12,9 @@ Reference cut: **2026-09-03**
 | Sources with explicit rights policy | 13 / 13 | complete at source-policy level |
 | Registered chronology conflicts | 2 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
-| Target fixed fragments | 96 | not yet frozen |
+| Target fixed fragments | 96 | preparation active |
+| Fragment locator rows resolved/candidate | 8 / 96 | first source-localization pass |
+| Fully frozen fragments | 0 / 96 | exact coder spans still pending |
 | Human-validated pedagogical fragments | 0 | not started |
 
 The original 50-document threshold established that PDHD-U1 could sustain object identity, provenance, rights and annotation workflows. The cohort has now reached **75 object-level records** while reducing the original dependence on two 1904–1907 pedagogical series.
@@ -82,11 +84,23 @@ No publication contributes more than six documents; *El Maestro* contributes fou
 
 Therefore the **document-selection gate is passed**.
 
+## Fragment-localization progress
+
+The first eight pilot slots now have documented page-level or section-level locator candidates in `data/samples/fragment_locator_progress_0_1.csv`.
+
+Four belong to `PDHD-D000069`, *Las misiones culturales en 1927: Las escuelas normales rurales*. The preparation pass has resolved source sections beginning on pages 21, 51, 209 and 371 for the source-criticism, pedagogical/institutional, professional-identity and control roles. These remain `locator_candidate` because exact coder-span boundaries still require source-page consultation.
+
+Four belong to `PDHD-D000071`, *Las misiones culturales, 1932-1933*. Google Books exposes page-level passages on pages 8, 22, 23 and 32 that map cleanly to the four pilot roles. These are `locator_resolved_text_package_pending`: the page and passage identity are sufficiently clear for preparation, but PDHD is deliberately not declaring them `frozen` until exact coder boundaries and rights-compatible text handling are fixed.
+
+This distinction matters:
+
+`page_locator_resolved != fixed_coder_span`
+
+The repository validator now checks that every locator-progress row belongs to the deterministic 96-slot pilot manifest, points to the correct document and slot, carries a page and evidence URL, and cannot be marked `frozen` without fixed boundaries.
+
 ## What remains before human coding
 
-Human annotation has **not** started. The next required operation is a fragment-freezing pass over the 24 selected documents.
-
-Four fixed fragments must be prepared per document, yielding **96 reliability fragments**. Every fragment must retain document ID, page or stable localizer, transcription status, access/rights basis, selection rationale and immutable `fragment_id`.
+Human annotation has **not** started. Four fixed fragments must ultimately be prepared per document, yielding **96 reliability fragments**. Every fragment must retain document ID, page or stable localizer, transcription status, access/rights basis, selection rationale and immutable `fragment_id`.
 
 The preparation design requires:
 
@@ -106,6 +120,8 @@ Primary-source resolution does not equal republication permission. HNDM remains 
 The current set is a **pilot-ready document cohort**, not an analysis-ready national sample.
 
 `document_selection_ready != annotation_started`
+
+`page_locator_resolved != fixed_coder_span`
 
 `pilot_reliability != historical_representativeness`
 
