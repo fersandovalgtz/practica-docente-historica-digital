@@ -1,6 +1,6 @@
 # PDHD-U1 cohort status
 
-Reference cut: **2026-09-03**
+Reference cut: **2026-09-04**
 
 ## Current thresholds
 
@@ -13,7 +13,7 @@ Reference cut: **2026-09-03**
 | Registered chronology conflicts | 2 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | 8 / 96 | first source-localization pass |
+| Fragment locator rows resolved/candidate | 12 / 96 | source-localization pass active |
 | Fully frozen fragments | 0 / 96 | exact coder spans still pending |
 | Human-validated pedagogical fragments | 0 | not started |
 
@@ -80,23 +80,27 @@ The selection contains:
 | E3 — 1921–1934 | 12 |
 | E4 — 1935–1940 | 2 |
 
-No publication contributes more than six documents; *El Maestro* contributes four, and no other selected periodical approaches the 25% ceiling. The pilot also contains more than three documentary types and at least three geographic origins outside Mexico City.
+No publication contributes more than six documents; *El Maestro. Revista de Cultura Nacional* contributes four, and no other selected periodical approaches the 25% ceiling. The pilot also contains more than three documentary types and at least three geographic origins outside Mexico City.
 
 Therefore the **document-selection gate is passed**.
 
 ## Fragment-localization progress
 
-The first eight pilot slots now have documented page-level or section-level locator candidates in `data/samples/fragment_locator_progress_0_1.csv`.
+Twelve pilot slots now have documented page-level or section-level locator candidates in `data/samples/fragment_locator_progress_0_1.csv`.
 
 Four belong to `PDHD-D000069`, *Las misiones culturales en 1927: Las escuelas normales rurales*. The preparation pass has resolved source sections beginning on pages 21, 51, 209 and 371 for the source-criticism, pedagogical/institutional, professional-identity and control roles. These remain `locator_candidate` because exact coder-span boundaries still require source-page consultation.
 
 Four belong to `PDHD-D000071`, *Las misiones culturales, 1932-1933*. Google Books exposes page-level passages on pages 8, 22, 23 and 32 that map cleanly to the four pilot roles. These are `locator_resolved_text_package_pending`: the page and passage identity are sufficiently clear for preparation, but PDHD is deliberately not declaring them `frozen` until exact coder boundaries and rights-compatible text handling are fixed.
 
+The newest four belong to `PDHD-D000075`, *Memoria de la Secretaría de Educación Pública* (1938). Google Books exposes an unusually useful table of contents: `Departamento de Enseñanza Agrícola y Normal Rural` begins on page 5, `Dirección General de Educación Urbana y Rural en los Estados` on page 59, `Oficina Jurídica y de Revalidación de Estudios` on page 269, and `Departamento de Supervisión` on page 335. These four sections provide candidates for instructional/teacher-preparation, source-critical, control and supervision slots respectively. They remain section-level candidates until a precise passage is selected inside each section.
+
 This distinction matters:
 
 `page_locator_resolved != fixed_coder_span`
 
-The repository validator now checks that every locator-progress row belongs to the deterministic 96-slot pilot manifest, points to the correct document and slot, carries a page and evidence URL, and cannot be marked `frozen` without fixed boundaries.
+`section_start != analytical_fragment`
+
+The repository validator checks that every locator-progress row belongs to the deterministic 96-slot pilot manifest, points to the correct document and slot, carries a page and evidence URL, and cannot be marked `frozen` without fixed boundaries.
 
 ## What remains before human coding
 
@@ -122,6 +126,8 @@ The current set is a **pilot-ready document cohort**, not an analysis-ready nati
 `document_selection_ready != annotation_started`
 
 `page_locator_resolved != fixed_coder_span`
+
+`section_start != analytical_fragment`
 
 `pilot_reliability != historical_representativeness`
 
