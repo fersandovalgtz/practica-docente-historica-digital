@@ -22,3 +22,5 @@ jobs:
         run: python scripts/validate_repository.py
       - name: Self-test annotation agreement calculator
         run: python scripts/annotation_agreement.py --self-test
+      - name: Check fixed-fragment manifest generator
+        run: python scripts/build_fragment_manifest.py --check
