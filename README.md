@@ -24,10 +24,10 @@ Corte de referencia: **4 de septiembre de 2026**.
 | Objetos documentales con identidad y localizador | **75** |
 | Fuentes con política de derechos explícita | **13 / 13** |
 | Leads hemerográficos activos sin resolver | **19** |
-| Conflictos cronológicos preservados | **4** |
+| Conflictos cronológicos preservados | **5** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
-| Slots con localizador candidato/resuelto | **54 / 96** |
+| Slots con localizador candidato/resuelto | **58 / 96** |
 | Fragmentos completamente congelados | **12 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
@@ -136,11 +136,13 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **54/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **12/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **58/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **12/96** fragmentos.
 
-Cinco localizadores recientes provienen de referencias de página explícitas en investigación histórica o publicaciones institucionales: *El Instructor* (1 de enero de 1889, p. 8), *México intelectual* (1889, p. 2), *La Escuela moderna* (31 de octubre de 1889, pp. 17–18), *Revista de la Instrucción Pública Mexicana* (15 de marzo de 1896, p. 31) y *La Enseñanza Normal* (15 de septiembre de 1904, p. 4). Otros tres slots de *La Enseñanza Moderna* del 1 de julio de 1907 se localizaron directamente sobre la imagen primaria de la primera página expuesta por BVMC.
+La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, se añadieron localizadores de página para José U. Escobar, *Las tribus indígenas mexicanas* (tomo I, núm. 2, pp. 173–176), Abel Ayala, *Mejores maestros* (tomo I, núm. 4, pp. 351–352), Gabriela Mistral, *Lecturas escolares. El cardo* (tomo II, núm. III, pp. 299–300) y Rufino Blanco-Fombona, *Democracia Criolla* (tomo II, núm. 3, pp. 293–297). Todos permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
 
-El tercer lote congelado proviene de `PDHD-D000055`, primer número de *El Maestro*. HNDM expone directamente la portada del número y la página impresa 15 con el inicio del artículo de Ezequiel A. Chávez. Esas páginas permiten fijar cuatro unidades estructurales sin almacenar texto fuente en GitHub: una unidad conceptual-prescriptiva, una unidad de identidad editorial, una unidad programática de relación con lectores y un control administrativo.
+El caso de tomo II, núm. 3 expuso además una discrepancia cronológica. Una fuente académica identifica el objeto digital como 1922, mientras una tesis de la UNAM cita *Lecturas escolares. El cardo* en diciembre de 1921. El conflicto está preservado en `data/catalog/chronology_conflicts.csv`; PDHD mantiene 1922 como año de trabajo del catálogo hasta inspeccionar el pie de imprenta original.
+
+Cinco localizadores anteriores provienen de referencias de página explícitas en investigación histórica o publicaciones institucionales: *El Instructor* (1 de enero de 1889, p. 8), *México intelectual* (1889, p. 2), *La Escuela moderna* (31 de octubre de 1889, pp. 17–18), *Revista de la Instrucción Pública Mexicana* (15 de marzo de 1896, p. 31) y *La Enseñanza Normal* (15 de septiembre de 1904, p. 4). Otros tres slots de *La Enseñanza Moderna* del 1 de julio de 1907 se localizaron directamente sobre la imagen primaria de la primera página expuesta por BVMC.
 
 La fuerza de la evidencia se interpreta conforme a [`docs/LOCATOR_EVIDENCE_POLICY.md`](docs/LOCATOR_EVIDENCE_POLICY.md): un pasaje primario directo, un inicio de sección, un facsímil histórico reproducido dentro de una fuente secundaria y una cita académica con página no tienen el mismo estatus metodológico.
 
@@ -170,7 +172,7 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. La tarea es llevar los **54/96 localizadores** actuales hacia **96/96** y aumentar la proporción de pasajes primarios directamente inspeccionados hasta convertirlos en verdaderos fragmentos congelados. Los primeros **12/96** muestran que el pipeline funciona en tres publicaciones históricas distintas y ya incluye un primer objeto postrevolucionario de *El Maestro*.
+La selección documental ya está lista. La tarea es llevar los **58/96 localizadores** actuales hacia **96/96** y aumentar la proporción de pasajes primarios directamente inspeccionados hasta convertirlos en verdaderos fragmentos congelados. Los primeros **12/96** muestran que el pipeline funciona en tres publicaciones históricas distintas y ya incluye un primer objeto postrevolucionario de *El Maestro*.
 
 Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
