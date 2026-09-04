@@ -21,13 +21,13 @@ Corte de referencia: **3 de septiembre de 2026**.
 | Capa | Estado |
 |---|---:|
 | Candidatos documentales registrados | **25** |
-| Objetos documentales con identidad y localizador | **65** |
-| Fuentes con política de derechos explícita | **10 / 10** |
+| Objetos documentales con identidad y localizador | **66** |
+| Fuentes con política de derechos explícita | **11 / 11** |
 | Leads hemerográficos activos sin resolver | **19** |
 | Conflictos cronológicos preservados | **2** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
-Los 65 objetos forman una **cohorte de estabilización**, no una muestra históricamente representativa. Cuarenta registros todavía proceden de dos series pedagógicas de 1904–1907. El proyecto mantiene explícita esta concentración y no autoriza inferencias longitudinales a partir del conteo bruto.
+Los 66 objetos forman una **cohorte de estabilización**, no una muestra históricamente representativa. Cuarenta registros todavía proceden de dos series pedagógicas de 1904–1907. El proyecto mantiene explícita esta concentración y no autoriza inferencias longitudinales a partir del conteo bruto.
 
 El tablero metodológico vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
 
@@ -39,6 +39,7 @@ La cohorte se construye mediante catálogos, hemerotecas, bibliotecas y reposito
 - **Repositorio Institucional de la UNAM**;
 - **Biblioteca Virtual Miguel de Cervantes**;
 - **Internet Archive**, utilizado como localizador de objetos cuando su procedencia puede documentarse;
+- **Fondo Reservado de la Biblioteca México**, para impresos históricos con registro institucional;
 - **Secretaría de Educación Pública** y colecciones históricas institucionales;
 - fuentes universitarias secundarias de alta calidad utilizadas para descubrir, contextualizar o verificar publicaciones antes de resolver el objeto primario.
 
@@ -134,6 +135,10 @@ El primer piloto humano está preespecificado en [`docs/ANNOTATION_PILOT_PROTOCO
 
 El manual vigente es [`docs/ANNOTATION_MANUAL.md`](docs/ANNOTATION_MANUAL.md), la plantilla pública está en [`data/samples/annotation_pilot_template.csv`](data/samples/annotation_pilot_template.csv) y el cálculo reproducible de acuerdo se implementa en [`scripts/annotation_agreement.py`](scripts/annotation_agreement.py).
 
+## Diversidad documental
+
+El corpus ya no depende exclusivamente de números de revistas. La primera ola de balance incorpora objetos hemerográficos regionales y **_El esfuerzo educativo en México_ (1928)** como `official_report`, a partir del registro institucional del Fondo Reservado de la Biblioteca México. El mínimo formal de tres tipos documentales puede alcanzarse, aunque la diversidad sigue siendo delgada y debe ampliarse con manuales, informes de inspección, materiales de formación docente y otras publicaciones oficiales.
+
 ## Derechos y reutilización
 
 PDHD aplica una política conservadora a los objetos digitales de terceros. En particular, las condiciones de HNDM impiden tratar la disponibilidad digital como autorización automática para incorporar imágenes o reproducciones a otro sistema.
@@ -168,9 +173,9 @@ La política es que una discrepancia real **se documenta; no se borra para que e
 
 ## Estado actual y siguiente puerta metodológica
 
-PDHD se encuentra en fase `0.1`, pero ya ha superado la prueba de infraestructura inicial. El trabajo actual es **estabilizar la cohorte**, reducir el sesgo de disponibilidad y resolver suficientes fuentes rurales y tipos documentales distintos de la prensa periódica.
+PDHD se encuentra en fase `0.1`, pero ya ha superado la prueba de infraestructura inicial. La cohorte de estabilización suma 66 objetos y ya puede satisfacer las condiciones formales de diversidad geográfica y de tipos documentales para el futuro piloto.
 
-La primera validación humana no comenzará solo porque se alcance un número mayor de documentos. La puerta metodológica requiere, entre otras condiciones, material rural con localizador primario, al menos tres procedencias geográficas fuera de Ciudad de México, diversidad de tipos documentales y que ninguna publicación domine más de una cuarta parte del piloto.
+La primera validación humana, sin embargo, **todavía no debe comenzar**. El bloqueo duro es disponer de material de maestro rural/postrevolucionario con localizador primario estable. La búsqueda pública actual recupera referencias académicas fuertes para _El Maestro Rural_ y _Revista de Educación_, pero no un endpoint primario suficientemente estable; por ello esos objetos permanecen como leads y no se inventan registros documentales.
 
 ## Autoría y citación
 
