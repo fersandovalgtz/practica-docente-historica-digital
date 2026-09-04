@@ -6,6 +6,7 @@ import csv
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -81,6 +82,8 @@ def main() -> int:
     issue_leads = read_csv(leads_path) if leads_path.exists() else []
     conflicts_path = ROOT / "data/catalog/chronology_conflicts.csv"
     chronology_conflicts = read_csv(conflicts_path) if conflicts_path.exists() else []
+    pilot_path = ROOT / "data/samples/pilot_document_selection_0_1.csv"
+    pilot_selection = read_csv(pilot_path) if pilot_path.exists() else []
     dimensions = read_csv(ROOT / "data/taxonomy/pedagogical_dimensions.csv")
     acts = read_csv(ROOT / "data/taxonomy/pedagogical_acts.csv")
 
@@ -93,6 +96,9 @@ def main() -> int:
         check_unique(issue_leads, "lead_id", "issue_leads")
     if chronology_conflicts:
         check_unique(chronology_conflicts, "conflict_id", "chronology_conflicts")
+    if pilot_selection:
+        check_unique(pilot_selection, "document_id", "pilot_document_selection")
+        check_unique(pilot_selection, "selection_order", "pilot_document_selection")
 
     source_ids = {r["source_id"] for r in sources}
     rights_ids = {r["source_id"] for r in rights}
@@ -136,6 +142,72 @@ def main() -> int:
         seen_docs,
         seen_source_identifiers,
     )
+
+    document_index = {
+        row["document_id"]: row for row in (documents_core + documents_balancing)
+    }
+
+    if pilot_selection:
+        if len(pilot_selection) != 24:
+            ERRORS.append(
+                f"pilot_document_selection: expected 24 documents, found {len(pilot_selection)}"
+            )
+        expected_orders = list(range(1, len(pilot_selection) + 1))
+        try:
+            actual_orders = sorted(int(r["selection_order"]) for r in pilot_selection)
+        except ValueError:
+            ERRORS.append("pilot_document_selection: non-integer selection_order")
+            actual_orders = []
+        if actual_orders and actual_orders != expected_orders:
+            ERRORS.append(
+                f"pilot_document_selection: selection_order must be contiguous 1-{len(pilot_selection)}"
+            )
+
+        fragment_total = 0
+        publication_counts: Counter[str] = Counter()
+        for row in pilot_selection:
+            doc_id = row.get("document_id", "").strip()
+            if doc_id not in seen_docs:
+                ERRORS.append(
+                    f"pilot_document_selection: unknown document_id {doc_id}"
+                )
+                continue
+            doc = document_index[doc_id]
+            publication = row.get("publication", "").strip()
+            if publication != doc.get("publication", "").strip():
+                ERRORS.append(
+                    f"pilot_document_selection: publication mismatch for {doc_id}"
+                )
+            publication_counts[publication] += 1
+            era_code = row.get("era_code", "").strip()
+            if era_code not in ERA_CODES:
+                ERRORS.append(
+                    f"pilot_document_selection: invalid era_code {era_code!r} for {doc_id}"
+                )
+            if row.get("status", "").strip() != "selected":
+                ERRORS.append(
+                    f"pilot_document_selection: unexpected status for {doc_id}"
+                )
+            try:
+                fragment_total += int(row.get("fragment_target_count", "0"))
+            except ValueError:
+                ERRORS.append(
+                    f"pilot_document_selection: invalid fragment_target_count for {doc_id}"
+                )
+
+        if fragment_total != 96:
+            ERRORS.append(
+                f"pilot_document_selection: expected 96 target fragments, found {fragment_total}"
+            )
+        overrepresented = {
+            publication: count
+            for publication, count in publication_counts.items()
+            if count > 6
+        }
+        if overrepresented:
+            ERRORS.append(
+                f"pilot_document_selection: publication concentration exceeds 6 {overrepresented}"
+            )
 
     unresolved_leads = 0
     resolved_leads = 0
@@ -182,12 +254,13 @@ def main() -> int:
         return 1
 
     total_documents = len(documents_core) + len(documents_balancing)
+    pilot_note = f"; {len(pilot_selection)} pilot documents" if pilot_selection else ""
     print(
         "PDHD repository checks passed "
         f"({len(sources)} sources; {len(candidates)} candidates; "
         f"{total_documents} documents; {len(issue_leads)} issue leads "
         f"[{unresolved_leads} unresolved, {resolved_leads} resolved]; "
-        f"{len(chronology_conflicts)} chronology conflicts)"
+        f"{len(chronology_conflicts)} chronology conflicts{pilot_note})"
     )
     return 0
 
