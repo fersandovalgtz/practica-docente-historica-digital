@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the union of PDHD pilot locator and frozen-fragment shards."""
+"""Validate the union of PDHD pilot locator/frozen shards and the remaining-gap queue."""
 from __future__ import annotations
 
 import csv
@@ -37,6 +37,7 @@ SELECTION_ROLES = {
     "source_criticism_salient",
     "control",
 }
+GAP_PRIORITIES = {"high", "medium", "low"}
 SLOTS = ("A", "B", "C", "D")
 
 
@@ -87,6 +88,57 @@ def unique_index(rows: list[dict[str, str]], label: str) -> dict[str, dict[str, 
             )
         index[fid] = row
     return index
+
+
+def validate_gap_queue(
+    expected: dict[str, tuple[str, str]], locators: dict[str, dict[str, str]]
+) -> int:
+    path = SAMPLES / "fragment_gap_queue_0_1.csv"
+    if not path.exists():
+        ERRORS.append("fragment_gap_queue_0_1.csv is missing")
+        return 0
+
+    rows = read_csv(path)
+    seen: set[str] = set()
+    for row in rows:
+        fid = row.get("fragment_id", "").strip()
+        if not re.fullmatch(r"PDHD-F\d{6}", fid):
+            ERRORS.append(f"gap queue: invalid fragment_id {fid!r}")
+            continue
+        if fid in seen:
+            ERRORS.append(f"gap queue: duplicate fragment_id {fid}")
+        seen.add(fid)
+
+        if fid not in expected:
+            ERRORS.append(f"gap queue: {fid} is outside the pilot manifest")
+            continue
+        expected_doc, expected_slot = expected[fid]
+        if row.get("document_id", "").strip() != expected_doc:
+            ERRORS.append(f"gap queue: document mismatch for {fid}")
+        if row.get("slot", "").strip() != expected_slot:
+            ERRORS.append(f"gap queue: slot mismatch for {fid}")
+        if fid in locators:
+            ERRORS.append(f"gap queue: {fid} already exists in locator union")
+        if row.get("priority", "").strip() not in GAP_PRIORITIES:
+            ERRORS.append(f"gap queue: invalid priority for {fid}")
+        for field in ("retrieval_route", "current_blocker", "target_evidence"):
+            if not row.get(field, "").strip():
+                ERRORS.append(f"gap queue: missing {field} for {fid}")
+
+    expected_missing = set(expected) - set(locators)
+    if seen != expected_missing:
+        missing_from_queue = sorted(expected_missing - seen)
+        stale_in_queue = sorted(seen - expected_missing)
+        if missing_from_queue:
+            ERRORS.append(
+                "gap queue lacks currently unlocated IDs: " + ", ".join(missing_from_queue)
+            )
+        if stale_in_queue:
+            ERRORS.append(
+                "gap queue contains IDs that are no longer unlocated: " + ", ".join(stale_in_queue)
+            )
+
+    return len(rows)
 
 
 def main() -> int:
@@ -174,6 +226,8 @@ def main() -> int:
     if len(frozen) > len(locators):
         ERRORS.append("frozen union cannot exceed locator union")
 
+    gap_count = validate_gap_queue(expected, locators)
+
     if ERRORS:
         for error in ERRORS:
             print(f"ERROR: {error}", file=sys.stderr)
@@ -182,7 +236,8 @@ def main() -> int:
     print(
         "PDHD fragment-shard checks passed "
         f"({len(locator_shards)} locator shards; {len(locators)}/96 located; "
-        f"{len(frozen_shards)} frozen shards; {len(frozen)}/96 frozen)"
+        f"{len(frozen_shards)} frozen shards; {len(frozen)}/96 frozen; "
+        f"{gap_count}/96 unlocated in gap queue)"
     )
     return 0
 
