@@ -1,0 +1,4 @@
+source_id,rights_status,source_terms_url,public_commit_policy,review_note,accessed_at
+HNDM,metadata_only,https://hndm.iib.unam.mx/index.php/es/tramites-y-servicios?start=1,"No facsimiles, page images or full OCR without documented permission","Default conservative policy based on HNDM published use and reproduction conditions",2026-09-03
+UNAM-RI,review_required,https://repositorio.unam.mx/,"Assess rights at object or contributing-repository level before committing source content","Repository aggregates heterogeneous resources; do not infer a single reuse license",2026-09-03
+SEP-CENTENARIO,review_required,https://centenario.sep.gob.mx/publicaciones,"Assess each publication before committing facsimile or full text","Institutional availability does not by itself establish redistribution rights",2026-09-03

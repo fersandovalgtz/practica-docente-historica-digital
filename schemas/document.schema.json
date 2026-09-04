@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fersandovalgtz/practica-docente-historica-digital/schemas/document.schema.json",
+  "title": "PDHD document",
+  "type": "object",
+  "required": ["document_id", "source_id", "title", "source_url", "rights_status"],
+  "properties": {
+    "document_id": {"type": "string", "pattern": "^PDHD-D[0-9]{6}$"},
+    "source_id": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "author": {"type": ["string", "null"]},
+    "publication_date": {"type": ["string", "null"]},
+    "source_url": {"type": "string", "format": "uri"},
+    "source_identifier": {"type": ["string", "null"]},
+    "rights_status": {
+      "enum": ["metadata_only", "local_processing_only", "redistributable_with_attribution", "public_domain_verified", "permission_granted", "review_required"]
+    },
+    "document_type": {"type": ["string", "null"]},
+    "period": {"type": ["string", "null"]}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use PDHD, please cite the project using this metadata."
+title: "Práctica Docente Histórica Digital (PDHD)"
+type: software
+authors:
+  - family-names: "Sandoval Gutiérrez"
+    given-names: "Fernando"
+    orcid: "https://orcid.org/0000-0002-3168-6725"
+version: "0.1.0-dev"
+date-released: "2026-09-03"
+repository-code: "https://github.com/fersandovalgtz/practica-docente-historica-digital"
+license: Apache-2.0
+keywords:
+  - history of education
+  - teaching practice
+  - digital humanities
+  - historical corpus
+  - Mexico
+  - teacher education
+abstract: >-
+  Open research infrastructure for the historical-computational study of
+  teaching practice in Mexico through pedagogical press, professional journals,
+  manuals, official publications and other educational printed sources.

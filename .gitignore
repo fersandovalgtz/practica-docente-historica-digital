@@ -1,0 +1,22 @@
+# Local or restricted research material
+local/
+private/
+restricted/
+
+# OCR and caches
+*.sqlite
+*.db
+.cache/
+ocr_raw/
+ocr_normalized/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
