@@ -22,6 +22,12 @@ RIGHTS = {
 }
 
 ERA_CODES = {f"E{i}" for i in range(1, 8)}
+PILOT_SLOTS = ("A", "B", "C", "D")
+LOCATOR_FREEZE_STATES = {
+    "locator_candidate",
+    "locator_resolved_text_package_pending",
+    "frozen",
+}
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -84,6 +90,8 @@ def main() -> int:
     chronology_conflicts = read_csv(conflicts_path) if conflicts_path.exists() else []
     pilot_path = ROOT / "data/samples/pilot_document_selection_0_1.csv"
     pilot_selection = read_csv(pilot_path) if pilot_path.exists() else []
+    locator_path = ROOT / "data/samples/fragment_locator_progress_0_1.csv"
+    locator_progress = read_csv(locator_path) if locator_path.exists() else []
     dimensions = read_csv(ROOT / "data/taxonomy/pedagogical_dimensions.csv")
     acts = read_csv(ROOT / "data/taxonomy/pedagogical_acts.csv")
 
@@ -99,6 +107,8 @@ def main() -> int:
     if pilot_selection:
         check_unique(pilot_selection, "document_id", "pilot_document_selection")
         check_unique(pilot_selection, "selection_order", "pilot_document_selection")
+    if locator_progress:
+        check_unique(locator_progress, "fragment_id", "fragment_locator_progress")
 
     source_ids = {r["source_id"] for r in sources}
     rights_ids = {r["source_id"] for r in rights}
@@ -147,6 +157,7 @@ def main() -> int:
         row["document_id"]: row for row in (documents_core + documents_balancing)
     }
 
+    expected_fragments: dict[str, tuple[str, str]] = {}
     if pilot_selection:
         if len(pilot_selection) != 24:
             ERRORS.append(
@@ -190,10 +201,17 @@ def main() -> int:
                 )
             try:
                 fragment_total += int(row.get("fragment_target_count", "0"))
+                order = int(row["selection_order"])
             except ValueError:
                 ERRORS.append(
-                    f"pilot_document_selection: invalid fragment_target_count for {doc_id}"
+                    f"pilot_document_selection: invalid integer field for {doc_id}"
                 )
+                continue
+
+            first_fragment = (order - 1) * 4 + 1
+            for offset, slot in enumerate(PILOT_SLOTS):
+                fragment_id = f"PDHD-F{first_fragment + offset:06d}"
+                expected_fragments[fragment_id] = (doc_id, slot)
 
         if fragment_total != 96:
             ERRORS.append(
@@ -208,6 +226,54 @@ def main() -> int:
             ERRORS.append(
                 f"pilot_document_selection: publication concentration exceeds 6 {overrepresented}"
             )
+
+    frozen_locator_count = 0
+    for row in locator_progress:
+        fragment_id = row.get("fragment_id", "").strip()
+        if not re.fullmatch(r"PDHD-F\d{6}", fragment_id):
+            ERRORS.append(
+                f"fragment_locator_progress: invalid fragment_id {fragment_id!r}"
+            )
+            continue
+        if fragment_id not in expected_fragments:
+            ERRORS.append(
+                f"fragment_locator_progress: fragment {fragment_id} is outside the pilot manifest"
+            )
+            continue
+
+        expected_doc, expected_slot = expected_fragments[fragment_id]
+        if row.get("document_id", "").strip() != expected_doc:
+            ERRORS.append(
+                f"fragment_locator_progress: document mismatch for {fragment_id}"
+            )
+        if row.get("slot", "").strip() != expected_slot:
+            ERRORS.append(
+                f"fragment_locator_progress: slot mismatch for {fragment_id}"
+            )
+        if not row.get("page", "").strip():
+            ERRORS.append(
+                f"fragment_locator_progress: missing page for {fragment_id}"
+            )
+        if not row.get("source_locator", "").strip():
+            ERRORS.append(
+                f"fragment_locator_progress: missing source_locator for {fragment_id}"
+            )
+        if not row.get("locator_evidence_url", "").strip():
+            ERRORS.append(
+                f"fragment_locator_progress: missing locator_evidence_url for {fragment_id}"
+            )
+
+        freeze_status = row.get("freeze_status", "").strip()
+        if freeze_status not in LOCATOR_FREEZE_STATES:
+            ERRORS.append(
+                f"fragment_locator_progress: invalid freeze_status {freeze_status!r} for {fragment_id}"
+            )
+        if freeze_status == "frozen":
+            frozen_locator_count += 1
+            if row.get("boundary_status", "").strip() != "fixed":
+                ERRORS.append(
+                    f"fragment_locator_progress: frozen fragment {fragment_id} lacks fixed boundaries"
+                )
 
     unresolved_leads = 0
     resolved_leads = 0
@@ -255,12 +321,17 @@ def main() -> int:
 
     total_documents = len(documents_core) + len(documents_balancing)
     pilot_note = f"; {len(pilot_selection)} pilot documents" if pilot_selection else ""
+    locator_note = (
+        f"; {len(locator_progress)} locator rows [{frozen_locator_count} frozen]"
+        if locator_progress
+        else ""
+    )
     print(
         "PDHD repository checks passed "
         f"({len(sources)} sources; {len(candidates)} candidates; "
         f"{total_documents} documents; {len(issue_leads)} issue leads "
         f"[{unresolved_leads} unresolved, {resolved_leads} resolved]; "
-        f"{len(chronology_conflicts)} chronology conflicts{pilot_note})"
+        f"{len(chronology_conflicts)} chronology conflicts{pilot_note}{locator_note})"
     )
     return 0
 
