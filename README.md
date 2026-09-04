@@ -24,10 +24,10 @@ Corte de referencia: **4 de septiembre de 2026**.
 | Objetos documentales con identidad y localizador | **75** |
 | Fuentes con política de derechos explícita | **13 / 13** |
 | Leads hemerográficos activos sin resolver | **19** |
-| Conflictos cronológicos preservados | **3** |
+| Conflictos cronológicos preservados | **4** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
-| Slots con localizador candidato/resuelto | **42 / 96** |
+| Slots con localizador candidato/resuelto | **47 / 96** |
 | Fragmentos completamente congelados | **8 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
@@ -136,7 +136,9 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **42/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **8/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **47/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **8/96** fragmentos.
+
+Cinco de los nuevos localizadores provienen de referencias de página explícitas en investigación histórica o publicaciones institucionales: *El Instructor* (1 de enero de 1889, p. 8), *México intelectual* (1889, p. 2), *La Escuela moderna* (31 de octubre de 1889, pp. 17–18), *Revista de la Instrucción Pública Mexicana* (15 de marzo de 1896, p. 31) y *La Enseñanza Normal* (15 de septiembre de 1904, p. 4). Son candidatos de recuperación, no fragmentos congelados: todavía requieren cotejo directo con la página primaria y delimitación exacta.
 
 La fuerza de la evidencia se interpreta conforme a [`docs/LOCATOR_EVIDENCE_POLICY.md`](docs/LOCATOR_EVIDENCE_POLICY.md): un pasaje primario directo, un inicio de sección, un facsímil histórico reproducido dentro de una fuente secundaria y una cita académica con página no tienen el mismo estatus metodológico.
 
@@ -162,9 +164,11 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 `validate_repository.py` controla el catálogo base. `validate_fragment_shards.py` trata todos los shards de localización y congelamiento como una sola unión lógica: detecta duplicados entre archivos, verifica documento y slot contra el manifiesto determinista, exige límites fijos para todo fragmento `frozen` y cruza cada registro congelado con su correspondiente localizador. Esto permite ampliar el trabajo por lotes sin perder una única identidad metodológica.
 
+`pilot_content_leads.csv` conserva hallazgos de contenido antes de su promoción a página. `validate_content_leads.py` distingue ahora entre contenido verificado a nivel de número, punteros secundarios de página verificados y material aún no apto para convertirse en localizador. Esto evita colapsar la cadena `issue identity -> content lead -> page locator -> frozen fragment`.
+
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. La tarea es llevar los **42/96 localizadores** actuales hacia **96/96** y aumentar la proporción de pasajes primarios directamente inspeccionados hasta convertirlos en verdaderos fragmentos congelados. Los primeros **8/96** muestran que el pipeline funciona en dos publicaciones pedagógicas distintas de HNDM.
+La selección documental ya está lista. La tarea es llevar los **47/96 localizadores** actuales hacia **96/96** y aumentar la proporción de pasajes primarios directamente inspeccionados hasta convertirlos en verdaderos fragmentos congelados. Los primeros **8/96** muestran que el pipeline funciona en dos publicaciones pedagógicas distintas de HNDM.
 
 Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
