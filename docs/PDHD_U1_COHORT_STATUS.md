@@ -10,14 +10,14 @@ Reference cut: **2026-09-04**
 | Object-level documents | 75 | stabilization advanced |
 | Issue-level leads | 21 total / 19 unresolved | active balancing queue |
 | Sources with explicit rights policy | 13 / 13 | complete at source-policy level |
-| Registered chronology conflicts | 2 | explicitly preserved |
+| Registered chronology conflicts | 3 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **38 / 96** | source-localization pass active |
-| Fully frozen fragments | **4 / 96** | first true freeze batch completed |
+| Fragment locator rows resolved/candidate | **42 / 96** | source-localization pass active |
+| Fully frozen fragments | **8 / 96** | two complete four-slot document batches |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The original 50-document threshold established that PDHD-U1 could sustain object identity, provenance, rights and annotation workflows. The cohort has now reached **75 object-level records** while reducing the original dependence on two 1904–1907 pedagogical series. The project has also crossed a second methodological threshold: exact fragment freezing is no longer only a protocol; four pilot fragments now have fixed structural boundaries and a dedicated frozen registry.
+The original 50-document threshold established that PDHD-U1 could sustain object identity, provenance, rights and annotation workflows. The cohort has now reached **75 object-level records** while reducing the original dependence on two 1904–1907 pedagogical series. Exact fragment freezing is no longer only a protocol: two complete pilot documents now contribute eight structurally fixed units with a rights-aware public registry.
 
 ## Composition of the 75-document union
 
@@ -43,7 +43,7 @@ The previous hard blocking condition was the absence of primary-localized rural-
 
 `PDHD-D000067` is the SEP pamphlet *El papel social del maestro rural*. `PDHD-D000068` is *El sistema de escuelas rurales en México*. `PDHD-D000069` is *Las misiones culturales en 1927: Las escuelas normales rurales*. `PDHD-D000071` is *Las misiones culturales, 1932-1933*. Together with `PDHD-D000066`, *El esfuerzo educativo en México*, and the SEP institutional memories `PDHD-D000072` through `PDHD-D000075`, these objects provide a primary documentary basis for rural teaching, missions, teacher preparation, inspection, supervision and federal educational administration.
 
-This means PDHD no longer needs to treat citations in later historiography as substitutes for the historical objects required by the pilot. Secondary scholarship remains useful as a retrieval layer and is explicitly marked when it supplies only a page pointer.
+Secondary scholarship remains useful as a retrieval layer and is explicitly marked when it supplies only a page pointer. A new chronology conflict also preserves the difference between the 1925 HathiTrust catalog date for *El papel social del maestro rural* and a 1926 archival citation reported in recent UAA scholarship. PDHD retains 1925 as the working catalog year while leaving the discrepancy open for direct-object inspection.
 
 ## Documentary-type depth
 
@@ -65,15 +65,17 @@ The first document set for human validation is frozen in `data/samples/pilot_doc
 
 No publication contributes more than six documents; *El Maestro. Revista de Cultura Nacional* contributes four, and no other selected periodical approaches the 25% ceiling. The pilot contains more than three documentary types and at least three geographic origins outside Mexico City. The **document-selection gate is therefore passed**.
 
-## First true fragment-freeze batch
+## Two complete fragment-freeze batches
 
-`PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, now contributes the first four genuinely frozen units: `PDHD-F000013` through `PDHD-F000016`.
+The first complete batch comes from `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, and contains `PDHD-F000013` through `PDHD-F000016`. Direct HNDM page inspection fixed an instructional/pedagogical paragraph, a professional editorial roster, a historically salient methodological passage and a deliberately non-analytical masthead/control block.
 
-The source page was inspected directly in the HNDM interface. PDHD fixed structural boundaries for an instructional/pedagogical paragraph, a professional editorial roster, a historically salient methodological passage and a deliberately non-analytical masthead/control block. Because HNDM remains `metadata_only`, the repository does **not** commit the historical text or page image. It stores the page, structural locator, boundary definition, access basis and preparation provenance.
+The second complete batch comes from `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, and contains `PDHD-F000017` through `PDHD-F000020`. Direct inspection fixed a compact explained-reading/vocabulary teaching unit, the publication's explicit pedagogical mission statement, a grammar sentence-transformation sequence and a non-analytical subscription/publication control block.
 
-The canonical frozen registry is `data/samples/frozen_fragments_0_1.csv`. Its separation from `fragment_locator_progress_0_1.csv` is intentional: a locator queue records work in progress, whereas the frozen registry records only units that have crossed the full boundary and access gate.
+Because both sources are HNDM and HNDM remains `metadata_only`, the repository does **not** commit the historical text or page images. It stores page identity, structural localizer, boundary definition, access basis, public-text decision and preparation provenance.
 
-This creates a new operational distinction:
+The work is now stored in auditable shards: `data/samples/fragment_locator_progress*.csv` and `data/samples/frozen_fragments*.csv`. Sharding allows new batches to be added without rewriting the preceding frozen evidence, while `scripts/validate_fragment_shards.py` treats every shard as one logical 96-slot union.
+
+The operational distinctions remain:
 
 `locator_candidate != frozen_fragment`
 
@@ -83,15 +85,13 @@ This creates a new operational distinction:
 
 ## Fragment-localization progress
 
-Thirty-eight pilot slots now have documented page-level or section-level locator candidates in `data/samples/fragment_locator_progress_0_1.csv`.
+The union of locator shards now contains **42/96** pilot slots. Eight are fully frozen. The remaining 34 rows range from direct primary page/section evidence to secondary scholarly page pointers that still require primary-object verification.
 
-The queue includes four frozen HNDM slots from `PDHD-D000002`; four candidates from `PDHD-D000068`; four from `PDHD-D000069`; four from `PDHD-D000070`; four from `PDHD-D000071`; three from `PDHD-D000072`; four from `PDHD-D000073`; four from `PDHD-D000075`; four newly localized slots from `PDHD-D000066`; and three newly localized slots from `PDHD-D000067`.
+The queue includes `PDHD-D000066`, *El esfuerzo educativo en México*; `PDHD-D000067`, *El papel social del maestro rural*; `PDHD-D000068`, *El sistema de escuelas rurales en México*; `PDHD-D000069`, *Las misiones culturales en 1927*; `PDHD-D000070`, *Proyecto para la organización de las misiones federales de educación*; `PDHD-D000071`, *Las misiones culturales, 1932-1933*; the SEP memories for 1932, 1934 and 1938; and the two directly inspected HNDM periodicals.
 
-For `PDHD-D000066`, *El esfuerzo educativo en México*, Google Books directly exposes the beginning of the Department of Rural Primary Schools on page 1 and the Directorate of Cultural Missions and Normal Schools on page 113. Historical scholarship supplies a weaker page-level pointer to pages 94–95 and 104 for quantitative evidence on rural-school expansion and schooling in predominantly Indigenous settlements. The title page, exposed directly as Google Books `PR5`, is retained as a control candidate.
+For `PDHD-D000067`, recent UAA scholarship points specifically to page 5 for hygiene and household routines, the rural teacher's social function and vocational preparation. Those rows remain `secondary_page_pointer_primary_check_pending`. The same scholarly citation gives a 1926 imprint, while HathiTrust catalogs the pamphlet as 1925; that discrepancy is now preserved in `data/catalog/chronology_conflicts.csv` rather than silently normalized.
 
-For `PDHD-D000067`, *El papel social del maestro rural*, a recent historical study explicitly cites page 5 for hygiene and household routines, the rural teacher's social function and the promotion of vocational preparation. These three rows remain `secondary_page_pointer_primary_check_pending`; none may be frozen until page 5 is inspected in the primary SEP pamphlet.
-
-The queue therefore intentionally mixes different evidentiary strengths. `docs/LOCATOR_EVIDENCE_POLICY.md` distinguishes direct primary passages, direct primary section starts, scholarly page pointers, embedded reproduced facsimiles and bibliographic leads.
+The queue intentionally mixes different evidentiary strengths. `docs/LOCATOR_EVIDENCE_POLICY.md` distinguishes direct primary passages, direct primary section starts, scholarly page pointers, embedded reproduced facsimiles and bibliographic leads.
 
 The rule remains explicit:
 
@@ -107,15 +107,15 @@ The rule remains explicit:
 
 ## Integrity checks for frozen units
 
-`scripts/validate_repository.py` now validates the frozen-fragment registry against both the deterministic 96-slot manifest and the locator queue. A frozen row must match its expected document and slot, preserve the same page and source locator as the locator record, contain a boundary definition and access basis, use controlled transcription/public-text/selection-role states, and have a corresponding locator row marked `frozen` with `boundary_status=fixed`.
+`scripts/validate_repository.py` continues to validate the base catalog and primary sample files. `scripts/validate_fragment_shards.py` adds union-level validation across every `fragment_locator_progress*.csv` and `frozen_fragments*.csv` shard. It rejects duplicate fragment IDs across batches, mismatches between document and deterministic slot, frozen locators without fixed boundaries, frozen-registry rows without a corresponding locator, and disagreements in page or source identity between the two layers.
 
-This prevents a fragment from being called frozen merely because a page number has been found.
+This prevents a fragment from being called frozen merely because a page number has been found and prevents batch-oriented work from fragmenting the methodological identity of the pilot.
 
 ## What remains before human coding
 
 Human annotation has **not** started. Four fixed fragments must ultimately be prepared per document, yielding **96 reliability fragments**. Every fragment must retain document ID, page or stable localizer, boundary definition, transcription status, access/rights basis, selection rationale and immutable `fragment_id`.
 
-A separate 12-fragment calibration set remains required before the 96-fragment independent reliability round. The first four frozen fragments are methodological proof that the pipeline works; they are not permission to begin coder labeling early.
+A separate 12-fragment calibration set remains required before the 96-fragment independent reliability round. The eight frozen fragments establish that the pipeline works across two periodicals; they are not permission to begin coder labeling early.
 
 ## Rights constraint during fragment freezing
 
