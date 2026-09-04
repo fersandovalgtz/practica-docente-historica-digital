@@ -2,13 +2,13 @@
 
 **Infraestructura abierta de investigación para estudiar históricamente la práctica docente en México mediante prensa pedagógica, manuales, revistas profesionales, publicaciones oficiales y otros impresos educativos.**
 
-> Estado: `v0.1.0-dev` · estabilización de `PDHD-U1` y preparación del primer protocolo de validación humana.
+> Estado: `v0.1.0-dev` · `PDHD-U1` en preparación del primer piloto de validación humana.
 
 ## Qué es PDHD
 
-Práctica Docente Histórica Digital (PDHD) es una infraestructura de investigación orientada a construir un corpus histórico-computacional trazable sobre el acto de enseñar en México. Su objeto no es reunir documentos por acumulación, sino convertir fuentes heterogéneas en evidencia reproducible sobre métodos de enseñanza, evaluación, disciplina, autoridad docente, materiales, formación profesional, inspección escolar, ruralidad, inclusión, concepciones del alumnado e identidad del magisterio.
+Práctica Docente Histórica Digital (PDHD) construye un corpus histórico-computacional trazable sobre el acto de enseñar en México. Su objetivo no es acumular documentos, sino transformar fuentes heterogéneas en evidencia reproducible sobre métodos de enseñanza, evaluación, disciplina, autoridad docente, materiales, formación profesional, inspección y supervisión, ruralidad, inclusión, concepciones del alumnado e identidad del magisterio.
 
-PDHD distingue entre **fuente**, **identidad documental**, **procesamiento técnico**, **fragmento pedagógico**, **anotación**, **validación humana** e **interpretación histórica**. Esta separación es un requisito epistemológico del proyecto.
+PDHD distingue entre **fuente**, **identidad documental**, **derechos**, **procesamiento técnico**, **fragmento pedagógico**, **anotación**, **validación humana** e **interpretación histórica**. Esta separación es parte del método.
 
 ## Pregunta general
 
@@ -21,29 +21,46 @@ Corte de referencia: **3 de septiembre de 2026**.
 | Capa | Estado |
 |---|---:|
 | Candidatos documentales registrados | **25** |
-| Objetos documentales con identidad y localizador | **66** |
-| Fuentes con política de derechos explícita | **11 / 11** |
+| Objetos documentales con identidad y localizador | **75** |
+| Fuentes con política de derechos explícita | **13 / 13** |
 | Leads hemerográficos activos sin resolver | **19** |
 | Conflictos cronológicos preservados | **2** |
+| Documentos congelados para el primer piloto | **24** |
+| Fragmentos fijos previstos | **96** |
+| Fragmentos ya congelados con página/localizador | **0** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
-Los 66 objetos forman una **cohorte de estabilización**, no una muestra históricamente representativa. Cuarenta registros todavía proceden de dos series pedagógicas de 1904–1907. El proyecto mantiene explícita esta concentración y no autoriza inferencias longitudinales a partir del conteo bruto.
+Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
 
-El tablero metodológico vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
+## Avance metodológico clave
+
+El principal bloqueo previo era la falta de fuentes rurales/postrevolucionarias primarias con localizador estable. Ese problema ya no depende de localizar primero números digitalizados de *El Maestro Rural*.
+
+PDHD incorporó objetos contemporáneos de la SEP con identidad primaria verificable, entre ellos:
+
+- *El papel social del maestro rural* (1925);
+- *El sistema de escuelas rurales en México* (1927);
+- *Las misiones culturales en 1927: Las escuelas normales rurales* (1928);
+- *Las misiones culturales, 1932-1933* (1933);
+- memorias de la Secretaría de Educación Pública de 1932, 1934, 1937 y 1938.
+
+Estos objetos documentan directamente funciones del maestro rural, organización de misiones, formación normal, inspección, supervisión y administración educativa.
 
 ## Ecosistema de fuentes
 
-La cohorte se construye mediante catálogos, hemerotecas, bibliotecas y repositorios institucionales. Entre las fuentes registradas se encuentran:
+La infraestructura registra, entre otras, las siguientes fuentes:
 
-- **Hemeroteca Nacional Digital de México (HNDM)** y sistemas hemerográficos de la UNAM;
-- **Repositorio Institucional de la UNAM**;
-- **Biblioteca Virtual Miguel de Cervantes**;
-- **Internet Archive**, utilizado como localizador de objetos cuando su procedencia puede documentarse;
-- **Fondo Reservado de la Biblioteca México**, para impresos históricos con registro institucional;
-- **Secretaría de Educación Pública** y colecciones históricas institucionales;
-- fuentes universitarias secundarias de alta calidad utilizadas para descubrir, contextualizar o verificar publicaciones antes de resolver el objeto primario.
+- Hemeroteca Nacional Digital de México y sistemas hemerográficos UNAM;
+- Repositorio Institucional de la UNAM;
+- Biblioteca Virtual Miguel de Cervantes;
+- Internet Archive;
+- Fondo Reservado de la Biblioteca México;
+- HathiTrust Digital Library;
+- Google Books;
+- colecciones históricas de la SEP;
+- fuentes universitarias secundarias utilizadas para descubrimiento y contextualización.
 
-La inclusión de una fuente en el catálogo **no implica autorización para redistribuir su facsímil, imagen u OCR íntegro**. Cada fuente y, cuando es necesario, cada objeto debe pasar por una decisión explícita de derechos.
+La inclusión de una fuente **no implica permiso automático para redistribuir facsímiles, imágenes u OCR íntegro**. Los estados de derechos se registran explícitamente en `data/catalog/rights_registry.csv`.
 
 ## Arquitectura de evidencia
 
@@ -78,104 +95,86 @@ PDHD adopta estas reglas:
 - `model_label != human_validation`
 - `prescription != observed_practice`
 - `object_count_threshold_reached != historical_representativeness`
+- `document_selection_ready != annotation_started`
+- `primary_source_resolved != source_text_republishable`
 - `absence_of_hit != demonstrated_absence`
 
-Un texto puede prescribir una conducta docente sin demostrar que esa conducta ocurrió. Una publicación abundante en los repositorios tampoco representa automáticamente una mayor importancia histórica. La infraestructura debe conservar ambas diferencias.
+Un texto puede prescribir una conducta docente sin demostrar que esa conducta ocurrió. Una publicación abundantemente digitalizada tampoco representa automáticamente una mayor importancia histórica.
 
-## Unidad inicial: PDHD-U1
+## Periodización analítica
 
-**PDHD-U1 — Genealogía documental de la práctica docente mexicana** es la primera cohorte de construcción. Su propósito es probar el modelo documental, estabilizar una muestra de fuentes defendible y validar el sistema de anotación antes de escalar.
-
-Para análisis y muestreo se utilizan estratos no superpuestos. La justificación y reglas se documentan en [`docs/PERIODIZATION_PROTOCOL.md`](docs/PERIODIZATION_PROTOCOL.md).
+Para muestreo y análisis se utilizan estratos no superpuestos documentados en [`docs/PERIODIZATION_PROTOCOL.md`](docs/PERIODIZATION_PROTOCOL.md).
 
 | Código | Periodo | Problema de trabajo |
 |---|---|---|
 | E1 | 1870–1910 | profesionalización liberal y porfiriana, prensa pedagógica, normalismo, enseñanza objetiva e inspección |
-| E2 | 1911–1920 | transición revolucionaria y reconfiguración de autoridad e instituciones escolares |
+| E2 | 1911–1920 | transición revolucionaria y reconfiguración institucional |
 | E3 | 1921–1934 | reconstrucción educativa de la SEP, expansión rural, misiones y formación del maestro |
 | E4 | 1935–1940 | educación socialista y reconfiguración cardenista |
-| E5 | 1941–1970 | consolidación nacional y expansión masiva de la escolarización |
+| E5 | 1941–1970 | consolidación nacional y expansión masiva |
 | E6 | 1971–2000 | planeación, modernización, tecnificación y evaluación |
 | E7 | 2001–2026 | inclusión, rendición de cuentas, digitalización y Nueva Escuela Mexicana |
 
-`era_code` es una variable de estratificación; **no constituye por sí misma una explicación causal del cambio pedagógico**.
+`era_code` es una variable de estratificación; no constituye por sí misma una explicación causal.
 
-## Unidad analítica: fragmento pedagógico
+## Primer piloto humano
 
-El objeto analítico principal es el `pedagogical_fragment`: un fragmento localizado dentro de un documento y anotado de forma trazable.
+La primera selección de **24 documentos** está congelada en [`data/samples/pilot_document_selection_0_1.csv`](data/samples/pilot_document_selection_0_1.csv) y explicada en [`docs/PILOT_DOCUMENT_SELECTION_0_1.md`](docs/PILOT_DOCUMENT_SELECTION_0_1.md).
 
-Ejemplo conceptual:
+Su composición es:
 
-```json
-{
-  "fragment_id": "PDHD-F000001",
-  "document_id": "PDHD-D000001",
-  "source_id": "HNDM",
-  "date": "1891-12-12",
-  "page": 4,
-  "fragment_locator": "p4-c2",
-  "transcription_status": "local_ocr_unverified",
-  "pedagogical_act_primary": "examine",
-  "dimensions": ["assessment"],
-  "actor": "teacher",
-  "target": "student",
-  "normativity": "prescriptive",
-  "validation_status": "unvalidated",
-  "rights_status": "metadata_only"
-}
+| Era | Documentos |
+|---|---:|
+| E1 | 10 |
+| E3 | 12 |
+| E4 | 2 |
+
+La selección incluye objetos de Campeche, Aguascalientes y Xalapa además de Ciudad de México; incorpora prensa, objetos hemerográficos, informes oficiales, orientación docente, monografías institucionales y propuestas de política. Ninguna publicación aporta más de seis documentos.
+
+El objetivo del piloto es probar la **reproducibilidad del sistema de anotación**, no estimar frecuencias históricas nacionales.
+
+## Fragmentos fijos
+
+Cada documento aporta cuatro slots metodológicos, para **96 fragmentos**:
+
+- A: acto pedagógico o prescripción explícita;
+- B: identidad profesional, autoridad, supervisión, evaluación u organización;
+- C: pasaje históricamente significativo seleccionado mediante crítica de fuentes;
+- D: control capaz de recibir `none` o `unclear` en al menos un campo.
+
+El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_PROTOCOL.md). El manifiesto vacío se genera determinísticamente con:
+
+```bash
+python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-## Taxonomía y validación humana
+La estructura de 24 documentos / 96 slots se comprueba automáticamente en CI.
 
-La taxonomía 0.2 incluye dimensiones como `teaching_method`, `teacher_authority`, `discipline`, `assessment`, `materials`, `lesson_organization`, `teacher_training`, `inspection_supervision`, `rurality`, `indigenous_education`, `inclusion_difference`, `gender`, `student_conception`, `professional_identity`, `school_community` y `pedagogical_change`.
+## Taxonomía y confiabilidad
 
-De manera transversal, PDHD registra **actos pedagógicos** mediante códigos controlados como `explain`, `ask`, `examine`, `correct`, `punish`, `reward`, `demonstrate`, `read`, `dictate`, `observe`, `organize`, `classify`, `adapt`, `record`, `repeat`, `memorize`, `practice` y `guide`.
+La taxonomía vigente incluye dimensiones como `teaching_method`, `teacher_authority`, `discipline`, `assessment`, `materials`, `lesson_organization`, `teacher_training`, `inspection_supervision`, `rurality`, `indigenous_education`, `inclusion_difference`, `gender`, `student_conception`, `professional_identity`, `school_community` y `pedagogical_change`.
 
-El primer piloto humano está preespecificado en [`docs/ANNOTATION_PILOT_PROTOCOL.md`](docs/ANNOTATION_PILOT_PROTOCOL.md). Su diseño prevé 24 documentos estratificados, 96 fragmentos fijos y al menos dos codificadores humanos independientes. La confiabilidad de campos nominales se evaluará mediante alfa de Krippendorff; las dimensiones multilabel se evaluarán por dimensión y mediante diagnósticos de solapamiento. La adjudicación ocurre **después** de congelar el cálculo de acuerdo independiente.
+La capa de actos pedagógicos utiliza códigos controlados como `explain`, `ask`, `examine`, `correct`, `punish`, `reward`, `demonstrate`, `read`, `dictate`, `observe`, `organize`, `classify`, `adapt`, `record`, `repeat`, `memorize`, `practice` y `guide`.
 
-El manual vigente es [`docs/ANNOTATION_MANUAL.md`](docs/ANNOTATION_MANUAL.md), la plantilla pública está en [`data/samples/annotation_pilot_template.csv`](data/samples/annotation_pilot_template.csv) y el cálculo reproducible de acuerdo se implementa en [`scripts/annotation_agreement.py`](scripts/annotation_agreement.py).
+El protocolo humano está en [`docs/ANNOTATION_PILOT_PROTOCOL.md`](docs/ANNOTATION_PILOT_PROTOCOL.md). Prevé 12 fragmentos de calibración y 96 fragmentos independientes, al menos dos codificadores humanos, alfa de Krippendorff para campos nominales, diagnóstico multilabel por dimensión y adjudicación solo después de congelar el acuerdo independiente.
 
-## Diversidad documental
-
-El corpus ya no depende exclusivamente de números de revistas. La primera ola de balance incorpora objetos hemerográficos regionales y **_El esfuerzo educativo en México_ (1928)** como `official_report`, a partir del registro institucional del Fondo Reservado de la Biblioteca México. El mínimo formal de tres tipos documentales puede alcanzarse, aunque la diversidad sigue siendo delgada y debe ampliarse con manuales, informes de inspección, materiales de formación docente y otras publicaciones oficiales.
+El manual vigente está en [`docs/ANNOTATION_MANUAL.md`](docs/ANNOTATION_MANUAL.md) y el cálculo reproducible en [`scripts/annotation_agreement.py`](scripts/annotation_agreement.py).
 
 ## Derechos y reutilización
 
-PDHD aplica una política conservadora a los objetos digitales de terceros. En particular, las condiciones de HNDM impiden tratar la disponibilidad digital como autorización automática para incorporar imágenes o reproducciones a otro sistema.
+PDHD aplica una política conservadora a objetos digitales de terceros. HNDM se mantiene `metadata_only` salvo autorización adicional. HathiTrust y Google Books se utilizan como localizadores de investigación; la disponibilidad de vista completa o ebook gratuito no se interpreta como permiso automático para republicar scans u OCR alojados por esas plataformas.
 
-Por ello, salvo autorización o licencia compatible documentada, PDHD conserva públicamente **metadatos, localizadores, código, esquemas, decisiones de procedencia y derivados jurídicamente publicables**, mientras que imágenes, facsímiles y OCR íntegro restringido permanecen fuera del repositorio público.
-
-El Repositorio Institucional de la UNAM expone algunos objetos históricos bajo CC BY-NC-ND 4.0. PDHD registra esa circunstancia a nivel de objeto, pero no la simplifica como una autorización general de redistribución o creación de derivados.
-
-Consulte [`RIGHTS.md`](RIGHTS.md), [`docs/RIGHTS_AND_REUSE.md`](docs/RIGHTS_AND_REUSE.md) y [`data/catalog/rights_registry.csv`](data/catalog/rights_registry.csv).
+Cuando el texto no deba publicarse, el fragmento puede congelarse mediante página/localizador y utilizar texto de trabajo controlado fuera de GitHub. Consulte [`RIGHTS.md`](RIGHTS.md), [`docs/RIGHTS_AND_REUSE.md`](docs/RIGHTS_AND_REUSE.md) y [`data/catalog/rights_registry.csv`](data/catalog/rights_registry.csv).
 
 ## Integridad y reproducibilidad
 
-El repositorio mantiene:
+El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `PDHD-X` y `PDHD-F`; registra discrepancias cronológicas; valida duplicados, fuentes, derechos y relaciones entre objetos; comprueba la selección de 24 documentos; auto-prueba el calculador de confiabilidad y verifica la generación de 96 slots en GitHub Actions.
 
-- catálogos separados de fuentes, candidatos, documentos, leads y conflictos cronológicos;
-- identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `PDHD-X` y `PDHD-F`;
-- un registro explícito de discrepancias, en vez de normalizaciones silenciosas;
-- validación automática de identificadores, fuentes, derechos, duplicados y relaciones entre leads y documentos;
-- auto-pruebas del calculador de confiabilidad de anotación dentro de GitHub Actions.
+La política central es simple: **una discrepancia real se documenta; no se borra para que el catálogo parezca limpio.**
 
-La política es que una discrepancia real **se documenta; no se borra para que el catálogo parezca limpio**.
+## Siguiente puerta metodológica
 
-## Principios de integridad científica
-
-1. La fuente no se corrige silenciosamente.
-2. La automatización no fabrica validación humana.
-3. La prescripción documental no se confunde con práctica observada.
-4. Los problemas de derechos se registran antes de procesar o redistribuir contenido.
-5. Todo fragmento debe poder regresar a su documento y localizador de origen.
-6. La incertidumbre y los resultados negativos forman parte del dato.
-7. Una release es un corte histórico reproducible y no cambia retroactivamente.
-
-## Estado actual y siguiente puerta metodológica
-
-PDHD se encuentra en fase `0.1`, pero ya ha superado la prueba de infraestructura inicial. La cohorte de estabilización suma 66 objetos y ya puede satisfacer las condiciones formales de diversidad geográfica y de tipos documentales para el futuro piloto.
-
-La primera validación humana, sin embargo, **todavía no debe comenzar**. El bloqueo duro es disponer de material de maestro rural/postrevolucionario con localizador primario estable. La búsqueda pública actual recupera referencias académicas fuertes para _El Maestro Rural_ y _Revista de Educación_, pero no un endpoint primario suficientemente estable; por ello esos objetos permanecen como leads y no se inventan registros documentales.
+La selección documental ya está lista. La siguiente tarea es congelar **96/96 fragmentos** con página o localizador, estado de transcripción y manejo de derechos. Solo después se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
 ## Autoría y citación
 
