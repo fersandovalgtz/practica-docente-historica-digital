@@ -13,11 +13,11 @@ Reference cut: **2026-09-04**
 | Registered chronology conflicts | 5 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **64 / 96** | two-thirds localization threshold reached |
+| Fragment locator rows resolved/candidate | **72 / 96** | three-quarter localization threshold reached |
 | Fully frozen fragments | **15 / 96** | three complete batches plus one three-slot primary-image batch |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 has crossed the **two-thirds localization threshold**: 64 of the 96 deterministic reliability slots have a documented page or section target. Fifteen units have now crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 has now crossed the **three-quarter localization threshold**: 72 of the 96 deterministic reliability slots have a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -27,29 +27,39 @@ The first reliability corpus remains frozen in `data/samples/pilot_document_sele
 
 Three selected documents have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
 
-A fourth document now contributes a partial but fully frozen three-slot batch: `PDHD-D000031`, *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, 1 July 1907. BVMC directly exposes the primary first-page image. Direct image inspection fixes `PDHD-F000038` as the editorial/professional masthead region, `PDHD-F000039` as the opening programmatic article region and `PDHD-F000040` as the publication/subscription administrative control. `PDHD-F000037` remains empty because no explicit pedagogical-act span has yet been inspected at sufficient resolution.
-
-The BVMC collection record independently identifies the publication as a pedagogical weekly, records its 1 July 1907 beginning, names Lázaro Pavía as director/owner, and describes its subscription and editorial arrangements. This supports structural identification of the three first-page regions without requiring PDHD to reproduce the historical wording.
+A fourth document contributes a partial but fully frozen three-slot batch: `PDHD-D000031`, *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, 1 July 1907. BVMC directly exposes the primary first-page image. Direct image inspection fixes `PDHD-F000038` as the editorial/professional masthead region, `PDHD-F000039` as the opening programmatic article region and `PDHD-F000040` as the publication/subscription administrative control. `PDHD-F000037` remains empty because no explicit pedagogical-act span has yet been inspected at sufficient resolution.
 
 HNDM remains `metadata_only`; the BVMC first-page batch is also stored conservatively as `metadata_only`. GitHub retains structural boundaries and provenance rather than source images or full transcriptions.
 
+## Three-quarter localization batch
+
+The new `fragment_locator_progress_threshold72_w9.csv` shard adds eight deterministic slots without changing the frozen count.
+
+`PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, gains two first-page targets: `PDHD-F000034` for the professional/editorial region and `PDHD-F000036` for publication/subscription administration. Both are tied to the exact BVMC object but remain candidates until high-resolution structural boundaries are checked.
+
+The *El Maestro* block gains four additional slots. `PDHD-F000044` reserves the stable Internet Archive opening scan for núm. 2 (1921) as a control candidate. `PDHD-F000047` targets Rafael Ramos Pedrueza's *Historia de México*, núm. 4 (1921), pp. 341–348. `PDHD-F000048` reserves the stable opening scan of núm. 4 as a control candidate. `PDHD-F000052` reserves the opening reader page of tomo II, núm. 3 as a control while preserving the existing 1922/December-1921 chronology conflict.
+
+`PDHD-F000045` targets Dionisio Montelongo Jr.'s *La ilustración de las masas*, pp. 363–365, but carries `issue_number_check_pending`: the secondary bibliography places the July 1921 item under a number incompatible with the working issue sequence. PDHD therefore records the page lead without silently normalizing the issue number or promoting it to primary evidence.
+
+Finally, `PDHD-F000083` completes the four-slot localization of the 1932 SEP memory by targeting p. 487 for a source-critical comparison of technical, primary and rural educational organization/costs. It remains a secondary page pointer pending direct verification in the Google Books object.
+
 ## El Maestro expansion
 
-The postrevolutionary press block extends beyond the first frozen issue. Exact secondary page pointers are registered for José U. Escobar's *Las tribus indígenas mexicanas* (I,2, pp. 173–176), José Suirob's *Orientación obrera* (I,2, pp. 145–147), Grupo Claridad's *La internacional de los intelectuales* (I,2, pp. 133–135), Abel Ayala's *Mejores maestros* (I,4, pp. 351–352), Gabriela Mistral's *Lecturas escolares. El cardo* (II,III, pp. 299–300) and Rufino Blanco-Fombona's *Democracia Criolla* (II,3, pp. 293–297).
+The postrevolutionary press block extends beyond the first frozen issue. Exact secondary page pointers are registered for José U. Escobar's *Las tribus indígenas mexicanas* (I,2, pp. 173–176), José Suirob's *Orientación obrera* (I,2, pp. 145–147), Grupo Claridad's *La internacional de los intelectuales* (I,2, pp. 133–135), Abel Ayala's *Mejores maestros* (I,4, pp. 351–352), Rafael Ramos Pedrueza's *Historia de México* (núm. 4, pp. 341–348), Gabriela Mistral's *Lecturas escolares. El cardo* (II,III, pp. 299–300) and Rufino Blanco-Fombona's *Democracia Criolla* (II,3, pp. 293–297).
 
-These remain locator candidates until the historical pages themselves are inspected. Internet Archive directly identifies the volume-2 digital object as `n1n3elmaestrorev02mexi`, volume 2, numbers 1–3, with 356 scanned pages and downloadable OCR/full-text derivatives. Open Library crosswalks that object to edition `OL25476443M`; PDHD records the alternate-catalog bridge in `data/catalog/object_aliases.csv` without treating it as page evidence.
+These remain locator candidates until the historical pages themselves are inspected. Internet Archive supplies stable reader targets for the selected objects, which are treated as retrieval/control candidates rather than page-level analytical proof.
 
-The Mistral citation exposed a fifth chronology conflict. Signos Históricos identifies tomo II, núm. 3 as 1922, while a UNAM thesis cites *Lecturas escolares. El cardo* in tomo II, no. III, December 1921. `PDHD-X000005` preserves the disagreement; the working catalog retains 1922 at year precision pending original-imprint inspection.
+The Mistral citation exposed the fifth registered chronology conflict. Signos Históricos identifies tomo II, núm. 3 as 1922, while a UNAM thesis cites *Lecturas escolares. El cardo* in tomo II, no. III, December 1921. `PDHD-X000005` preserves the disagreement; the working catalog retains 1922 at year precision pending original-imprint inspection.
 
-## 1937 SEP memory block
+## SEP memory blocks
 
 `PDHD-D000074`, *Memoria de la Secretaría de Educación Pública*, vol. 2 (1937), has all four deterministic slots localized. `PDHD-F000089` uses a secondary exact pointer to p. 371 for a passage relating manual work to mental/intellectual development and application of school knowledge. `PDHD-F000090` uses Google Books' direct contents entry for the Consejo Nacional de la Educación Superior y de la Investigación on p. 41. `PDHD-F000091` uses a UNAM thesis pointer to vol. 2, p. 444 for a library-attendance report. `PDHD-F000092` uses the direct Google Books contents entry *Distribución de Becas en la República* on p. 40 as an administrative control candidate.
 
-The direct contents entries are stronger than bibliographic leads but remain section targets rather than analytical spans. The secondary page pointers remain explicitly below direct primary-page inspection.
+`PDHD-D000072`, the 1932 SEP memory, now also has all four slots localized after adding `PDHD-F000083` at p. 487. The direct contents entries are stronger than bibliographic leads but remain section targets rather than analytical spans. Secondary page pointers remain explicitly below direct primary-page inspection.
 
 ## Fragment-localization progress
 
-The union of all `fragment_locator_progress*.csv` shards contains **64/96** pilot slots. Fifteen are frozen. The remaining 49 include direct primary-page candidates, direct section starts, reproduced facsimiles and exact scholarly page pointers.
+The union of all `fragment_locator_progress*.csv` shards contains **72/96** pilot slots. Fifteen are frozen. The remaining **57** located rows include direct primary-page candidates, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **24 slots remain without a locator.**
 
 The retrieval chain remains:
 
@@ -60,6 +70,8 @@ The mandatory distinctions remain:
 `secondary_page_citation != primary_page_inspection`
 
 `visible_reproduced_facsimile != primary_object_crosscheck`
+
+`reader_page_target != analytical_span`
 
 `table_of_contents_entry != passage`
 
@@ -81,10 +93,10 @@ The current 15 frozen units demonstrate that the pipeline works across HNDM and 
 
 ## Rights constraint
 
-Primary-source access does not equal republication permission. HNDM remains `metadata_only`; HathiTrust and Google Books/Google Play access is treated as research access rather than a blanket license to mirror scans or full OCR. Where reuse is not clearly authorized, coder text remains outside the public repository.
+Primary-source access does not equal republication permission. HNDM remains `metadata_only`; HathiTrust, Internet Archive and Google Books/Google Play access are treated as research-access or retrieval layers rather than blanket licenses to mirror scans or full OCR. Where reuse is not clearly authorized, coder text remains outside the public repository.
 
 ## Decision
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The next quantitative threshold is **72/96 located** (three quarters of the pilot). The stronger scientific priority is to increase the frozen count beyond **15/96**, especially by converting directly accessible or page-resolved primary candidates before adding weaker evidence.
+The **72/96 three-quarter localization threshold is reached**. The next operational threshold is **80/96 located**, while the stronger scientific priority is to raise the frozen count beyond **15/96**, especially by converting direct page/scan candidates into exact coder spans rather than adding weaker references.
