@@ -28,6 +28,27 @@ LOCATOR_FREEZE_STATES = {
     "locator_resolved_text_package_pending",
     "frozen",
 }
+TRANSCRIPTION_STATES = {
+    "source_text_verified",
+    "ocr_human_corrected",
+    "ocr_unverified",
+    "manual_transcription_unverified",
+    "not_transcribed",
+    "not_started",
+}
+PUBLIC_TEXT_STATES = {
+    "public_text_permitted",
+    "short_excerpt_only",
+    "coder_local_text",
+    "metadata_only",
+    "access_unresolved",
+}
+SELECTION_ROLES = {
+    "explicit_pedagogical_act",
+    "institutional_relation",
+    "source_criticism_salient",
+    "control",
+}
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -92,6 +113,8 @@ def main() -> int:
     pilot_selection = read_csv(pilot_path) if pilot_path.exists() else []
     locator_path = ROOT / "data/samples/fragment_locator_progress_0_1.csv"
     locator_progress = read_csv(locator_path) if locator_path.exists() else []
+    frozen_path = ROOT / "data/samples/frozen_fragments_0_1.csv"
+    frozen_fragments = read_csv(frozen_path) if frozen_path.exists() else []
     dimensions = read_csv(ROOT / "data/taxonomy/pedagogical_dimensions.csv")
     acts = read_csv(ROOT / "data/taxonomy/pedagogical_acts.csv")
 
@@ -109,6 +132,8 @@ def main() -> int:
         check_unique(pilot_selection, "selection_order", "pilot_document_selection")
     if locator_progress:
         check_unique(locator_progress, "fragment_id", "fragment_locator_progress")
+    if frozen_fragments:
+        check_unique(frozen_fragments, "fragment_id", "frozen_fragments")
 
     source_ids = {r["source_id"] for r in sources}
     rights_ids = {r["source_id"] for r in rights}
@@ -227,6 +252,9 @@ def main() -> int:
                 f"pilot_document_selection: publication concentration exceeds 6 {overrepresented}"
             )
 
+    locator_index = {r.get("fragment_id", "").strip(): r for r in locator_progress}
+    frozen_index = {r.get("fragment_id", "").strip(): r for r in frozen_fragments}
+
     frozen_locator_count = 0
     for row in locator_progress:
         fragment_id = row.get("fragment_id", "").strip()
@@ -274,6 +302,62 @@ def main() -> int:
                 ERRORS.append(
                     f"fragment_locator_progress: frozen fragment {fragment_id} lacks fixed boundaries"
                 )
+            if fragment_id not in frozen_index:
+                ERRORS.append(
+                    f"fragment_locator_progress: frozen fragment {fragment_id} lacks frozen registry row"
+                )
+
+    for row in frozen_fragments:
+        fragment_id = row.get("fragment_id", "").strip()
+        if fragment_id not in expected_fragments:
+            ERRORS.append(f"frozen_fragments: unknown pilot fragment {fragment_id}")
+            continue
+        if fragment_id not in locator_index:
+            ERRORS.append(f"frozen_fragments: {fragment_id} lacks locator-progress row")
+            continue
+        locator = locator_index[fragment_id]
+        expected_doc, expected_slot = expected_fragments[fragment_id]
+        if row.get("document_id", "").strip() != expected_doc:
+            ERRORS.append(f"frozen_fragments: document mismatch for {fragment_id}")
+        if row.get("slot", "").strip() != expected_slot:
+            ERRORS.append(f"frozen_fragments: slot mismatch for {fragment_id}")
+        for field in (
+            "page",
+            "source_locator",
+            "locator_evidence_url",
+            "boundary_definition",
+            "access_basis",
+            "preparation_note",
+            "checked_at",
+        ):
+            if not row.get(field, "").strip():
+                ERRORS.append(f"frozen_fragments: missing {field} for {fragment_id}")
+        for field in ("page", "source_locator", "locator_evidence_url"):
+            if row.get(field, "").strip() != locator.get(field, "").strip():
+                ERRORS.append(
+                    f"frozen_fragments: {field} does not match locator row for {fragment_id}"
+                )
+        if row.get("transcription_status", "").strip() not in TRANSCRIPTION_STATES:
+            ERRORS.append(
+                f"frozen_fragments: invalid transcription_status for {fragment_id}"
+            )
+        if row.get("public_text_status", "").strip() not in PUBLIC_TEXT_STATES:
+            ERRORS.append(
+                f"frozen_fragments: invalid public_text_status for {fragment_id}"
+            )
+        if row.get("selection_role", "").strip() not in SELECTION_ROLES:
+            ERRORS.append(f"frozen_fragments: invalid selection_role for {fragment_id}")
+        if row.get("freeze_status", "").strip() != "frozen":
+            ERRORS.append(f"frozen_fragments: non-frozen registry row {fragment_id}")
+        if locator.get("freeze_status", "").strip() != "frozen":
+            ERRORS.append(
+                f"frozen_fragments: locator row is not frozen for {fragment_id}"
+            )
+
+    if frozen_locator_count != len(frozen_fragments):
+        ERRORS.append(
+            "frozen fragment count mismatch between locator queue and frozen registry"
+        )
 
     unresolved_leads = 0
     resolved_leads = 0
