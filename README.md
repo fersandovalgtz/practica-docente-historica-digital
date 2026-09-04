@@ -27,7 +27,7 @@ Corte de referencia: **4 de septiembre de 2026**.
 | Conflictos cronológicos preservados | **2** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
-| Slots con localizador candidato/resuelto | **19 / 96** |
+| Slots con localizador candidato/resuelto | **27 / 96** |
 | Fragmentos completamente congelados | **0 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
@@ -42,6 +42,7 @@ PDHD incorporó objetos contemporáneos de la SEP con identidad primaria verific
 - *El papel social del maestro rural* (1925);
 - *El sistema de escuelas rurales en México* (1927);
 - *Las misiones culturales en 1927: Las escuelas normales rurales* (1928);
+- *Proyecto para la organización de las misiones federales de educación* (1923);
 - *Las misiones culturales, 1932-1933* (1933);
 - memorias de la Secretaría de Educación Pública de 1932, 1934, 1937 y 1938.
 
@@ -57,7 +58,7 @@ La infraestructura registra, entre otras, las siguientes fuentes:
 - Internet Archive;
 - Fondo Reservado de la Biblioteca México;
 - HathiTrust Digital Library;
-- Google Books;
+- Google Books / Google Play Books;
 - colecciones históricas de la SEP;
 - fuentes universitarias secundarias utilizadas para descubrimiento y contextualización.
 
@@ -98,6 +99,7 @@ PDHD adopta estas reglas:
 - `object_count_threshold_reached != historical_representativeness`
 - `document_selection_ready != annotation_started`
 - `secondary_page_citation != primary_page_inspection`
+- `visible_reproduced_facsimile != primary_object_crosscheck`
 - `page_locator_resolved != fixed_coder_span`
 - `primary_source_resolved != source_text_republishable`
 - `absence_of_hit != demonstrated_absence`
@@ -153,7 +155,7 @@ python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 
 La estructura de 24 documentos / 96 slots se comprueba automáticamente en CI.
 
-La cola de localización se registra en [`data/samples/fragment_locator_progress_0_1.csv`](data/samples/fragment_locator_progress_0_1.csv). En el corte actual hay **19/96** slots con una página o sección candidata. La fuerza de esa evidencia se interpreta conforme a [`docs/LOCATOR_EVIDENCE_POLICY.md`](docs/LOCATOR_EVIDENCE_POLICY.md): un pasaje primario directo, un inicio de sección en la fuente y una cita secundaria con página no tienen el mismo estatus metodológico.
+La cola de localización se registra en [`data/samples/fragment_locator_progress_0_1.csv`](data/samples/fragment_locator_progress_0_1.csv). En el corte actual hay **27/96** slots con una página o sección candidata. La fuerza de esa evidencia se interpreta conforme a [`docs/LOCATOR_EVIDENCE_POLICY.md`](docs/LOCATOR_EVIDENCE_POLICY.md): un pasaje primario directo, un inicio de sección, un facsímil histórico reproducido dentro de una fuente secundaria y una cita académica con página no tienen el mismo estatus metodológico.
 
 ## Taxonomía y confiabilidad
 
@@ -167,7 +169,7 @@ El manual vigente está en [`docs/ANNOTATION_MANUAL.md`](docs/ANNOTATION_MANUAL.
 
 ## Derechos y reutilización
 
-PDHD aplica una política conservadora a objetos digitales de terceros. HNDM se mantiene `metadata_only` salvo autorización adicional. HathiTrust y Google Books se utilizan como localizadores de investigación; la disponibilidad de vista completa o ebook gratuito no se interpreta como permiso automático para republicar scans u OCR alojados por esas plataformas.
+PDHD aplica una política conservadora a objetos digitales de terceros. HNDM se mantiene `metadata_only` salvo autorización adicional. HathiTrust y Google Books/Google Play Books se utilizan como localizadores de investigación; la disponibilidad de vista completa o ebook gratuito no se interpreta como permiso automático para republicar scans u OCR alojados por esas plataformas.
 
 Cuando el texto no deba publicarse, el fragmento puede congelarse mediante página/localizador y utilizar texto de trabajo controlado fuera de GitHub. Consulte [`RIGHTS.md`](RIGHTS.md), [`docs/RIGHTS_AND_REUSE.md`](docs/RIGHTS_AND_REUSE.md) y [`data/catalog/rights_registry.csv`](data/catalog/rights_registry.csv).
 
@@ -179,7 +181,7 @@ La política central es simple: **una discrepancia real se documenta; no se borr
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. La siguiente tarea es llevar los **19/96 localizadores** actuales hasta **96/96** y convertirlos, tras inspección primaria y fijación de límites, en verdaderos fragmentos congelados. Solo después se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
+La selección documental ya está lista. La siguiente tarea es llevar los **27/96 localizadores** actuales hasta **96/96** y convertirlos, tras inspección primaria y fijación de límites, en verdaderos fragmentos congelados. Solo después se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
 ## Autoría y citación
 
