@@ -35,7 +35,7 @@ After the taxonomy is stable, a smaller second task asks coders to identify rele
 
 ## Coders
 
-At least **two human coders** independently code the reliability batch. Ideally, at least one coder should not have participated in the construction of the taxonomy. This follows the reproducibility concern noted in content-analysis methodology: coders who built a scheme together can share tacit assumptions that inflate apparent reliability.
+At least **two human coders** independently code the reliability batch. Ideally, at least one coder should not have participated in the construction of the taxonomy. Content-analysis methodology notes that coders who built a scheme together can share tacit assumptions that inflate apparent reliability.
 
 A third expert may adjudicate disagreements after the independent reliability calculation.
 
@@ -55,32 +55,33 @@ Each fixed fragment receives the following fields.
 
 ### `pedagogical_act_primary`
 
-One primary historical teaching act when supported by the passage, for example `explicar`, `preguntar`, `examinar`, `corregir`, `castigar`, `premiar`, `mostrar`, `leer`, `dictar`, `observar`, `organizar`, `clasificar`, `adaptar` or `registrar`. A coder may use `none` or `unclear`.
-
-Secondary acts may be stored separately, but primary-act reliability is calculated on one nominal value.
+One primary historical teaching act using the controlled `act_code` values in `data/taxonomy/pedagogical_acts.csv`. A coder may use `none` or `unclear`. Secondary acts may be stored separately, but primary-act reliability is calculated on one nominal value.
 
 ### `dimension`
 
-Multi-label thematic dimensions such as `teaching_method`, `assessment`, `discipline`, `teacher_authority`, `teacher_training`, `rurality`, `indigenous_education`, `inclusion_difference` and `professional_identity`.
+Dimensions are multi-label. Each controlled dimension in `data/taxonomy/pedagogical_dimensions.csv` is coded as a binary decision for the fragment.
 
-Because this field is multi-label, agreement is calculated per dimension as a binary decision and supplemented with set-overlap measures. PDHD does not collapse the entire multi-label set into a misleading single nominal category.
+Because this field is multi-label, agreement is calculated per dimension and supplemented with set-overlap measures. PDHD does not collapse the entire multi-label set into a misleading single nominal category.
 
 ### `normativity`
 
-Controlled values:
+Controlled values follow `ANNOTATION_MANUAL.md`:
 
-- `prescriptive` — instructs or recommends what should be done;
-- `descriptive` — describes a practice or situation without itself prescribing it;
-- `testimonial` — reports first-person or attributed practitioner experience;
-- `policy_normative` — establishes or communicates an institutional rule;
-- `mixed` — more than one mode is inseparable in the fixed fragment;
+- `prescriptive` — pedagogical advice, recommendation or instruction;
+- `policy_normative` — formal or institutional rule, obligation or programmatic requirement;
+- `descriptive` — describes a method, arrangement or role without asserting a concrete occurrence or prescribing it;
+- `reported_practice` — reports that a practice occurred;
+- `observed_practice` — direct contemporaneous observation or inspection record, used only when the evidentiary setting supports it;
+- `testimonial` — first-person or explicitly attributed practitioner experience;
+- `analytical` — interpretation, theorization or argument about practice;
+- `mixed` — inseparable combination of modes in the fixed fragment;
 - `unclear`.
 
 The distinction is central because `prescription != observed_practice`.
 
 ### `actor`
 
-Primary actor of the pedagogical action: `teacher`, `student`, `inspector`, `director`, `family`, `community`, `state_authority`, `other`, `unclear`.
+Primary actor of the pedagogical action or expectation: `teacher`, `student`, `inspector`, `director`, `family`, `community`, `state_authority`, `other`, `unclear`.
 
 ### `target`
 
@@ -100,7 +101,7 @@ Missing access or illegible text is coded as an evidence problem, not guessed.
 
 ## Reliability statistics
 
-PDHD uses **Krippendorff's alpha** for nominal single-label fields because it is a chance-corrected reliability measure that can accommodate more than two coders and missing values. Krippendorff's methodological work emphasizes that reliability must be demonstrated before conclusions are trusted; later annotation-quality research also warns that high agreement alone does not guarantee annotation quality and should be paired with manual inspection and adjudication.
+PDHD uses **Krippendorff's alpha** for nominal single-label fields because it is chance-corrected, can accommodate more than two coders and can handle missing values. Krippendorff's methodological work emphasizes that reliability must be demonstrated before conclusions are trusted. Recent annotation-quality research likewise warns that high agreement alone does not guarantee high-quality annotation and recommends pairing agreement measures with expert inspection, adjudication and error analysis.
 
 Predeclared decision rule:
 
@@ -112,7 +113,7 @@ These thresholds are conventions, not laws of nature. PDHD reports the coefficie
 
 For `dimension`, each dimension is represented as a binary field and evaluated separately; macro summaries and Jaccard set similarity are secondary diagnostics.
 
-Confusion matrices must be inspected for fields with multiple categories, because an acceptable aggregate coefficient can conceal a systematically confused pair of labels.
+Confusion matrices must be inspected for fields with multiple categories, because an acceptable aggregate coefficient can conceal a systematically confused pair of labels. The relatively fine-grained `normativity` scheme is deliberately tested rather than assumed; if recurrent confusion demonstrates that two categories cannot be applied reliably, any later collapse must be versioned and the reliability batch rerun.
 
 ## Adjudication and gold labels
 
