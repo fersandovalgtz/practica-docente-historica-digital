@@ -13,17 +13,15 @@ Reference cut: **2026-09-04**
 | Registered chronology conflicts | 4 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **50 / 96** | first localization majority threshold crossed |
-| Fully frozen fragments | **8 / 96** | two complete four-slot document batches |
+| Fragment locator rows resolved/candidate | **54 / 96** | localization majority established |
+| Fully frozen fragments | **12 / 96** | three complete four-slot document batches |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The original 50-document threshold established that PDHD-U1 could sustain object identity, provenance, rights and annotation workflows. The cohort has now reached **75 object-level records** while reducing the original dependence on two 1904–1907 pedagogical series. Exact fragment freezing is no longer only a protocol: two complete pilot documents contribute eight structurally fixed units with a rights-aware public registry, and **50 of the 96 deterministic pilot slots now have a documented page or section locator**.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 has now crossed two different methodological thresholds: more than half of the deterministic pilot slots have a documented page/section locator, and three selected documents have complete four-slot frozen batches.
 
 ## Composition of the 75-document union
 
-PDHD currently treats `data/catalog/documents.csv` and `data/catalog/documents_balancing_w1.csv` as two validated shards of one object catalog. The separation remains temporary and keeps the balancing intervention auditable.
-
-### By evidence source
+PDHD treats `data/catalog/documents.csv` and `data/catalog/documents_balancing_w1.csv` as validated shards of one object catalog. The separation keeps the balancing intervention auditable.
 
 | Source | Documents | Share |
 |---|---:|---:|
@@ -35,27 +33,17 @@ PDHD currently treats `data/catalog/documents.csv` and `data/catalog/documents_b
 | HATHITRUST | 4 | 5.3% |
 | BIBMX-FR | 1 | 1.3% |
 
-The original 80% dependence on BVM-CERVANTES has fallen to **53.3%**. Concentration remains visible, but the balancing strategy adds independent institutional sources and documentary regimes rather than merely accumulating more issues from the best-digitized series.
+The original 80% dependence on BVM-CERVANTES has fallen to 53.3%. This remains a convenience-driven digitization concentration and must not be interpreted as historical importance.
 
-## Rural-teacher primary-source block resolved
+## Rural and postrevolutionary primary-source block
 
-The previous hard blocking condition was the absence of primary-localized rural-teacher material. That condition is now resolved through direct historical objects.
+The former hard bottleneck—absence of stable primary rural-teacher material—is resolved. The pilot now includes direct historical objects such as *El papel social del maestro rural*, *El sistema de escuelas rurales en México*, *Las misiones culturales en 1927*, *Proyecto para la organización de las misiones federales de educación*, *Las misiones culturales, 1932-1933*, *El esfuerzo educativo en México* and several SEP institutional memories.
 
-`PDHD-D000067` is the SEP pamphlet *El papel social del maestro rural*. `PDHD-D000068` is *El sistema de escuelas rurales en México*. `PDHD-D000069` is *Las misiones culturales en 1927: Las escuelas normales rurales*. `PDHD-D000071` is *Las misiones culturales, 1932-1933*. Together with `PDHD-D000066`, *El esfuerzo educativo en México*, and the SEP institutional memories `PDHD-D000072` through `PDHD-D000075`, these objects provide a primary documentary basis for rural teaching, missions, teacher preparation, inspection, supervision and federal educational administration.
-
-Secondary scholarship remains useful as a retrieval layer and is explicitly marked when it supplies only a page pointer. A chronology conflict preserves the difference between the 1925 HathiTrust catalog date for *El papel social del maestro rural* and a 1926 archival citation reported in recent UAA scholarship. PDHD retains 1925 as the working catalog year while leaving the discrepancy open for direct-object inspection.
-
-## Documentary-type depth
-
-The stabilized union includes at least `issue`, `hemerographic_object`, `official_report`, `teacher_guidance`, `institutional_monograph` and `policy_proposal`. This matters because the coding scheme can be tested across documentary regimes rather than merely across periodical titles.
-
-## Geographic condition
-
-Direct object-level records provide regional origins outside Mexico City for Xalapa, Veracruz (*México intelectual*), Aguascalientes (*El Instructor*) and Campeche (*El Periquito*). These records satisfy the geographic-diversity condition for the methodological pilot. They do not establish national representativeness.
+Secondary scholarship continues to function as a retrieval layer only. When it provides a page pointer, PDHD labels that pointer as secondary until the historical page itself is inspected. The 1925/1926 discrepancy for *El papel social del maestro rural* remains registered as an open chronology conflict.
 
 ## First 24-document pilot selection
 
-The first document set for human validation is frozen in `data/samples/pilot_document_selection_0_1.csv` and documented in `docs/PILOT_DOCUMENT_SELECTION_0_1.md`.
+The first reliability corpus remains frozen in `data/samples/pilot_document_selection_0_1.csv`:
 
 | Era | Documents |
 |---|---:|
@@ -63,51 +51,33 @@ The first document set for human validation is frozen in `data/samples/pilot_doc
 | E3 — 1921–1934 | 12 |
 | E4 — 1935–1940 | 2 |
 
-No publication contributes more than six documents; *El Maestro. Revista de Cultura Nacional* contributes four, and no other selected periodical approaches the 25% ceiling. The pilot contains more than three documentary types and at least three geographic origins outside Mexico City. The **document-selection gate is therefore passed**.
+The selection includes regional objects from Campeche, Aguascalientes and Xalapa, multiple documentary types and no publication contributing more than six documents. This is a methodological reliability sample, not an estimator of national historical frequencies.
 
-## Two complete fragment-freeze batches
+## Three complete fragment-freeze batches
 
-The first complete batch comes from `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, and contains `PDHD-F000013` through `PDHD-F000016`. Direct HNDM page inspection fixed an instructional/pedagogical paragraph, a professional editorial roster, a historically salient methodological passage and a deliberately non-analytical masthead/control block.
+The first batch is `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888 (`PDHD-F000013`–`PDHD-F000016`). Direct HNDM page inspection fixed an instructional passage, a professional editorial roster, a methodological-context passage and an administrative control.
 
-The second complete batch comes from `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, and contains `PDHD-F000017` through `PDHD-F000020`. Direct inspection fixed a compact explained-reading/vocabulary teaching unit, the publication's explicit pedagogical mission statement, a grammar sentence-transformation sequence and a non-analytical subscription/publication control block.
+The second batch is `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891 (`PDHD-F000017`–`PDHD-F000020`). Direct inspection fixed a compact vocabulary/reading-teaching unit, an explicit publication mission statement, a grammar exercise sequence and a subscription/publication control.
 
-Because both sources are HNDM and HNDM remains `metadata_only`, the repository does **not** commit the historical text or page images. It stores page identity, structural localizer, boundary definition, access basis, public-text decision and preparation provenance.
+The third batch is `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional* (`PDHD-F000053`–`PDHD-F000056`). HNDM directly exposes both the issue cover and the printed page 15 carrying the opening of Ezequiel A. Chávez's *Los rasgos distintivos de la educación moderna*. PDHD fixed one conceptual-prescriptive education span, one editorial/professional identity span, one programmatic reader-collaboration span and one administrative control.
 
-The work is stored in auditable shards: `data/samples/fragment_locator_progress*.csv` and `data/samples/frozen_fragments*.csv`. Sharding allows new batches to be added without rewriting the preceding frozen evidence, while `scripts/validate_fragment_shards.py` treats every shard as one logical 96-slot union.
+This third batch is important because fragment freezing now spans both the late-nineteenth-century pedagogical press and the early postrevolutionary cultural-educational project.
 
-The operational distinctions remain:
-
-`locator_candidate != frozen_fragment`
-
-`fixed_boundary != public_text_permission`
-
-`frozen_fragment != validated_annotation`
-
-## Cross-repository and content-lead layer
-
-PDHD records explicit object bridges in `data/catalog/object_aliases.csv`. The UNAM-RI records for *La Enseñanza primaria*, *El Instructor* and *México intelectual* expose full-text targets that resolve to HNDM serial containers. These crosswalks make targeted source recovery possible without changing the canonical repository identity of the PDHD document.
-
-The project separates content discovery from page localization in `data/samples/pilot_content_leads.csv`. A lead can identify an article or passage at issue level without being eligible for fragment promotion. Once a page pointer is independently documented, the lead can be promoted to a locator candidate while remaining short of a frozen fragment.
-
-This gives the retrieval chain:
-
-`issue identity -> content lead -> page-level fragment locator -> frozen fragment`
+Because these pages are accessed through HNDM and HNDM remains `metadata_only`, the public repository does not store the historical text or page images. It stores page identity, source locator, structural boundary, access basis, selection role and preparation provenance.
 
 ## Fragment-localization progress
 
-The union of locator shards now contains **50/96** pilot slots. Eight are fully frozen. The remaining 42 rows range from direct primary page/section evidence to secondary scholarly page pointers that still require primary-object verification or high-resolution boundary fixing.
+The union of all `fragment_locator_progress*.csv` shards now contains **54/96** pilot slots. Twelve are frozen. The remaining 42 range from direct primary page candidates to direct section starts, reproduced facsimiles and secondary scholarly page pointers.
 
-Five page-resolved additions strengthen the nineteenth- and early-twentieth-century press side of the pilot. `PDHD-D000064`, *El Instructor* of 1 January 1889, has a page-8 pointer to material on the Liceo de Niñas. `PDHD-D000063`, *México intelectual*, has a page-2 pointer to its programmatic discussion of pedagogical methods and practical guidance to the teaching profession. `PDHD-D000058`, *La Escuela moderna* of 31 October 1889, has a pp. 17–18 pointer to Enrique C. Rébsamen's *La Pedagogía Moderna*. `PDHD-D000006`, *Revista de la Instrucción Pública Mexicana* of 15 March 1896, has a page-31 pointer to a teacher-personnel notice. `PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, has a page-4 pointer used for source-critical review of its liberty/progress framing.
+Recent pre-1910 additions include page-resolved candidates from *El Instructor*, *México intelectual*, *La Escuela moderna*, *Revista de la Instrucción Pública Mexicana* and *La Enseñanza Normal*. Three more slots from *La Enseñanza Moderna* are anchored to a directly exposed first-page BVMC image.
 
-A second route added three more slots from `PDHD-D000031`, *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, 1 July 1907. BVMC directly exposes a first-page primary image for this exact issue. The visible page structure supplies candidates for the editorial/professional-role block, an opening programmatic column and a separable publication/subscription control block. Because the exposed image is reduced and exact text boundaries have not yet been checked at high resolution, all three remain `locator_candidate` rather than `frozen`.
+The new *El Maestro* batch is stored separately in `fragment_locator_progress_hndm_el_maestro_w6.csv` and `frozen_fragments_hndm_el_maestro_w6.csv`. Sharding preserves batch provenance while `scripts/validate_fragment_shards.py` treats every shard as one logical deterministic manifest.
 
-The date of the inaugural *México intelectual* object is preserved as a conflict rather than silently normalized. UNAM-RI dates its digital object 1 January 1889, whereas another historical study reports that the journal began operating on 16 January 1889. PDHD retains the catalog object date but treats inaugural chronology at month precision until the original imprint resolves the discrepancy.
+The retrieval chain remains:
 
-The rural/postrevolutionary queue continues to include `PDHD-D000066`, *El esfuerzo educativo en México*; `PDHD-D000067`, *El papel social del maestro rural*; `PDHD-D000068`, *El sistema de escuelas rurales en México*; `PDHD-D000069`, *Las misiones culturales en 1927*; `PDHD-D000070`, *Proyecto para la organización de las misiones federales de educación*; `PDHD-D000071`, *Las misiones culturales, 1932-1933*; and the SEP memories for 1932, 1934 and 1938.
+`issue identity -> content lead -> page-level fragment locator -> frozen fragment -> human annotation`
 
-The queue intentionally mixes different evidentiary strengths. `docs/LOCATOR_EVIDENCE_POLICY.md` distinguishes direct primary passages, direct primary section starts, scholarly page pointers, embedded reproduced facsimiles and bibliographic leads.
-
-The rule remains explicit:
+And the epistemic distinctions remain mandatory:
 
 `secondary_page_citation != primary_page_inspection`
 
@@ -119,42 +89,30 @@ The rule remains explicit:
 
 `fixed_coder_span != validated_annotation`
 
-## Integrity checks for frozen units
+## Cross-repository layer
 
-`scripts/validate_repository.py` continues to validate the base catalog and primary sample files. `scripts/validate_fragment_shards.py` adds union-level validation across every `fragment_locator_progress*.csv` and `frozen_fragments*.csv` shard. It rejects duplicate fragment IDs across batches, mismatches between document and deterministic slot, frozen locators without fixed boundaries, frozen-registry rows without a corresponding locator, and disagreements in page or source identity between the two layers.
+`data/catalog/object_aliases.csv` records explicit bridges between canonical PDHD objects and alternate repository interfaces. UNAM-RI records for *La Enseñanza primaria*, *El Instructor* and *México intelectual* lead to HNDM targets, but those bridges do not become page locators unless a page identity is actually resolved.
 
-`validate_content_leads.py` recognizes a distinct `secondary_page_pointer_verified` state and enforces that any row promoted to the fragment-locator layer has `page_status=page_resolved`. This prevents page-free content discovery from masquerading as localization.
+`data/samples/pilot_content_leads.csv` retains article-level or passage-level discoveries whose page is still unresolved. The validator prevents such leads from being promoted prematurely.
+
+## Integrity checks
+
+`scripts/validate_repository.py` validates the base catalog. `scripts/validate_fragment_shards.py` validates the logical union of locator/frozen shards, including duplicate detection, deterministic document/slot matching, fixed-boundary requirements and cross-checks between frozen rows and locator rows.
+
+`validate_object_aliases.py` checks cross-repository bridges. `validate_content_leads.py` prevents unresolved content leads from masquerading as page-level fragment evidence. GitHub Actions runs these checks together with the annotation-agreement self-test and deterministic manifest check.
 
 ## What remains before human coding
 
-Human annotation has **not** started. Four fixed fragments must ultimately be prepared per document, yielding **96 reliability fragments**. Every fragment must retain document ID, page or stable localizer, boundary definition, transcription status, access/rights basis, selection rationale and immutable `fragment_id`.
+Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain immutable ID, source identity, page/localizer, fixed boundary, access/right basis and selection role.
 
-A separate 12-fragment calibration set remains required before the 96-fragment independent reliability round. The eight frozen fragments establish that the pipeline works across two periodicals; they are not permission to begin coder labeling early.
+The current 12 frozen units prove that the freeze pipeline works across three historical publications. They do not justify starting coder labeling before the package is complete.
 
-## Rights constraint during fragment freezing
+## Rights constraint
 
-Primary-source resolution does not equal republication permission. HNDM remains `metadata_only`; HathiTrust and Google Books/Google Play full-view status is treated as research access rather than a blanket license to mirror scans or full OCR. Where public excerpt storage is not clearly supported, coder-local text or source-interface consultation must remain separated from public metadata and localizers.
-
-## Epistemic status
-
-The current set is a **pilot-ready document cohort with fragment freezing underway**, not an analysis-ready national sample.
-
-`document_selection_ready != annotation_started`
-
-`secondary_page_citation != primary_page_inspection`
-
-`visible_reproduced_facsimile != primary_object_crosscheck`
-
-`page_locator_resolved != fixed_coder_span`
-
-`section_start != analytical_fragment`
-
-`pilot_reliability != historical_representativeness`
-
-`primary_source_resolved != source_text_republishable`
-
-`digitized_series_density != historical_importance`
+Primary-source access does not equal republication permission. HNDM remains `metadata_only`; HathiTrust and Google Books/Google Play access is treated as research access rather than a blanket license to mirror scans or full OCR. Where reuse is not clearly authorized, coder text must remain outside the public GitHub repository.
 
 ## Decision
 
-PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round. The first localization-majority threshold has now been crossed at **50/96**. The next meaningful threshold is to convert more of the 42 non-frozen locator rows into directly inspected primary spans while filling the remaining 46 empty slots without weakening evidentiary standards.
+PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
+
+The next quantitative threshold is **64/96 located** (two thirds of the pilot), but the stronger scientific priority is to raise the frozen count from **12/96** by converting existing weak or intermediate locators into directly inspected primary spans rather than merely adding more secondary page pointers.
