@@ -37,21 +37,43 @@ def check_unique(rows: list[dict[str, str]], key: str, label: str) -> None:
 def main() -> int:
     sources = read_csv(ROOT / "data/catalog/sources.csv")
     rights = read_csv(ROOT / "data/catalog/rights_registry.csv")
+    candidates = read_csv(ROOT / "data/catalog/source_candidates.csv")
     documents = read_csv(ROOT / "data/catalog/documents.csv")
     dimensions = read_csv(ROOT / "data/taxonomy/pedagogical_dimensions.csv")
     acts = read_csv(ROOT / "data/taxonomy/pedagogical_acts.csv")
 
     check_unique(sources, "source_id", "sources")
     check_unique(rights, "source_id", "rights_registry")
+    check_unique(candidates, "candidate_id", "source_candidates")
+    check_unique(documents, "source_identifier", "documents")
     check_unique(dimensions, "dimension_code", "pedagogical_dimensions")
     check_unique(acts, "act_code", "pedagogical_acts")
 
     source_ids = {r["source_id"] for r in sources}
+    rights_ids = {r["source_id"] for r in rights}
+    missing_rights = sorted(source_ids - rights_ids)
+    extra_rights = sorted(rights_ids - source_ids)
+    if missing_rights:
+        ERRORS.append(f"rights_registry: missing source_id entries {missing_rights}")
+    if extra_rights:
+        ERRORS.append(f"rights_registry: unknown source_id entries {extra_rights}")
+
     for row in rights:
-        if row.get("source_id") not in source_ids:
-            ERRORS.append(f"rights_registry: unknown source_id {row.get('source_id')}")
         if row.get("rights_status") not in RIGHTS:
             ERRORS.append(f"rights_registry: invalid rights_status {row.get('rights_status')}")
+
+    seen_candidates: set[str] = set()
+    for row in candidates:
+        candidate_id = row.get("candidate_id", "")
+        if not re.fullmatch(r"PDHD-C\d{6}", candidate_id):
+            ERRORS.append(f"source_candidates: invalid candidate_id {candidate_id!r}")
+        if candidate_id in seen_candidates:
+            ERRORS.append(f"source_candidates: duplicate candidate_id {candidate_id}")
+        seen_candidates.add(candidate_id)
+        if row.get("source_id") not in source_ids:
+            ERRORS.append(f"source_candidates: unknown source_id {row.get('source_id')}")
+        if row.get("rights_status") not in RIGHTS:
+            ERRORS.append(f"source_candidates: invalid rights_status {row.get('rights_status')}")
 
     seen_docs: set[str] = set()
     for row in documents:
@@ -75,7 +97,10 @@ def main() -> int:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
 
-    print("PDHD repository checks passed")
+    print(
+        "PDHD repository checks passed "
+        f"({len(sources)} sources; {len(candidates)} candidates; {len(documents)} documents)"
+    )
     return 0
 
 
