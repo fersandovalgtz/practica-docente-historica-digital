@@ -20,6 +20,8 @@ jobs:
           python-version: "3.12"
       - name: Validate public research data
         run: python scripts/validate_repository.py
+      - name: Validate locator and frozen fragment shards
+        run: python scripts/validate_fragment_shards.py
       - name: Self-test annotation agreement calculator
         run: python scripts/annotation_agreement.py --self-test
       - name: Check fixed-fragment manifest generator
