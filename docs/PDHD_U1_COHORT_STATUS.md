@@ -13,49 +13,47 @@ Reference cut: **2026-09-04**
 | Registered chronology conflicts | 5 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **58 / 96** | localization majority established |
+| Fragment locator rows resolved/candidate | **64 / 96** | two-thirds localization threshold reached |
 | Fully frozen fragments | **12 / 96** | three complete four-slot document batches |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has more than half of the deterministic pilot slots localized and three selected documents with complete four-slot frozen batches.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 has now crossed the **two-thirds localization threshold**: 64 of the 96 deterministic reliability slots have a documented page or section target. Twelve units have crossed the stronger frozen-fragment gate.
 
-## Composition and sampling status
+## Sampling status
 
-PDHD treats `data/catalog/documents.csv` and `data/catalog/documents_balancing_w1.csv` as validated shards of one object catalog. BVM-CERVANTES still contributes 40/75 objects (53.3%), but the pilot itself deliberately combines multiple repositories, regions and documentary types so that digitization convenience is not confused with historical importance.
-
-The first reliability corpus remains frozen in `data/samples/pilot_document_selection_0_1.csv`: 10 E1 documents, 12 E3 documents and 2 E4 documents. The selection includes regional objects from Campeche, Aguascalientes and Xalapa, multiple documentary types and no publication contributing more than six documents. It is a methodological reliability sample, not an estimator of national frequencies.
+The first reliability corpus remains frozen in `data/samples/pilot_document_selection_0_1.csv`: 10 E1 documents, 12 E3 documents and 2 E4 documents. It includes regional origins outside Mexico City, multiple documentary regimes and no publication contributing more than six documents. This is a methodological reliability sample rather than an estimator of national historical frequencies.
 
 ## Three complete fragment-freeze batches
 
-The first batch is `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888 (`PDHD-F000013`–`PDHD-F000016`). Direct HNDM inspection fixed an instructional passage, a professional roster, a methodological-context passage and an administrative control.
+`PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
 
-The second is `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891 (`PDHD-F000017`–`PDHD-F000020`). Direct inspection fixed a vocabulary/reading-teaching unit, a publication mission statement, a grammar exercise sequence and a subscription/publication control.
+All three batches were built from direct HNDM page inspection. They contain analytically positive units, professional/institutional units, source-critical units and deliberate controls. HNDM remains `metadata_only`, so GitHub stores structural boundaries and provenance rather than the historical text or page images.
 
-The third is `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional* (`PDHD-F000053`–`PDHD-F000056`). HNDM directly exposes the issue cover and printed page 15 with the opening of Ezequiel A. Chávez's *Los rasgos distintivos de la educación moderna*. PDHD fixed one conceptual-prescriptive span, one editorial/professional identity span, one programmatic reader-collaboration span and one administrative control.
+## El Maestro expansion
 
-This third batch extends direct fragment freezing from late-nineteenth-century pedagogical press into the early postrevolutionary cultural-educational project. Because HNDM remains `metadata_only`, the repository stores structural boundaries and provenance rather than historical text or page images.
+The postrevolutionary press block now extends beyond the first frozen issue. Exact secondary page pointers have been registered for six additional pieces: José U. Escobar's *Las tribus indígenas mexicanas* (I,2, pp. 173–176), José Suirob's *Orientación obrera* (I,2, pp. 145–147), Grupo Claridad's *La internacional de los intelectuales* (I,2, pp. 133–135), Abel Ayala's *Mejores maestros* (I,4, pp. 351–352), Gabriela Mistral's *Lecturas escolares. El cardo* (II,III, pp. 299–300) and Rufino Blanco-Fombona's *Democracia Criolla* (II,3, pp. 293–297).
 
-## El Maestro localization expansion
+These are locator candidates, not frozen fragments. Their pages must still be checked against the historical objects before coder spans are fixed.
 
-The newest locator shard adds four exact secondary page targets across three additional selected *El Maestro* objects.
+The Mistral citation exposed a fifth chronology conflict. Signos Históricos identifies the tomo II, núm. 3 digital object as 1922, while a UNAM thesis cites *Lecturas escolares. El cardo* in tomo II, no. III, December 1921. `PDHD-X000005` preserves the disagreement; the working catalog retains 1922 at year precision pending original-imprint inspection.
 
-`PDHD-F000043` targets José U. Escobar's *Las tribus indígenas mexicanas* in tomo I, núm. 2, pp. 173–176. `PDHD-F000046` targets Abel Ayala's *Mejores maestros* in tomo I, núm. 4, pp. 351–352. `PDHD-F000049` targets Gabriela Mistral's *Lecturas escolares. El cardo*, tomo II, núm. III, pp. 299–300. `PDHD-F000051` targets Rufino Blanco-Fombona's *Democracia Criolla*, tomo II, núm. 3, pp. 293–297.
+## 1937 SEP memory block
 
-All four remain `locator_candidate`. Exact page citations in scholarship are useful retrieval evidence, but they do not become frozen units until the historical pages themselves are inspected and coder boundaries are fixed.
+`PDHD-D000074`, *Memoria de la Secretaría de Educación Pública*, vol. 2 (1937), now has all four deterministic slots localized.
 
-The Mistral reference exposed a fifth chronology conflict. Signos Históricos identifies the tomo II, núm. 3 digital object as 1922, whereas a UNAM thesis cites *Lecturas escolares. El cardo* in tomo II, no. III, December 1921. `PDHD-X000005` preserves the discrepancy. The current catalog keeps 1922 at year precision pending direct inspection of the original imprint.
+`PDHD-F000089` uses a secondary exact pointer to p. 371 for a passage relating manual work to mental/intellectual development and the application of school knowledge. `PDHD-F000090` uses Google Books' direct contents entry for the Consejo Nacional de la Educación Superior y de la Investigación on p. 41. `PDHD-F000091` uses a UNAM thesis pointer to vol. 2, p. 444 for a library-attendance report. `PDHD-F000092` uses the direct Google Books contents entry *Distribución de Becas en la República* on p. 40 as an administrative control candidate.
 
-## Broader fragment-localization progress
+The direct contents entries are stronger than a bibliographic lead but remain section targets rather than analytical spans. The secondary page pointers remain explicitly below direct primary-page inspection.
 
-The union of all `fragment_locator_progress*.csv` shards now contains **58/96** pilot slots. Twelve are frozen. The remaining 46 range from direct primary page candidates and section starts to reproduced facsimiles and secondary scholarly page pointers.
+## Fragment-localization progress
 
-Other localized objects include *El Instructor*, *México intelectual*, *La Escuela moderna*, *Revista de la Instrucción Pública Mexicana*, *La Enseñanza Normal*, *La Enseñanza Moderna*, rural-teacher monographs, cultural-mission reports and SEP institutional memories.
+The union of all `fragment_locator_progress*.csv` shards contains **64/96** pilot slots. Twelve are frozen. The remaining 52 include direct primary-page candidates, direct section starts, reproduced facsimiles and exact scholarly page pointers.
 
 The retrieval chain remains:
 
 `issue identity -> content lead -> page-level fragment locator -> frozen fragment -> human annotation`
 
-And the epistemic distinctions remain mandatory:
+The mandatory distinctions remain:
 
 `secondary_page_citation != primary_page_inspection`
 
@@ -67,30 +65,24 @@ And the epistemic distinctions remain mandatory:
 
 `fixed_coder_span != validated_annotation`
 
-## Cross-repository and content-lead layers
+## Integrity and provenance
 
-`data/catalog/object_aliases.csv` records explicit bridges between canonical PDHD objects and alternate repository interfaces. Those bridges improve retrieval but do not become page evidence without a resolved page identity.
+`scripts/validate_repository.py` validates the base catalog. `scripts/validate_fragment_shards.py` validates the logical union of all locator/frozen shards, including deterministic document/slot identity, duplicate protection, fixed-boundary requirements and cross-checking between frozen rows and locator rows.
 
-`data/samples/pilot_content_leads.csv` now preserves both page-unresolved content discoveries and exact scholarly page pointers. `validate_content_leads.py` prevents unresolved leads from being promoted and requires any promoted content lead to have a resolved page state.
-
-## Integrity checks
-
-`scripts/validate_repository.py` validates the base catalog. `scripts/validate_fragment_shards.py` validates the logical union of locator/frozen shards, including duplicate detection, deterministic document/slot matching, fixed-boundary requirements and cross-checks between frozen and locator rows.
-
-`validate_object_aliases.py` checks cross-repository bridges. `validate_content_leads.py` protects the issue-to-page transition. GitHub Actions runs these checks together with the annotation-agreement self-test and deterministic 96-slot manifest check.
+`validate_object_aliases.py` protects cross-repository bridges. `validate_content_leads.py` protects the transition from issue-level discovery to page-level evidence. GitHub Actions runs these checks together with the annotation-agreement self-test and deterministic 96-slot manifest check.
 
 ## What remains before human coding
 
-Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.
+Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.
 
-The current 12 frozen units prove that the freeze pipeline works across three historical publications. They do not justify starting coder labeling before the package is complete.
+The current 12 frozen units demonstrate that the pipeline works across three historical publications. They do not justify coder labeling before the package is complete.
 
 ## Rights constraint
 
-Primary-source access does not equal republication permission. HNDM remains `metadata_only`; HathiTrust and Google Books/Google Play access is treated as research access rather than a blanket license to mirror scans or full OCR. Where reuse is not clearly authorized, coder text must remain outside the public GitHub repository.
+Primary-source access does not equal republication permission. HNDM remains `metadata_only`; HathiTrust and Google Books/Google Play access is treated as research access rather than a blanket license to mirror scans or full OCR. Where reuse is not clearly authorized, coder text remains outside the public repository.
 
 ## Decision
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The next quantitative threshold is **64/96 located** (two thirds of the pilot). The stronger scientific priority remains to raise the frozen count from **12/96** by converting intermediate locators into directly inspected primary spans instead of merely accumulating weaker references.
+The next quantitative threshold is **72/96 located** (three quarters of the pilot). The stronger scientific priority is to increase the frozen count beyond **12/96**, especially by converting directly accessible or page-resolved primary candidates before adding weaker evidence.
