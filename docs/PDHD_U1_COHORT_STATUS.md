@@ -13,7 +13,7 @@ Reference cut: **2026-09-04**
 | Registered chronology conflicts | 2 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | 12 / 96 | source-localization pass active |
+| Fragment locator rows resolved/candidate | 19 / 96 | source-localization pass active |
 | Fully frozen fragments | 0 / 96 | exact coder spans still pending |
 | Human-validated pedagogical fragments | 0 | not started |
 
@@ -86,19 +86,27 @@ Therefore the **document-selection gate is passed**.
 
 ## Fragment-localization progress
 
-Twelve pilot slots now have documented page-level or section-level locator candidates in `data/samples/fragment_locator_progress_0_1.csv`.
+Nineteen pilot slots now have documented page-level or section-level locator candidates in `data/samples/fragment_locator_progress_0_1.csv`.
 
 Four belong to `PDHD-D000069`, *Las misiones culturales en 1927: Las escuelas normales rurales*. The preparation pass has resolved source sections beginning on pages 21, 51, 209 and 371 for the source-criticism, pedagogical/institutional, professional-identity and control roles. These remain `locator_candidate` because exact coder-span boundaries still require source-page consultation.
 
 Four belong to `PDHD-D000071`, *Las misiones culturales, 1932-1933*. Google Books exposes page-level passages on pages 8, 22, 23 and 32 that map cleanly to the four pilot roles. These are `locator_resolved_text_package_pending`: the page and passage identity are sufficiently clear for preparation, but PDHD is deliberately not declaring them `frozen` until exact coder boundaries and rights-compatible text handling are fixed.
 
-The newest four belong to `PDHD-D000075`, *Memoria de la Secretaría de Educación Pública* (1938). Google Books exposes an unusually useful table of contents: `Departamento de Enseñanza Agrícola y Normal Rural` begins on page 5, `Dirección General de Educación Urbana y Rural en los Estados` on page 59, `Oficina Jurídica y de Revalidación de Estudios` on page 269, and `Departamento de Supervisión` on page 335. These four sections provide candidates for instructional/teacher-preparation, source-critical, control and supervision slots respectively. They remain section-level candidates until a precise passage is selected inside each section.
+Three belong to `PDHD-D000072`, the 1932 *Memoria relativa al estado que guarda el ramo de educación pública*. Google Books directly identifies the `Dirección de Misiones Culturales y Escuelas Normales` at page 111, the `Departamento de Psicopedagogía e Higiene` at page 307, and the `Oficina Consultiva y de Revalidación de Estudios` at page 465. These are section starts, not analytical passages.
 
-This distinction matters:
+Four belong to `PDHD-D000073`, the 1934 SEP memory. Here the project deliberately uses a weaker evidence class: peer-reviewed historical scholarship points to volume II pages XVI, 29, 53 and 58 in discussions of federalization, inspectors and rural-school expansion, but those pages have not yet been directly inspected in the primary Google Books object. They therefore remain `secondary_page_pointer_primary_check_pending` and cannot be frozen.
+
+Four belong to `PDHD-D000075`, *Memoria de la Secretaría de Educación Pública* (1938). Google Books exposes section starts at pages 5, 59, 269 and 335, covering agricultural/normal-rural teaching, state-level rural administration, legal/revalidation work and supervision.
+
+Because locator evidence now comes from more than one evidentiary route, the repository adds `docs/LOCATOR_EVIDENCE_POLICY.md`. It distinguishes direct primary passages, direct primary section starts, scholarly page pointers and bibliographic leads. The rule is explicit:
+
+`secondary_page_citation != primary_page_inspection`
+
+`table_of_contents_entry != passage`
 
 `page_locator_resolved != fixed_coder_span`
 
-`section_start != analytical_fragment`
+`fixed_coder_span != validated_annotation`
 
 The repository validator checks that every locator-progress row belongs to the deterministic 96-slot pilot manifest, points to the correct document and slot, carries a page and evidence URL, and cannot be marked `frozen` without fixed boundaries.
 
@@ -124,6 +132,8 @@ Primary-source resolution does not equal republication permission. HNDM remains 
 The current set is a **pilot-ready document cohort**, not an analysis-ready national sample.
 
 `document_selection_ready != annotation_started`
+
+`secondary_page_citation != primary_page_inspection`
 
 `page_locator_resolved != fixed_coder_span`
 
