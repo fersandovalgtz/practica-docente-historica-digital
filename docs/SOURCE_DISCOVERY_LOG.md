@@ -75,3 +75,31 @@ No expansion of the discovery universe changes the public-content policy. HNDM o
 ### Next documentary target
 
 The next threshold is **50 concrete documents**. Priority should go to resolving issue-level objects for the strongest comparative series: *La Enseñanza Objetiva*, *El Escolar Mexicano*, *México Intelectual*, *La Escuela moderna*, *La Enseñanza primaria*, *La Enseñanza Normal* and *El Maestro Rural*. A stratified sample can then enter `pedagogical_fragment` annotation so that method, authority, assessment, discipline and teacher action are compared across periods without treating prescriptions as observed classroom practice.
+
+## 2026-09-03 — stabilization sweep, regional balancing and unresolved rural sources
+
+After reaching the 50-object infrastructure seed, the project shifted from accumulation to **cohort stabilization**. The working object union now contains 65 records, split temporarily between `documents.csv` and `documents_balancing_w1.csv` so that the balancing intervention remains auditable.
+
+### Resolved balancing objects
+
+The sweep added seven object records from *El Maestro. Revista de Cultura Nacional* to create an early-SEP/postrevolutionary pole. Where bibliographic sources disagree about the exact day of an issue, PDHD deliberately reduces date precision instead of selecting a date without sufficient evidence. The disagreement over tomo I, núm. 1 is registered in `chronology_conflicts.csv`.
+
+Five direct object-level records of *La Escuela moderna* were resolved in the UNAM repository for 1889–1891. Three additional direct UNAM objects increase regional breadth: *México intelectual* from Xalapa, Veracruz; *El Instructor* from Aguascalientes; and *El Periquito* from Campeche. Their digital-resource licenses are recorded conservatively at object level and are not generalized into a blanket source-reuse permission.
+
+### Lead queue and negative discovery result
+
+The rural/postrevolutionary series remain the main methodological bottleneck. Peer-reviewed scholarship gives strong issue-level evidence for *El Maestro Rural*: it identifies the magazine as the organ of the SEP's Departamento de Misiones Culturales and cites individual issues including núm. 1 (1 March 1932), núm. 8 (15 June 1932) and núm. 11 (1 August 1932). Scholarship likewise identifies *Revista de Educación* as a SEP publication from 1937 and 1939. These citations are sufficient to create **discovery leads**, but not to promote the issues to object-level PDHD documents without a stable primary digital locator.
+
+A targeted public-web sweep checked HNDM-facing queries, institutional repositories and Internet Archive discovery for stable issue objects. It recovered additional scholarly references and physical/hemerographic evidence, but **did not resolve a stable primary digital issue endpoint for _El Maestro Rural_ or _Revista de Educación_**. PDHD therefore preserves these records as `pending_primary_locator` rather than fabricating object URLs or treating secondary citations as source objects.
+
+This negative result is itself part of project provenance. Repeating the same generic search should not be treated as new progress; the next attempt should use a new access route, such as an HNDM internal issue identifier, a catalog-to-image bridge, an institutional scan supplied by a library, or documented permission/access from the holding institution.
+
+### Regional nineteenth-century leads
+
+The same sweep strengthened the pre-1900 queue with HNDM primary descriptors. *El Protector de la infancia* is supported at serial level for Guadalajara, with surviving chronology from tomo I, núm. 1 (31 August 1871) through núm. 10 (31 August 1872). *La Educación* is supported for León, including tomo I, núm. 4 (16 July 1871) and tomo II, núm. 18 (1 May 1873). These remain leads until issue-level localizers are resolved.
+
+### Methodological consequence
+
+The corpus now satisfies the future pilot's minimum **geographic diversity** condition at object level, but it does not yet satisfy the stronger requirement for rural-teacher primary objects and documentary-type diversity. Accordingly, the human reliability protocol has been built and tested technically, but actual blind coding remains gated.
+
+The decision is deliberate: **a smaller, traceable and heterogeneous pilot is preferable to an apparently larger corpus whose rural evidence rests only on citations to inaccessible primary issues.**
