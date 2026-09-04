@@ -13,11 +13,11 @@ Reference cut: **2026-09-04**
 | Registered chronology conflicts | 4 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **47 / 96** | source-localization pass active |
+| Fragment locator rows resolved/candidate | **50 / 96** | first localization majority threshold crossed |
 | Fully frozen fragments | **8 / 96** | two complete four-slot document batches |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The original 50-document threshold established that PDHD-U1 could sustain object identity, provenance, rights and annotation workflows. The cohort has now reached **75 object-level records** while reducing the original dependence on two 1904–1907 pedagogical series. Exact fragment freezing is no longer only a protocol: two complete pilot documents now contribute eight structurally fixed units with a rights-aware public registry.
+The original 50-document threshold established that PDHD-U1 could sustain object identity, provenance, rights and annotation workflows. The cohort has now reached **75 object-level records** while reducing the original dependence on two 1904–1907 pedagogical series. Exact fragment freezing is no longer only a protocol: two complete pilot documents contribute eight structurally fixed units with a rights-aware public registry, and **50 of the 96 deterministic pilot slots now have a documented page or section locator**.
 
 ## Composition of the 75-document union
 
@@ -85,9 +85,9 @@ The operational distinctions remain:
 
 ## Cross-repository and content-lead layer
 
-PDHD now records explicit object bridges in `data/catalog/object_aliases.csv`. The UNAM-RI records for *La Enseñanza primaria*, *El Instructor* and *México intelectual* expose full-text targets that resolve to HNDM serial containers. These crosswalks make targeted source recovery possible without changing the canonical repository identity of the PDHD document.
+PDHD records explicit object bridges in `data/catalog/object_aliases.csv`. The UNAM-RI records for *La Enseñanza primaria*, *El Instructor* and *México intelectual* expose full-text targets that resolve to HNDM serial containers. These crosswalks make targeted source recovery possible without changing the canonical repository identity of the PDHD document.
 
-The project also separates content discovery from page localization in `data/samples/pilot_content_leads.csv`. A lead can identify an article or passage at issue level without being eligible for fragment promotion. Once a page pointer is independently documented, the lead can be promoted to a locator candidate while remaining short of a frozen fragment.
+The project separates content discovery from page localization in `data/samples/pilot_content_leads.csv`. A lead can identify an article or passage at issue level without being eligible for fragment promotion. Once a page pointer is independently documented, the lead can be promoted to a locator candidate while remaining short of a frozen fragment.
 
 This gives the retrieval chain:
 
@@ -95,13 +95,13 @@ This gives the retrieval chain:
 
 ## Fragment-localization progress
 
-The union of locator shards now contains **47/96** pilot slots. Eight are fully frozen. The remaining 39 rows range from direct primary page/section evidence to secondary scholarly page pointers that still require primary-object verification.
+The union of locator shards now contains **50/96** pilot slots. Eight are fully frozen. The remaining 42 rows range from direct primary page/section evidence to secondary scholarly page pointers that still require primary-object verification or high-resolution boundary fixing.
 
-Five page-resolved additions strengthen the nineteenth- and early-twentieth-century press side of the pilot. `PDHD-D000064`, *El Instructor* of 1 January 1889, now has a page-8 pointer to material on the Liceo de Niñas. `PDHD-D000063`, *México intelectual*, has a page-2 pointer to its programmatic discussion of pedagogical methods and practical guidance to the teaching profession. `PDHD-D000058`, *La Escuela moderna* of 31 October 1889, has a pp. 17–18 pointer to Enrique C. Rébsamen's *La Pedagogía Moderna*. `PDHD-D000006`, *Revista de la Instrucción Pública Mexicana* of 15 March 1896, has a page-31 pointer to a teacher-personnel notice. `PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, has a page-4 pointer used for source-critical review of its liberty/progress framing.
+Five page-resolved additions strengthen the nineteenth- and early-twentieth-century press side of the pilot. `PDHD-D000064`, *El Instructor* of 1 January 1889, has a page-8 pointer to material on the Liceo de Niñas. `PDHD-D000063`, *México intelectual*, has a page-2 pointer to its programmatic discussion of pedagogical methods and practical guidance to the teaching profession. `PDHD-D000058`, *La Escuela moderna* of 31 October 1889, has a pp. 17–18 pointer to Enrique C. Rébsamen's *La Pedagogía Moderna*. `PDHD-D000006`, *Revista de la Instrucción Pública Mexicana* of 15 March 1896, has a page-31 pointer to a teacher-personnel notice. `PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, has a page-4 pointer used for source-critical review of its liberty/progress framing.
 
-These five additions are deliberately `locator_candidate`, not `frozen`. Their evidence comes from explicit page citations in historical scholarship or institutional publications, while the corresponding historical page still needs direct inspection and fixed boundaries.
+A second route added three more slots from `PDHD-D000031`, *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, 1 July 1907. BVMC directly exposes a first-page primary image for this exact issue. The visible page structure supplies candidates for the editorial/professional-role block, an opening programmatic column and a separable publication/subscription control block. Because the exposed image is reduced and exact text boundaries have not yet been checked at high resolution, all three remain `locator_candidate` rather than `frozen`.
 
-The date of the inaugural *México intelectual* object is also now preserved as a conflict rather than silently normalized. UNAM-RI dates its digital object 1 January 1889, whereas another historical study reports that the journal began operating on 16 January 1889. PDHD retains the catalog object date but treats inaugural chronology at month precision until the original imprint resolves the discrepancy.
+The date of the inaugural *México intelectual* object is preserved as a conflict rather than silently normalized. UNAM-RI dates its digital object 1 January 1889, whereas another historical study reports that the journal began operating on 16 January 1889. PDHD retains the catalog object date but treats inaugural chronology at month precision until the original imprint resolves the discrepancy.
 
 The rural/postrevolutionary queue continues to include `PDHD-D000066`, *El esfuerzo educativo en México*; `PDHD-D000067`, *El papel social del maestro rural*; `PDHD-D000068`, *El sistema de escuelas rurales en México*; `PDHD-D000069`, *Las misiones culturales en 1927*; `PDHD-D000070`, *Proyecto para la organización de las misiones federales de educación*; `PDHD-D000071`, *Las misiones culturales, 1932-1933*; and the SEP memories for 1932, 1934 and 1938.
 
@@ -123,7 +123,7 @@ The rule remains explicit:
 
 `scripts/validate_repository.py` continues to validate the base catalog and primary sample files. `scripts/validate_fragment_shards.py` adds union-level validation across every `fragment_locator_progress*.csv` and `frozen_fragments*.csv` shard. It rejects duplicate fragment IDs across batches, mismatches between document and deterministic slot, frozen locators without fixed boundaries, frozen-registry rows without a corresponding locator, and disagreements in page or source identity between the two layers.
 
-`validate_content_leads.py` now recognizes a distinct `secondary_page_pointer_verified` state and enforces that any row promoted to the fragment-locator layer has `page_status=page_resolved`. This prevents page-free content discovery from masquerading as localization.
+`validate_content_leads.py` recognizes a distinct `secondary_page_pointer_verified` state and enforces that any row promoted to the fragment-locator layer has `page_status=page_resolved`. This prevents page-free content discovery from masquerading as localization.
 
 ## What remains before human coding
 
@@ -157,4 +157,4 @@ The current set is a **pilot-ready document cohort with fragment freezing underw
 
 ## Decision
 
-PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round. The next meaningful threshold is to convert more of the 39 non-frozen locator rows into directly inspected primary spans while continuing to fill the remaining 49 empty slots without weakening evidentiary standards.
+PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round. The first localization-majority threshold has now been crossed at **50/96**. The next meaningful threshold is to convert more of the 42 non-frozen locator rows into directly inspected primary spans while filling the remaining 46 empty slots without weakening evidentiary standards.
