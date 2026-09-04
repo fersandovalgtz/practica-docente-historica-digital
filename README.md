@@ -24,11 +24,11 @@ Corte de referencia: **4 de septiembre de 2026**.
 | Objetos documentales con identidad y localizador | **75** |
 | Fuentes con política de derechos explícita | **13 / 13** |
 | Leads hemerográficos activos sin resolver | **19** |
-| Conflictos cronológicos preservados | **2** |
+| Conflictos cronológicos preservados | **3** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
-| Slots con localizador candidato/resuelto | **38 / 96** |
-| Fragmentos completamente congelados | **4 / 96** |
+| Slots con localizador candidato/resuelto | **42 / 96** |
+| Fragmentos completamente congelados | **8 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -39,7 +39,7 @@ El principal bloqueo previo era la falta de fuentes rurales/postrevolucionarias 
 
 PDHD incorporó objetos contemporáneos de la SEP con identidad primaria verificable, entre ellos *El papel social del maestro rural* (1925), *El sistema de escuelas rurales en México* (1927), *Las misiones culturales en 1927: Las escuelas normales rurales* (1928), *Proyecto para la organización de las misiones federales de educación* (1923), *Las misiones culturales, 1932-1933* (1933), *El esfuerzo educativo en México* (1928) y memorias de la Secretaría de Educación Pública de 1932, 1934, 1937 y 1938.
 
-El proyecto también cruzó la primera puerta de **fragment freezing**: `PDHD-F000013`–`PDHD-F000016`, derivados de la página directamente inspeccionada de *El Escolar Mexicano* del 2 de septiembre de 1888, tienen límites estructurales fijos. Como la fuente es HNDM, el repositorio conserva únicamente localizadores y metadatos de preparación; no publica el texto histórico ni la imagen de página.
+El proyecto ya cruzó dos veces la puerta de **fragment freezing**. `PDHD-F000013`–`PDHD-F000016`, derivados de una página directamente inspeccionada de *El Escolar Mexicano* del 2 de septiembre de 1888, y `PDHD-F000017`–`PDHD-F000020`, derivados de la página directamente inspeccionada de *La Enseñanza Objetiva* del 12 de diciembre de 1891, tienen límites estructurales fijos. Como ambas fuentes son HNDM, el repositorio conserva localizadores, límites y metadatos de preparación; no publica el texto histórico ni las imágenes de página.
 
 ## Ecosistema de fuentes
 
@@ -136,7 +136,7 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo vive en [`data/samples/fragment_locator_progress_0_1.csv`](data/samples/fragment_locator_progress_0_1.csv). En el corte actual hay **38/96** slots con una página o sección candidata o resuelta. Los fragmentos que ya cruzaron el gate completo se registran separadamente en [`data/samples/frozen_fragments_0_1.csv`](data/samples/frozen_fragments_0_1.csv); actualmente son **4/96**.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **42/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **8/96** fragmentos.
 
 La fuerza de la evidencia se interpreta conforme a [`docs/LOCATOR_EVIDENCE_POLICY.md`](docs/LOCATOR_EVIDENCE_POLICY.md): un pasaje primario directo, un inicio de sección, un facsímil histórico reproducido dentro de una fuente secundaria y una cita académica con página no tienen el mismo estatus metodológico.
 
@@ -160,11 +160,11 @@ Cuando el texto no deba publicarse, el fragmento puede congelarse mediante pági
 
 El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `PDHD-X` y `PDHD-F`; registra discrepancias cronológicas; valida duplicados, fuentes, derechos y relaciones entre objetos; comprueba la selección de 24 documentos; auto-prueba el calculador de confiabilidad y verifica la generación de 96 slots en GitHub Actions.
 
-El validador también cruza `frozen_fragments_0_1.csv` contra la cola de localizadores y el manifiesto determinista: un fragmento no puede declararse `frozen` sin límites fijos, campos de acceso y manejo público válidos, ni sin coincidir con su documento y slot esperados.
+`validate_repository.py` controla el catálogo base. `validate_fragment_shards.py` trata todos los shards de localización y congelamiento como una sola unión lógica: detecta duplicados entre archivos, verifica documento y slot contra el manifiesto determinista, exige límites fijos para todo fragmento `frozen` y cruza cada registro congelado con su correspondiente localizador. Esto permite ampliar el trabajo por lotes sin perder una única identidad metodológica.
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. La tarea es llevar los **38/96 localizadores** actuales hacia **96/96** y aumentar la proporción de pasajes primarios directamente inspeccionados hasta convertirlos en verdaderos fragmentos congelados. Los primeros **4/96** ya demuestran que el pipeline de congelamiento funciona.
+La selección documental ya está lista. La tarea es llevar los **42/96 localizadores** actuales hacia **96/96** y aumentar la proporción de pasajes primarios directamente inspeccionados hasta convertirlos en verdaderos fragmentos congelados. Los primeros **8/96** muestran que el pipeline funciona en dos publicaciones pedagógicas distintas de HNDM.
 
 Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
