@@ -28,7 +28,7 @@ Corte de referencia: **4 de septiembre de 2026**.
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
 | Slots con localizador candidato/resuelto | **64 / 96** |
-| Fragmentos completamente congelados | **12 / 96** |
+| Fragmentos completamente congelados | **15 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -39,11 +39,15 @@ El principal bloqueo previo era la falta de fuentes rurales/postrevolucionarias 
 
 PDHD incorporó objetos contemporáneos de la SEP con identidad primaria verificable, entre ellos *El papel social del maestro rural* (1925), *El sistema de escuelas rurales en México* (1927), *Las misiones culturales en 1927: Las escuelas normales rurales* (1928), *Proyecto para la organización de las misiones federales de educación* (1923), *Las misiones culturales, 1932-1933* (1933), *El esfuerzo educativo en México* (1928) y memorias de la Secretaría de Educación Pública de 1932, 1934, 1937 y 1938.
 
-El proyecto ya tiene tres lotes completos de **fragment freezing**. `PDHD-F000013`–`PDHD-F000016`, derivados de una página directamente inspeccionada de *El Escolar Mexicano* del 2 de septiembre de 1888; `PDHD-F000017`–`PDHD-F000020`, derivados de *La Enseñanza Objetiva* del 12 de diciembre de 1891; y `PDHD-F000053`–`PDHD-F000056`, derivados del primer número de *El Maestro. Revista de Cultura Nacional* de 1921, tienen límites estructurales fijos. El tercer lote combina la portada primaria de HNDM con una página directamente inspeccionada del artículo de Ezequiel A. Chávez *Los rasgos distintivos de la educación moderna*. Como HNDM permanece `metadata_only`, el repositorio conserva localizadores, límites y metadatos de preparación; no publica el texto histórico ni las imágenes de página.
+El proyecto ya tiene tres lotes completos de **fragment freezing**. `PDHD-F000013`–`PDHD-F000016`, derivados de una página directamente inspeccionada de *El Escolar Mexicano* del 2 de septiembre de 1888; `PDHD-F000017`–`PDHD-F000020`, derivados de *La Enseñanza Objetiva* del 12 de diciembre de 1891; y `PDHD-F000053`–`PDHD-F000056`, derivados del primer número de *El Maestro. Revista de Cultura Nacional* de 1921, tienen límites estructurales fijos.
+
+A esos doce fragmentos se suman tres unidades directamente inspeccionadas de *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, del 1 de julio de 1907: `PDHD-F000038`–`PDHD-F000040`. La imagen primaria de BVMC permite fijar el bloque editorial/profesional, la región programática de apertura y un bloque administrativo de control. El slot A de ese documento (`PDHD-F000037`) sigue pendiente porque todavía no se ha inspeccionado un pasaje de acto pedagógico explícito con resolución suficiente.
+
+Como HNDM permanece `metadata_only` y la reutilización de la imagen BVMC se maneja conservadoramente, el repositorio conserva localizadores, límites y metadatos de preparación; no publica el texto histórico ni las imágenes de página.
 
 ## Ecosistema de fuentes
 
-La infraestructura registra, entre otras, HNDM y sistemas hemerográficos UNAM, Repositorio Institucional UNAM, Biblioteca Virtual Miguel de Cervantes, Internet Archive, Fondo Reservado de la Biblioteca México, HathiTrust, Google Books/Google Play Books y colecciones históricas de la SEP. Fuentes universitarias secundarias de alta calidad se utilizan para descubrimiento y contextualización cuando todavía falta cotejar una página en el objeto primario.
+La infraestructura registra, entre otras, HNDM y sistemas hemerográficos UNAM, Repositorio Institucional UNAM, Biblioteca Virtual Miguel de Cervantes, Internet Archive, Open Library, Fondo Reservado de la Biblioteca México, HathiTrust, Google Books/Google Play Books y colecciones históricas de la SEP. Fuentes universitarias secundarias de alta calidad se utilizan para descubrimiento y contextualización cuando todavía falta cotejar una página en el objeto primario.
 
 La inclusión de una fuente **no implica permiso automático para redistribuir facsímiles, imágenes u OCR íntegro**. Los estados de derechos se registran explícitamente en `data/catalog/rights_registry.csv`.
 
@@ -136,11 +140,13 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **64/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **12/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **64/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **15/96** fragmentos.
 
 La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, se añadieron localizadores de página para José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Todos permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
 
-El caso de tomo II, núm. 3 expuso además una discrepancia cronológica. Una fuente académica identifica el objeto digital como 1922, mientras una tesis de la UNAM cita *Lecturas escolares. El cardo* en diciembre de 1921. El conflicto está preservado en `data/catalog/chronology_conflicts.csv`; PDHD mantiene 1922 como año de trabajo del catálogo hasta inspeccionar el pie de imprenta original.
+Internet Archive identifica directamente `n1n3elmaestrorev02mexi` como el volumen 2, números 1–3 de *El Maestro*, con 356 páginas y derivados OCR/full-text disponibles. Open Library lo cruza con la edición `OL25476443M`; esa relación ya se registra como alias de objeto y no como localizador de página.
+
+El caso de tomo II, núm. 3 conserva una discrepancia cronológica. Una fuente académica identifica el objeto digital como 1922, mientras una tesis de la UNAM cita *Lecturas escolares. El cardo* en diciembre de 1921. El conflicto está preservado en `data/catalog/chronology_conflicts.csv`; PDHD mantiene 1922 como año de trabajo del catálogo hasta inspeccionar el pie de imprenta original.
 
 El volumen II de la *Memoria de la Secretaría de Educación Pública* de 1937 ya tiene sus cuatro slots localizados. Dos proceden directamente del índice de Google Books —Consejo Nacional de la Educación Superior y de la Investigación, p. 41, y Distribución de Becas en la República, p. 40—. Otros dos son punteros secundarios verificables: p. 371 para la relación entre trabajo manual y desarrollo educativo, y p. 444 para estadísticas de asistencia a bibliotecas. Estos últimos no se congelarán sin cotejo primario.
 
@@ -158,7 +164,7 @@ El manual vigente está en [`docs/ANNOTATION_MANUAL.md`](docs/ANNOTATION_MANUAL.
 
 ## Derechos y reutilización
 
-PDHD aplica una política conservadora a objetos digitales de terceros. HNDM se mantiene `metadata_only` salvo autorización adicional. HathiTrust y Google Books/Google Play Books se utilizan como localizadores de investigación; la disponibilidad de vista completa o ebook gratuito no se interpreta como permiso automático para republicar scans u OCR alojados por esas plataformas.
+PDHD aplica una política conservadora a objetos digitales de terceros. HNDM se mantiene `metadata_only` salvo autorización adicional. HathiTrust, Internet Archive y Google Books/Google Play Books se utilizan como localizadores de investigación; la disponibilidad de vista completa, OCR o ebook gratuito no se interpreta como permiso automático para republicar scans u OCR alojados por esas plataformas.
 
 Cuando el texto no deba publicarse, el fragmento puede congelarse mediante página/localizador y utilizar texto de trabajo controlado fuera de GitHub. Consulte [`RIGHTS.md`](RIGHTS.md), [`docs/RIGHTS_AND_REUSE.md`](docs/RIGHTS_AND_REUSE.md) y [`data/catalog/rights_registry.csv`](data/catalog/rights_registry.csv).
 
@@ -172,7 +178,7 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **64/96 slots —dos tercios del piloto— tienen ya un localizador documentado.** La prioridad deja de ser alcanzar una mayoría simple y pasa a convertir la mayor cantidad posible de los 52 localizadores no congelados en páginas primarias inspeccionadas con límites fijos. Los **12/96** congelados demuestran el pipeline en tres publicaciones históricas distintas.
+La selección documental ya está lista. **64/96 slots —dos tercios del piloto— tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **49 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **15/96** congelados demuestran el pipeline a través de HNDM y BVMC y cubren ya prensa pedagógica de 1888, 1891 y 1907, además de *El Maestro* en 1921.
 
 Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
