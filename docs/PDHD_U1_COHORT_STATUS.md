@@ -13,11 +13,11 @@ Reference cut: **2026-09-04**
 | Registered chronology conflicts | 5 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **72 / 96** | three-quarter localization threshold reached |
+| Fragment locator rows resolved/candidate | **75 / 96** | 78.1% of reliability slots localized |
 | Fully frozen fragments | **15 / 96** | three complete batches plus one three-slot primary-image batch |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 has now crossed the **three-quarter localization threshold**: 72 of the 96 deterministic reliability slots have a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **75 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -33,15 +33,29 @@ HNDM remains `metadata_only`; the BVMC first-page batch is also stored conservat
 
 ## Three-quarter localization batch
 
-The new `fragment_locator_progress_threshold72_w9.csv` shard adds eight deterministic slots without changing the frozen count.
+`fragment_locator_progress_threshold72_w9.csv` added eight deterministic slots without changing the frozen count.
 
-`PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, gains two first-page targets: `PDHD-F000034` for the professional/editorial region and `PDHD-F000036` for publication/subscription administration. Both are tied to the exact BVMC object but remain candidates until high-resolution structural boundaries are checked.
+`PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, gained two first-page targets: `PDHD-F000034` for the professional/editorial region and `PDHD-F000036` for publication/subscription administration. Both are tied to the exact BVMC object but remain candidates until high-resolution structural boundaries are checked.
 
-The *El Maestro* block gains four additional slots. `PDHD-F000044` reserves the stable Internet Archive opening scan for núm. 2 (1921) as a control candidate. `PDHD-F000047` targets Rafael Ramos Pedrueza's *Historia de México*, núm. 4 (1921), pp. 341–348. `PDHD-F000048` reserves the stable opening scan of núm. 4 as a control candidate. `PDHD-F000052` reserves the opening reader page of tomo II, núm. 3 as a control while preserving the existing 1922/December-1921 chronology conflict.
+The *El Maestro* block gained four additional slots. `PDHD-F000044` reserves the stable Internet Archive opening scan for núm. 2 (1921) as a control candidate. `PDHD-F000047` targets Rafael Ramos Pedrueza's *Historia de México*, núm. 4 (1921), pp. 341–348. `PDHD-F000048` reserves the stable opening scan of núm. 4 as a control candidate. `PDHD-F000052` reserves the opening reader page of tomo II, núm. 3 as a control while preserving the existing 1922/December-1921 chronology conflict.
 
 `PDHD-F000045` targets Dionisio Montelongo Jr.'s *La ilustración de las masas*, pp. 363–365, but carries `issue_number_check_pending`: the secondary bibliography places the July 1921 item under a number incompatible with the working issue sequence. PDHD therefore records the page lead without silently normalizing the issue number or promoting it to primary evidence.
 
 Finally, `PDHD-F000083` completes the four-slot localization of the 1932 SEP memory by targeting p. 487 for a source-critical comparison of technical, primary and rural educational organization/costs. It remains a secondary page pointer pending direct verification in the Google Books object.
+
+## México Intelectual and La Enseñanza Normal additions
+
+Three new page-resolved candidates move the pilot from 72 to **75 localized slots**.
+
+`PDHD-F000009` uses *México intelectual*, tomo I, p. 5 for an explicit programmatic prescription centered on diffusion of teaching methods, systems and modern pedagogical approaches to the teaching profession. A recent historical study identifies that page explicitly; direct inspection of the historical page remains pending.
+
+`PDHD-F000012` uses *México intelectual*, tomo I, p. 6 as the deliberately low-pedagogical-content control candidate. The *Anuario Mexicano de Historia de la Educación* cites that page for prices and correspondence-routing instructions. This is page-resolved secondary evidence, not a frozen primary span.
+
+`PDHD-F000033` closes the only remaining localization gap in the inaugural *La Enseñanza Normal* issue. A UNAM thesis cites p. 12 for Leopoldo Kiel's explicit statement that teacher formation requires sustained work with groups of children, observation, experimentation and verification of teaching procedures. This is a strong pedagogical-practice target, but its BVMC page still requires direct inspection before freezing.
+
+These additions preserve the rule:
+
+`secondary_page_pointer != directly_inspected_historical_page`
 
 ## El Maestro expansion
 
@@ -55,11 +69,11 @@ The Mistral citation exposed the fifth registered chronology conflict. Signos Hi
 
 `PDHD-D000074`, *Memoria de la Secretaría de Educación Pública*, vol. 2 (1937), has all four deterministic slots localized. `PDHD-F000089` uses a secondary exact pointer to p. 371 for a passage relating manual work to mental/intellectual development and application of school knowledge. `PDHD-F000090` uses Google Books' direct contents entry for the Consejo Nacional de la Educación Superior y de la Investigación on p. 41. `PDHD-F000091` uses a UNAM thesis pointer to vol. 2, p. 444 for a library-attendance report. `PDHD-F000092` uses the direct Google Books contents entry *Distribución de Becas en la República* on p. 40 as an administrative control candidate.
 
-`PDHD-D000072`, the 1932 SEP memory, now also has all four slots localized after adding `PDHD-F000083` at p. 487. The direct contents entries are stronger than bibliographic leads but remain section targets rather than analytical spans. Secondary page pointers remain explicitly below direct primary-page inspection.
+`PDHD-D000072`, the 1932 SEP memory, also has all four slots localized after adding `PDHD-F000083` at p. 487. The direct contents entries are stronger than bibliographic leads but remain section targets rather than analytical spans. Secondary page pointers remain explicitly below direct primary-page inspection.
 
 ## Fragment-localization progress
 
-The union of all `fragment_locator_progress*.csv` shards contains **72/96** pilot slots. Fifteen are frozen. The remaining **57** located rows include direct primary-page candidates, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **24 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **75/96** pilot slots. Fifteen are frozen. The remaining **60** located rows include direct primary-page candidates, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **21 slots remain without a locator.**
 
 The retrieval chain remains:
 
@@ -81,7 +95,7 @@ The mandatory distinctions remain:
 
 ## Integrity and provenance
 
-`scripts/validate_repository.py` validates the base catalog. `scripts/validate_fragment_shards.py` validates the logical union of all locator/frozen shards, including deterministic document/slot identity, duplicate protection, fixed-boundary requirements and cross-checking between frozen rows and locator rows.
+`scripts/validate_repository.py` validates the base catalog. `scripts/validate_fragment_shards.py` validates the logical union of all locator/frozen shards, including deterministic document/slot identity, duplicate protection, fixed-boundary requirements and cross-checking between frozen rows and locator rows. It also requires `fragment_gap_queue_0_1.csv` to equal the exact complement of the localized fragment IDs.
 
 `validate_object_aliases.py` protects cross-repository bridges. `validate_content_leads.py` protects the transition from issue-level discovery to page-level evidence. GitHub Actions runs these checks together with the annotation-agreement self-test and deterministic 96-slot manifest check.
 
@@ -99,4 +113,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The **72/96 three-quarter localization threshold is reached**. The next operational threshold is **80/96 located**, while the stronger scientific priority is to raise the frozen count beyond **15/96**, especially by converting direct page/scan candidates into exact coder spans rather than adding weaker references.
+The project is now at **75/96 localized**. The next operational threshold remains **80/96 located**, while the stronger scientific priority is to raise the frozen count beyond **15/96**, especially by converting direct page/scan candidates into exact coder spans rather than adding weaker references.
