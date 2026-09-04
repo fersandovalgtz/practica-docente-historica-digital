@@ -20,6 +20,8 @@ RIGHTS = {
     "review_required",
 }
 
+ERA_CODES = {f"E{i}" for i in range(1, 8)}
+
 
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as fh:
@@ -34,20 +36,63 @@ def check_unique(rows: list[dict[str, str]], key: str, label: str) -> None:
         ERRORS.append(f"{label}: duplicate {key}")
 
 
+def validate_document_rows(
+    rows: list[dict[str, str]],
+    label: str,
+    source_ids: set[str],
+    seen_docs: set[str],
+    seen_source_identifiers: set[str],
+) -> None:
+    for row in rows:
+        doc_id = row.get("document_id", "").strip()
+        if not re.fullmatch(r"PDHD-D\d{6}", doc_id):
+            ERRORS.append(f"{label}: invalid document_id {doc_id!r}")
+        if doc_id in seen_docs:
+            ERRORS.append(f"documents union: duplicate document_id {doc_id}")
+        seen_docs.add(doc_id)
+
+        source_identifier = row.get("source_identifier", "").strip()
+        if not source_identifier:
+            ERRORS.append(f"{label}: empty source_identifier for {doc_id}")
+        elif source_identifier in seen_source_identifiers:
+            ERRORS.append(
+                f"documents union: duplicate source_identifier {source_identifier}"
+            )
+        seen_source_identifiers.add(source_identifier)
+
+        if row.get("source_id") not in source_ids:
+            ERRORS.append(f"{label}: unknown source_id {row.get('source_id')}")
+        if row.get("rights_status") not in RIGHTS:
+            ERRORS.append(f"{label}: invalid rights_status {row.get('rights_status')}")
+
+        era_code = row.get("era_code", "").strip()
+        if era_code and era_code not in ERA_CODES:
+            ERRORS.append(f"{label}: invalid era_code {era_code}")
+
+
 def main() -> int:
     sources = read_csv(ROOT / "data/catalog/sources.csv")
     rights = read_csv(ROOT / "data/catalog/rights_registry.csv")
     candidates = read_csv(ROOT / "data/catalog/source_candidates.csv")
-    documents = read_csv(ROOT / "data/catalog/documents.csv")
+    documents_core = read_csv(ROOT / "data/catalog/documents.csv")
+    balancing_path = ROOT / "data/catalog/documents_balancing_w1.csv"
+    documents_balancing = read_csv(balancing_path) if balancing_path.exists() else []
+    leads_path = ROOT / "data/catalog/issue_leads.csv"
+    issue_leads = read_csv(leads_path) if leads_path.exists() else []
+    conflicts_path = ROOT / "data/catalog/chronology_conflicts.csv"
+    chronology_conflicts = read_csv(conflicts_path) if conflicts_path.exists() else []
     dimensions = read_csv(ROOT / "data/taxonomy/pedagogical_dimensions.csv")
     acts = read_csv(ROOT / "data/taxonomy/pedagogical_acts.csv")
 
     check_unique(sources, "source_id", "sources")
     check_unique(rights, "source_id", "rights_registry")
     check_unique(candidates, "candidate_id", "source_candidates")
-    check_unique(documents, "source_identifier", "documents")
     check_unique(dimensions, "dimension_code", "pedagogical_dimensions")
     check_unique(acts, "act_code", "pedagogical_acts")
+    if issue_leads:
+        check_unique(issue_leads, "lead_id", "issue_leads")
+    if chronology_conflicts:
+        check_unique(chronology_conflicts, "conflict_id", "chronology_conflicts")
 
     source_ids = {r["source_id"] for r in sources}
     rights_ids = {r["source_id"] for r in rights}
@@ -76,17 +121,35 @@ def main() -> int:
             ERRORS.append(f"source_candidates: invalid rights_status {row.get('rights_status')}")
 
     seen_docs: set[str] = set()
-    for row in documents:
-        doc_id = row.get("document_id", "")
-        if not re.fullmatch(r"PDHD-D\d{6}", doc_id):
-            ERRORS.append(f"documents: invalid document_id {doc_id!r}")
-        if doc_id in seen_docs:
-            ERRORS.append(f"documents: duplicate document_id {doc_id}")
-        seen_docs.add(doc_id)
-        if row.get("source_id") not in source_ids:
-            ERRORS.append(f"documents: unknown source_id {row.get('source_id')}")
-        if row.get("rights_status") not in RIGHTS:
-            ERRORS.append(f"documents: invalid rights_status {row.get('rights_status')}")
+    seen_source_identifiers: set[str] = set()
+    validate_document_rows(
+        documents_core,
+        "documents.csv",
+        source_ids,
+        seen_docs,
+        seen_source_identifiers,
+    )
+    validate_document_rows(
+        documents_balancing,
+        "documents_balancing_w1.csv",
+        source_ids,
+        seen_docs,
+        seen_source_identifiers,
+    )
+
+    for row in issue_leads:
+        lead_id = row.get("lead_id", "")
+        if not re.fullmatch(r"PDHD-L\d{6}", lead_id):
+            ERRORS.append(f"issue_leads: invalid lead_id {lead_id!r}")
+        if not row.get("publication", "").strip():
+            ERRORS.append(f"issue_leads: empty publication for {lead_id}")
+        if not row.get("evidence_url", "").strip():
+            ERRORS.append(f"issue_leads: empty evidence_url for {lead_id}")
+
+    for row in chronology_conflicts:
+        conflict_id = row.get("conflict_id", "")
+        if not re.fullmatch(r"PDHD-X\d{6}", conflict_id):
+            ERRORS.append(f"chronology_conflicts: invalid conflict_id {conflict_id!r}")
 
     for schema in ("document.schema.json", "pedagogical_fragment.schema.json"):
         with (ROOT / "schemas" / schema).open(encoding="utf-8") as fh:
@@ -97,9 +160,12 @@ def main() -> int:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
 
+    total_documents = len(documents_core) + len(documents_balancing)
     print(
         "PDHD repository checks passed "
-        f"({len(sources)} sources; {len(candidates)} candidates; {len(documents)} documents)"
+        f"({len(sources)} sources; {len(candidates)} candidates; "
+        f"{total_documents} documents; {len(issue_leads)} issue leads; "
+        f"{len(chronology_conflicts)} chronology conflicts)"
     )
     return 0
 
