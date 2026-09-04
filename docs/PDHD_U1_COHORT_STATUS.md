@@ -13,7 +13,7 @@ Reference cut: **2026-09-04**
 | Registered chronology conflicts | 2 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | 19 / 96 | source-localization pass active |
+| Fragment locator rows resolved/candidate | 27 / 96 | source-localization pass active |
 | Fully frozen fragments | 0 / 96 | exact coder spans still pending |
 | Human-validated pedagogical fragments | 0 | not started |
 
@@ -86,9 +86,13 @@ Therefore the **document-selection gate is passed**.
 
 ## Fragment-localization progress
 
-Nineteen pilot slots now have documented page-level or section-level locator candidates in `data/samples/fragment_locator_progress_0_1.csv`.
+Twenty-seven pilot slots now have documented page-level or section-level locator candidates in `data/samples/fragment_locator_progress_0_1.csv`.
+
+Four belong to `PDHD-D000068`, *El sistema de escuelas rurales en México*. Historical scholarship provides page pointers to page 72 for the professional situation and recruitment of rural teachers and to pages 255–256 for the organization, staffing and work of the Cuernavaca rural normal school. These are intentionally stored as `secondary_page_pointer_primary_check_pending`: they guide primary retrieval but are not yet treated as inspected source passages.
 
 Four belong to `PDHD-D000069`, *Las misiones culturales en 1927: Las escuelas normales rurales*. The preparation pass has resolved source sections beginning on pages 21, 51, 209 and 371 for the source-criticism, pedagogical/institutional, professional-identity and control roles. These remain `locator_candidate` because exact coder-span boundaries still require source-page consultation.
+
+Four belong to `PDHD-D000070`, *Proyecto para la organización de las misiones federales de educación*. A UNAM thesis reproduces visible facsimile pages from the 1923 project. Original printed pages 22–25 expose the mission staff, the diagnostic program, concrete educational/community actions and the normative representation of the `maestro misionero`. Because the facsimile is embedded inside a secondary container rather than opened from the registered HathiTrust object, PDHD marks these rows `embedded_facsimile_primary_check_pending` and requires a primary-object cross-check before freezing.
 
 Four belong to `PDHD-D000071`, *Las misiones culturales, 1932-1933*. Google Books exposes page-level passages on pages 8, 22, 23 and 32 that map cleanly to the four pilot roles. These are `locator_resolved_text_package_pending`: the page and passage identity are sufficiently clear for preparation, but PDHD is deliberately not declaring them `frozen` until exact coder boundaries and rights-compatible text handling are fixed.
 
@@ -98,9 +102,11 @@ Four belong to `PDHD-D000073`, the 1934 SEP memory. Here the project deliberatel
 
 Four belong to `PDHD-D000075`, *Memoria de la Secretaría de Educación Pública* (1938). Google Books exposes section starts at pages 5, 59, 269 and 335, covering agricultural/normal-rural teaching, state-level rural administration, legal/revalidation work and supervision.
 
-Because locator evidence now comes from more than one evidentiary route, the repository adds `docs/LOCATOR_EVIDENCE_POLICY.md`. It distinguishes direct primary passages, direct primary section starts, scholarly page pointers and bibliographic leads. The rule is explicit:
+Because locator evidence now comes from more than one evidentiary route, `docs/LOCATOR_EVIDENCE_POLICY.md` distinguishes direct primary passages, direct primary section starts, scholarly page pointers, embedded reproduced facsimiles and bibliographic leads. The rule is explicit:
 
 `secondary_page_citation != primary_page_inspection`
+
+`visible_reproduced_facsimile != primary_object_crosscheck`
 
 `table_of_contents_entry != passage`
 
@@ -135,6 +141,8 @@ The current set is a **pilot-ready document cohort**, not an analysis-ready nati
 
 `secondary_page_citation != primary_page_inspection`
 
+`visible_reproduced_facsimile != primary_object_crosscheck`
+
 `page_locator_resolved != fixed_coder_span`
 
 `section_start != analytical_fragment`
@@ -147,4 +155,4 @@ The current set is a **pilot-ready document cohort**, not an analysis-ready nati
 
 ## Decision
 
-PDHD-U1 has advanced from infrastructure testing to **pilot preparation**. Issue #1 should remain open through fragment freezing and the first independent human reliability round. The next meaningful threshold is not a larger raw document count: it is a complete, rights-aware, reproducible set of 96 fixed fragments ready for blind human coding.
+PDHD-U1 has advanced from infrastructure testing to **pilot preparation**. Issue #1 remains open through fragment freezing and the first independent human reliability round. The next meaningful threshold is not a larger raw document count: it is a complete, rights-aware, reproducible set of 96 fixed fragments ready for blind human coding.
