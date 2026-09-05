@@ -24,6 +24,20 @@ Locator and freeze work may be split into auditable shards such as `fragment_loc
 
 The queue records the remaining conversion blocker and the next source-critical action. Inclusion therefore means **priority for verification**, not evidentiary promotion. Rows remain governed by their canonical `fragment_locator_progress*.csv` state until direct inspection, exact boundary selection, transcription/access decisions and the other requirements of `docs/FRAGMENT_FREEZE_PROTOCOL.md` are complete.
 
+`scripts/validate_freeze_conversion_queue.py` requires the queue to equal the complete current set of eligible non-frozen direct-primary candidates. It also requires every queued fragment to have structured retrieval provenance in `retrieval_attempts.csv`. A source-access failure is therefore retained as evidence about the retrieval process instead of disappearing from the research record or being misread as source absence.
+
+## Manual primary-page review bridge
+
+`scripts/prepare_freeze_review.py` projects the canonical queue and locator metadata into a deterministic review sheet for primary-page inspection. It can prepare the complete queue or selected fragment IDs without changing any scientific state.
+
+New review records deliberately begin with `source_image_verified=no` and `decision=pending_primary_visual_review`. Boundary definition, transcription status and access basis remain blank for the reviewer to complete from the actual primary object. The script refuses already frozen fragments and queue/locator identity mismatches. Its `--check` mode is executed in CI.
+
+This separates mechanical metadata transfer from the source-critical decision:
+
+`direct-primary candidate -> structured retrieval provenance -> manual primary-page review -> fixed boundary -> frozen registry`
+
+A completed review sheet is not itself a freeze operation. Promotion still requires synchronized updates to the canonical locator shard and a `frozen_fragments*.csv` registry row that passes repository validation.
+
 The current sprint is documented in `docs/FREEZE_CONVERSION_SPRINT_0_1.md`.
 
 The distinction is intentional:
@@ -33,6 +47,10 @@ The distinction is intentional:
 `promoted_content_lead != frozen_fragment`
 
 `freeze_conversion_priority != frozen_fragment`
+
+`prepared_review_record != primary_image_verified`
+
+`primary_image_verified != validated_annotation`
 
 `public_pilot_metadata != public_source_text`
 
