@@ -1,0 +1,45 @@
+name: Sync README methodological gate after F000037
+
+on:
+  push:
+    branches:
+      - freeze-ensenanza-moderna-p6
+    paths:
+      - ".github/workflows/sync-readme-gate-p6.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: freeze-ensenanza-moderna-p6
+
+      - name: Replace stale methodological-gate prose
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('README.md')
+          text = p.read_text(encoding='utf-8')
+          old = '''La selección documental ya está lista. **82/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **54 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **23/96** congelados demuestran el pipeline a través de HNDM, BVMC e Internet Archive y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
+
+La cola dedicada de conversión directa quedó vacía después de `PDHD-F000060`; el siguiente frente es convertir punteros de página fuertes mediante inspección directa del objeto primario. Quedan **14 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **84/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles. La cola directa queda reducida a `PDHD-F000060`, control `PR5` de *El esfuerzo educativo en México*, todavía pendiente de inspección primaria auditable.'''
+          new = '''La selección documental ya está lista. **83/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **54 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **29/96** congelados demuestran el pipeline a través de HNDM, BVMC, Internet Archive y Google Books y cubren prensa pedagógica de 1888, 1891, 1901, 1904 y 1907, además de *El Maestro* en 1921 y un informe SEP de 1928.
+
+La cola dedicada de conversión directa permanece vacía después de completar P1–P4; el frente activo es convertir punteros de página fuertes mediante inspección directa del objeto primario y resolver clusters documentales completos. Quedan **13 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **84/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles. `PDHD-F000060` ya fue verificado y congelado desde la página primaria `PR5`; no forma parte de una cola pendiente.'''
+          if old not in text:
+              raise SystemExit('Expected stale methodological-gate block not found')
+          p.write_text(text.replace(old, new), encoding='utf-8')
+
+      - name: Commit cleanup and remove temporary workflow
+        run: |
+          set -euo pipefail
+          rm .github/workflows/sync-readme-gate-p6.yml
+          git config user.name 'PDHD status sync'
+          git config user.email 'actions@users.noreply.github.com'
+          git add README.md .github/workflows/sync-readme-gate-p6.yml
+          git commit -m 'Refresh README methodological gate after F000037'
+          git push origin HEAD:freeze-ensenanza-moderna-p6
