@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SAMPLES = ROOT / "data/samples"
 QUEUE = SAMPLES / "freeze_conversion_queue_0_1.csv"
+RETRIEVAL_ATTEMPTS = SAMPLES / "retrieval_attempts.csv"
 ERRORS: list[str] = []
 
 REQUIRED_COLUMNS = (
@@ -64,6 +65,25 @@ def load_locator_union() -> dict[str, dict[str, str]]:
     return locators
 
 
+def load_retrieval_coverage() -> dict[str, set[str]]:
+    coverage: dict[str, set[str]] = {}
+    if not RETRIEVAL_ATTEMPTS.exists():
+        ERRORS.append("retrieval_attempts.csv is required for freeze-conversion work")
+        return coverage
+
+    for row in read_csv(RETRIEVAL_ATTEMPTS):
+        attempt_id = row.get("attempt_id", "").strip()
+        document_id = row.get("document_id", "").strip()
+        for raw_fid in row.get("fragment_ids", "").split(";"):
+            fid = raw_fid.strip()
+            if not fid:
+                continue
+            coverage.setdefault(fid, set()).add(attempt_id)
+            if not document_id:
+                ERRORS.append(f"{attempt_id}: retrieval attempt lacks document_id")
+    return coverage
+
+
 def valid_iso_date(value: str) -> bool:
     try:
         date.fromisoformat(value)
@@ -89,6 +109,7 @@ def main() -> int:
         )
 
     locators = load_locator_union()
+    retrieval_coverage = load_retrieval_coverage()
     seen: set[str] = set()
 
     for row in rows:
@@ -149,6 +170,11 @@ def main() -> int:
             if not row.get(field, "").strip():
                 ERRORS.append(f"{fid}: missing {field}")
 
+        if fid not in retrieval_coverage:
+            ERRORS.append(
+                f"{fid}: direct-primary conversion candidate lacks structured retrieval provenance"
+            )
+
     eligible = {
         fid
         for fid, row in locators.items()
@@ -181,9 +207,10 @@ def main() -> int:
     for row in rows:
         counts[row["priority_group"].strip()] += 1
     distribution = ", ".join(f"{key}={value}" for key, value in counts.items())
+    covered = sum(1 for fid in seen if fid in retrieval_coverage)
     print(
         "PDHD freeze-conversion queue checks passed "
-        f"({len(rows)} complete direct-primary candidates; {distribution})"
+        f"({len(rows)} complete direct-primary candidates; {covered}/{len(rows)} with retrieval provenance; {distribution})"
     )
     return 0
 
