@@ -4,7 +4,7 @@ Reference cut: **2026-09-05**
 
 ## Objective
 
-PDHD-U1 remains at **80/96 localized slots** and has advanced from 15 to **19/96 frozen** through two completed direct-primary conversion waves.
+PDHD-U1 remains at **80/96 localized slots** and has advanced from 15 to **21/96 frozen** through three completed direct-primary conversion waves.
 
 The sprint prioritizes conversion of already localized direct-primary candidates into fixed coder spans. No row is promoted merely to improve the metric.
 
@@ -16,67 +16,65 @@ The sprint prioritizes conversion of already localized direct-primary candidates
 
 `PDHD-F000034` and `PDHD-F000036` crossed the freeze gate after direct inspection of the exact BVMC primary PDF for the inaugural 15 September 1904 issue.
 
-`PDHD-F000034` fixes the first-page professional/editorial block from `CUERPO DE REDACCION` through the collaborator line and stops before the programmatic article opening. `PDHD-F000036` fixes the autonomous publication-cadence line as the smallest defensible administrative control span.
-
-Both use `not_transcribed`, `metadata_only` and `BVMC_direct_primary_pdf_inspection`. Their registry rows are stored in `frozen_fragments_ensenanza_normal_w16.csv`.
+`PDHD-F000034` fixes the first-page professional/editorial block. `PDHD-F000036` fixes the autonomous publication-cadence line as the smallest defensible administrative control span. Both use `not_transcribed`, `metadata_only` and `BVMC_direct_primary_pdf_inspection`.
 
 ## Completed P2 — El Maestro, tomo II, núm. 3
 
-`PDHD-F000050` and `PDHD-F000052` have also crossed the freeze gate.
+`PDHD-F000050` and `PDHD-F000052` crossed the freeze gate after the Internet Archive retrieval path was corrected from an erroneous Search Inside mapping to BookReader `n232–n238`.
 
-The first Internet Archive retrieval workflow used an incorrect Search Inside to BookReader mapping and downloaded later pages. Scandata/page-number reconciliation moved the target to **BookReader `n232–n238`**. The corrected workflow completed successfully and produced seven primary JPEGs for manual source review.
+Direct inspection showed `n236` as the tomo II, núm. III cover dated diciembre de 1921; `n237` as the issue-specific Secretaría de Educación Pública / Talleres Gráficos imprint ending México, diciembre de 1921; and `n238` as the opening of *La inconsciencia de la hora* on printed p. 227.
 
-Direct inspection resolves the issue sequence:
+`PDHD-F000050` is fixed on the institutional imprint in `n237`. `PDHD-F000052` is fixed on the bibliographic title/volume/number/date cartouche in `n236`. Both use `not_transcribed`, `metadata_only` and `Internet_Archive_direct_primary_image_inspection`.
 
-- `n236` explicitly identifies *EL MAESTRO*, *REVISTA DE CULTURA NACIONAL*, **TOMO II - NUMERO III**, **DICIEMBRE DE MCMXXI**, México;
-- `n237` contains the issue-specific institutional imprint **SECRETARIA DE EDUCACION PUBLICA**, Talleres Gráficos de la Nación, Filomeno Mata número 8, ending **MEXICO, DICIEMBRE DE 1921**;
-- `n238` opens *La inconsciencia de la hora* on printed p. 227.
+The same image evidence resolves `PDHD-X000005` to canonical **1921-12**, while retaining the secondary 1922 listing as a documented discrepancy.
 
-`PDHD-F000050` is therefore fixed on `n237` as the institutional-relation span. This choice is deliberately more conservative than using an adjacent masthead page because the n237 imprint is unambiguously internal to tomo II, núm. III.
+## Completed P3 — El Maestro issue-opening controls
 
-`PDHD-F000052` is fixed on the issue-identification cartouche of `n236` as the non-analytical control. It remains separate from the institutional block and requires no historical transcription in the public repository.
+`PDHD-F000044` and `PDHD-F000048` have now crossed the freeze gate as deliberately non-analytical control spans.
 
-Both use `not_transcribed`, `metadata_only` and `Internet_Archive_direct_primary_image_inspection`. Their registry rows are stored in `frozen_fragments_el_maestro_t2n3_w17.csv`.
+A one-day GitHub Actions retrieval workflow downloaded short primary-image windows around the registered reader targets. The workflow did not alter scientific state; it only exposed auditable source images for manual inspection.
 
-## Chronology result
+For `PDHD-F000044`, the registered reader target `n103` led to a window in which `n104` is the unequivocal cover for núm. II of 1921. The frozen boundary is the bibliographic cartouche containing the issue number, Mexico and the Roman-numeral year. The illustration and other cover matter are excluded.
 
-The primary images resolve `PDHD-X000005` to **1921-12** at month precision. The secondary 1922 listing is retained as a documented scholarly/catalog discrepancy, but it is no longer the canonical chronology.
+For `PDHD-F000048`, the registered reader target `n6` led to a window in which `n4` is the unequivocal cover for núm. IV of 1921. Again, only the bibliographic cartouche is fixed; the illustration and surrounding cover matter are excluded.
 
-This resolution follows the evidence hierarchy rather than OCR convenience:
+Both use `not_transcribed`, `metadata_only` and `Internet_Archive_direct_primary_image_inspection`. Their registry rows are stored in `frozen_fragments_el_maestro_controls_w18.csv`.
 
-`primary_ocr_region != image_verified_span`
+This conversion explicitly demonstrates:
 
-The OCR guided retrieval; the cover and imprint images supported the chronology decision.
+`reader_page_target != analytical_span`
+
+The reader route found the relevant neighborhood; the final frozen span was selected only after visual inspection of the primary image.
 
 ## Current direct-primary queue
 
-The machine-readable queue now contains exactly **three fragments**.
-
-### P3 — El Maestro issue-opening controls
-
-`PDHD-F000044` and `PDHD-F000048` retain stable Internet Archive reader targets for selected 1921 issues. Both are control slots and still require direct primary inspection plus selection of the smallest defensible front-matter or administrative region.
+The machine-readable queue now contains exactly **one fragment**.
 
 ### P4 — El esfuerzo educativo en México
 
 `PDHD-F000060` points to Google Books page `PR5`. The title-page control remains a candidate until the page itself can be directly inspected and its access/transcription decisions are fixed.
 
+The current blocker is not bibliographic identity. `PDHD-D000066` and `PR5` are already resolved. The blocker is auditable primary-page rendering: the current route has not yet yielded a directly inspectable page image.
+
 ## Queue completeness and provenance
 
 `scripts/validate_freeze_conversion_queue.py` requires the queue to equal the complete set of non-frozen locator rows whose canonical `boundary_status` belongs to the direct-primary conversion states. Once a row becomes `fixed`/`frozen`, it must disappear from the queue.
 
-The expected set at this cut is exactly `PDHD-F000044`, `PDHD-F000048` and `PDHD-F000060`. Each retains structured retrieval provenance.
+At this cut the complete direct-primary set is exactly `PDHD-F000060`.
 
-Completed retrieval attempts for P1 and P2 remain in `retrieval_attempts.csv` with `superseded_by_locator`, preserving the technical path without presenting a resolved blocker as current.
+Completed retrieval attempts for P1, P2 and P3 remain in `retrieval_attempts.csv` with `superseded_by_locator`, preserving the technical path without presenting a resolved blocker as current. The P4 attempt remains open until a primary page can be inspected.
 
 ## Evidence policy retained
 
-Neither conversion wave weakens PDHD's source-critical distinctions. P1 uses a directly inspected first-party PDF. P2 uses directly inspected primary BookReader page images. No secondary facsimile or OCR-only region is promoted as a frozen span.
+None of the three conversion waves weakens PDHD's source-critical distinctions. P1 uses a directly inspected first-party PDF. P2 and P3 use directly inspected primary BookReader page images. No secondary facsimile, generic reader route or OCR-only region is promoted as a frozen span.
 
 The following distinctions remain mandatory:
 
 `secondary_page_citation != primary_page_inspection`
 
 `visible_reproduced_facsimile != primary_object_crosscheck`
+
+`reader_page_target != analytical_span`
 
 `primary_ocr_region != image_verified_span`
 
@@ -86,6 +84,8 @@ The following distinctions remain mandatory:
 
 ## Success criterion
 
-The sprint has moved the project **15/96 -> 17/96 -> 19/96 frozen** while localization remains **80/96**. The number of localized-but-not-frozen slots therefore falls from 65 to 63 and now to **61**.
+The sprint has moved the project **15/96 -> 17/96 -> 19/96 -> 21/96 frozen** while localization remains **80/96**. The number of localized-but-not-frozen slots therefore falls from 65 to 63, then 61, and now to **59**.
 
-The next scientific objective is to convert the remaining three direct-primary candidates without weakening the fixed-boundary, rights or source-inspection gates. Human annotation remains downstream of the complete 96-fragment freeze package.
+The immediate scientific objective is to resolve `PDHD-F000060` without weakening the primary-image gate. After that, the sprint should pivot from the direct-primary queue to the strongest remaining page-resolved candidates, prioritizing those where primary inspection can convert existing exact page pointers rather than adding weaker discovery evidence.
+
+Human annotation remains downstream of the complete 96-fragment freeze package.
