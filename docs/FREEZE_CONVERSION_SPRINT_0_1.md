@@ -40,6 +40,24 @@ The machine-readable queue is `data/samples/freeze_conversion_queue_0_1.csv`.
 
 `PDHD-F000060` points directly to Google Books page `PR5`. The page is reserved as a control candidate. It can be frozen only after direct inspection confirms the page-level boundary and the access/transcription decisions are recorded.
 
+## Queue completeness and CI
+
+`scripts/validate_freeze_conversion_queue.py` validates both row-level integrity and queue completeness. The queue must equal the complete set of non-frozen locator rows whose canonical `boundary_status` belongs to the current direct-primary conversion states. An eligible fragment omitted from the queue, a stale row that is no longer eligible or a row already promoted to `frozen` causes CI to fail.
+
+This turns the sprint from a manually curated reminder into a reproducible projection of the canonical locator shards. Priority remains a human source-critical decision, but eligibility is machine-checked.
+
+At the current cut the complete direct-primary conversion set contains **seven fragments**: two P1, two P2, two P3 and one P4.
+
+## Retrieval status at this cut
+
+The first source-access pass did not justify any new freeze promotion.
+
+For `PDHD-F000034` and `PDHD-F000036`, BVMC resolves the exact 15 September 1904 issue and the direct first-page image candidate, but the available automated route does not expose the high-resolution page/PDF in a form that permits auditable visual boundary confirmation. The attempt is versioned as `PDHD-RA000005` in `data/samples/retrieval_attempts.csv`.
+
+For `PDHD-F000050` and `PDHD-F000052`, Internet Archive resolves the primary tomo II object and primary OCR narrows the December 1921 issue opening, including the director/office region and a December 1921 imprint. Because the corresponding page image/reader leaf has not yet been visually inspected, the OCR evidence remains retrieval evidence rather than a fixed coder span. The attempt is versioned as `PDHD-RA000006`.
+
+The same principle governs HNDM retrieval. Resolving an issue and a sequential page identifier is useful provenance, but it does not count as visual inspection of the historical page when the viewer does not expose readable page content in the research environment.
+
 ## Excluded from fast promotion
 
 High-value L3 and reproduced-facsimile candidates remain in their existing locator shards. Examples include page pointers for *La Enseñanza Primaria*, *El papel social del maestro rural*, *El sistema de escuelas rurales en México*, the 1934 SEP memory and reproduced pages of the 1923 mission project. They must first be checked against the registered primary object.
