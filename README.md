@@ -27,7 +27,7 @@ Corte de referencia: **5 de septiembre de 2026**.
 | Conflictos cronológicos preservados | **5** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
-| Slots con localizador candidato/resuelto | **78 / 96** |
+| Slots con localizador candidato/resuelto | **79 / 96** |
 | Fragmentos completamente congelados | **15 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
@@ -141,7 +141,7 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **78/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **15/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **79/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **15/96** fragmentos.
 
 La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, se añadieron localizadores para los números 2 y 4 de 1921 y para el tomo II, núm. 3. Entre ellos figuran José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Rafael Ramos Pedrueza, *Historia de México*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Todos los punteros secundarios permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
 
@@ -154,6 +154,8 @@ Internet Archive aporta además lectores estables para la apertura de los númer
 *La Enseñanza Primaria* incorpora ahora `PDHD-F000025`: una publicación de la Universidad Pedagógica Nacional proporciona la cita exacta de Ponciano Rodríguez, *El método en los libros de texto*, tomo I, núm. 11, pp. 167–168. La identidad del número y la fecha de 1 de diciembre de 1901 están respaldadas por investigación histórica independiente. El rango de páginas queda resuelto para el slot A, pero el pasaje permanece como `locator_candidate` hasta inspeccionar directamente la página histórica y fijar el span del codificador.
 
 El mismo número incorpora `PDHD-F000027`: una tesis de la UNAM localiza Gregorio Torres Quintero, *Los ejercicios físicos en la escuela*, pp. 161–163. El rango resuelve el slot C como puntero secundario exacto sobre escolarización corporal y educación física; sigue pendiente el cotejo de la página histórica en HNDM antes del congelamiento.
+
+*El Periquito* incorpora `PDHD-F000003`: una monografía académica de la Biblioteca Nacional de México cita el texto homónimo en el número 4, fechado el 6 de noviembre de 1870, p. 2, dentro de su análisis de la simbolización animal en la prensa. El dato coincide exactamente con el objeto piloto de Campeche y resuelve el slot C como puntero secundario de página para crítica de fuentes. La página histórica del volumen encuadernado en HNDM continúa pendiente de inspección, por lo que el fragmento no está congelado.
 
 `PDHD-F000050`, correspondiente a *El Maestro*, tomo II, núm. 3, utiliza ahora el OCR primario derivado del escaneo de Internet Archive para localizar la región editorial/profesional de apertura. El OCR expone título, directores, oficinas y material de contacto y, en la apertura del mismo número, un pie temporal de diciembre de 1921. Se conserva como `direct_primary_ocr_region_image_check_pending`: sirve para recuperación y crítica cronológica, pero no equivale a una lectura verificada de la imagen ni a un span fijo.
 
@@ -187,13 +189,15 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 `validate_repository.py` controla el catálogo base. `validate_fragment_shards.py` trata todos los shards de localización y congelamiento como una sola unión lógica: detecta duplicados entre archivos, verifica documento y slot contra el manifiesto determinista, exige límites fijos para todo fragmento `frozen` y cruza cada registro congelado con su correspondiente localizador. La misma validación exige que `fragment_gap_queue_0_1.csv` sea exactamente el complemento de los IDs localizados, de modo que un slot no pueda aparecer simultáneamente como resuelto y pendiente.
 
-`pilot_content_leads.csv` conserva hallazgos de contenido antes de su promoción a página. `validate_content_leads.py` distingue entre contenido verificado a nivel de número, punteros secundarios de página verificados y material aún no apto para convertirse en localizador. Esto evita colapsar la cadena `issue identity -> content lead -> page locator -> frozen fragment`.
+`pilot_content_leads.csv` conserva hallazgos de contenido antes de su promoción a página. Toda fila promovida declara ahora un `promoted_fragment_id`; `validate_content_leads.py` comprueba que ese fragmento exista en los shards, corresponda al mismo documento y no sea reclamado por otro lead. La cadena queda explícita como `issue identity -> content lead -> promoted_fragment_id -> page locator -> frozen fragment`.
+
+`retrieval_attempts.csv` conserva intentos de acceso primario que todavía no producen un localizador o un span congelado. `validate_retrieval_attempts.py` verifica IDs, correspondencia documento-fragmento, URLs, estados de bloqueo y rutas siguientes. Esto permite registrar resultados negativos —por ejemplo, un PDF exacto demasiado grande para el interfaz automatizado o un volumen HNDM sin page IDs recuperados— sin confundirlos con evidencia analítica.
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **78/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **63 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **15/96** congelados demuestran el pipeline a través de HNDM y BVMC y cubren ya prensa pedagógica de 1888, 1891 y 1907, además de *El Maestro* en 1921.
+La selección documental ya está lista. **79/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **64 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **15/96** congelados demuestran el pipeline a través de HNDM y BVMC y cubren ya prensa pedagógica de 1888, 1891 y 1907, además de *El Maestro* en 1921.
 
-Quedan **18 slots sin localizador**. El umbral operativo 80/96 está a dos slots, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles.
+Quedan **17 slots sin localizador**. El umbral operativo 80/96 está a un solo slot, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles.
 
 Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
