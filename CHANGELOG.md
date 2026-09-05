@@ -8,18 +8,23 @@ All notable changes to PDHD are documented here.
 
 - Deterministic 24-document / 96-fragment reliability pilot with auditable locator and frozen-fragment shards.
 - Exact-page and primary-OCR locator evidence for the active pilot, including `PDHD-F000027` and `PDHD-F000050`.
+- Exact secondary page localization of `PDHD-F000003` in *El Periquito*, núm. 4, 6 November 1870, p. 2, supported by a Biblioteca Nacional de México scholarly monograph.
 - Explicit chronology-conflict registry preserving unresolved publication-date discrepancies instead of silently normalizing them.
 - `scripts/validate_status_counts.py` to make fragment CSVs the source of truth for public pilot counts.
 - CI enforcement that README and `docs/PDHD_U1_COHORT_STATUS.md` remain synchronized with locator, frozen and gap-queue data.
-- Explicit `promoted_fragment_id` crosswalks in `pilot_content_leads.csv`, including the newly registered Gregorio Torres Quintero lead for `PDHD-F000027`.
+- Explicit `promoted_fragment_id` crosswalks in `pilot_content_leads.csv`, including the newly registered Gregorio Torres Quintero lead for `PDHD-F000027` and the *El Periquito* lead for `PDHD-F000003`.
 - CI validation that every promoted content lead resolves to an existing locator fragment in the same pilot document and that no two leads claim the same promoted fragment.
+- `data/samples/retrieval_attempts.csv` for structured provenance of primary-source access attempts that remain blocked or incomplete.
+- `scripts/validate_retrieval_attempts.py` and CI enforcement of retrieval-attempt IDs, document/fragment relationships, object URLs, blocker states and next recovery routes.
 
 ### Changed
 
-- PDHD-U1 public status advanced to **78/96 localized**, **15/96 frozen** and **18/96 unlocated**.
+- PDHD-U1 public status advanced to **79/96 localized**, **15/96 frozen** and **17/96 unlocated**.
 - README and cohort-status documentation now distinguish primary OCR retrieval evidence from image-verified fixed spans.
-- High-value unresolved routes were refined for the 37-page HNDM issue of *Revista de la Instrucción Pública Mexicana* (15 March 1896), the exact BVMC PDF of *La Enseñanza Moderna* (1 July 1907), and HathiTrust item `txu.059173025410517` for *El papel social del maestro rural*.
+- The evidence-promotion chain is now explicit: `issue identity -> content lead -> promoted_fragment_id -> page locator -> frozen fragment -> human annotation`.
+- High-value unresolved routes were refined for the 37-page HNDM issue of *Revista de la Instrucción Pública Mexicana* (15 March 1896), the exact BVMC PDF of *La Enseñanza Moderna* (1 July 1907), HathiTrust item `txu.059173025410517` for *El papel social del maestro rural*, and the HNDM bound-volume route for *El Periquito*.
 - The stale `PDHD-PL000001` state was corrected: *El método en los libros de texto* is page-resolved at pp. 167–168 and explicitly promoted to `PDHD-F000025` rather than remaining incorrectly marked `page_unresolved`.
+- Negative access results are now retained as reproducible retrieval provenance rather than being lost or treated as page evidence.
 - The project continues to prioritize stronger frozen-fragment evidence over reaching localization thresholds with weak secondary references.
 
 ## [0.1.0-dev] - 2026-09-03
