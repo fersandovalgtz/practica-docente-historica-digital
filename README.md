@@ -27,7 +27,7 @@ Corte de referencia: **5 de septiembre de 2026**.
 | Conflictos cronológicos preservados | **5** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
-| Slots con localizador candidato/resuelto | **79 / 96** |
+| Slots con localizador candidato/resuelto | **80 / 96** |
 | Fragmentos completamente congelados | **15 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
@@ -141,13 +141,13 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **79/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **15/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **80/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **15/96** fragmentos.
 
 La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, se añadieron localizadores para los números 2 y 4 de 1921 y para el tomo II, núm. 3. Entre ellos figuran José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Rafael Ramos Pedrueza, *Historia de México*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Todos los punteros secundarios permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
 
 Internet Archive aporta además lectores estables para la apertura de los números seleccionados. Esos targets se usan como candidatos de control y recuperación, no como sustitutos de la inspección de página ni como spans congelados. Una referencia a Dionisio Montelongo Jr., *La ilustración de las masas*, pp. 363–365, se conserva con `issue_number_check_pending` porque la fuente secundaria presenta una numeración incompatible con la secuencia del número de julio; no se fuerza una normalización.
 
-*México intelectual* incorpora ahora dos nuevos punteros exactos en el tomo I. La p. 5 se usa para el slot A por la formulación programática de difusión de métodos, sistemas y enseñanza pedagógica moderna; la p. 6 se reserva como control administrativo por contener precios e instrucciones de correspondencia. Ambos siguen como punteros secundarios pendientes de cotejo contra la página histórica.
+*México intelectual* tiene ya sus cuatro slots localizados en el tomo I. La p. 5 se usa para el slot A por la formulación programática de difusión de métodos, sistemas y enseñanza pedagógica moderna; la p. 2 alimenta el componente profesional/institucional; la p. 6 se reserva como control administrativo por contener precios e instrucciones de correspondencia; y `PDHD-F000011` resuelve ahora el slot C con *La Escuela Normal de Jalapa*, pp. 26–27. Este último puntero procede de un volumen de historia de la educación editado por la Sociedad Mexicana de Historia de la Educación y evaluado por pares. Los cuatro permanecen sujetos al estatus de evidencia individual de sus respectivos shards; el nuevo slot C sigue pendiente de cotejo contra la página histórica.
 
 *La Enseñanza Normal* incorpora dos targets de primera página del número inaugural del 15 de septiembre de 1904, uno para la región profesional/editorial y otro para administración/suscripción. Además, el slot A apunta ahora a la p. 12, donde una tesis de la UNAM localiza una prescripción de Leopoldo Kiel sobre práctica con grupos de niños, observación y comprobación de procedimientos de enseñanza. Los tres permanecen pendientes de inspección directa del PDF histórico de BVMC.
 
@@ -195,9 +195,9 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **79/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **64 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **15/96** congelados demuestran el pipeline a través de HNDM y BVMC y cubren ya prensa pedagógica de 1888, 1891 y 1907, además de *El Maestro* en 1921.
+La selección documental ya está lista. **80/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **65 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **15/96** congelados demuestran el pipeline a través de HNDM y BVMC y cubren ya prensa pedagógica de 1888, 1891 y 1907, además de *El Maestro* en 1921.
 
-Quedan **17 slots sin localizador**. El umbral operativo 80/96 está a un solo slot, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles.
+Quedan **16 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **84/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles.
 
 Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
