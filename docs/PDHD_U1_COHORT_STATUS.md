@@ -53,7 +53,7 @@ The union of all `fragment_locator_progress*.csv` shards contains **80/96** pilo
 
 The current direct-primary freeze-conversion queue contains three fragments: `PDHD-F000044`, `PDHD-F000048` and `PDHD-F000060`. The first two are *El Maestro* issue-opening control candidates with stable Internet Archive reader targets. The third is the `PR5` Google Books title-page control for *El esfuerzo educativo en México*. None is frozen until its exact primary span and access decisions are fixed.
 
-The locator union contains **80/96** pilot slots and remains the source-of-truth layer for progress accounting. Localization does not imply that the historical page has been validated or that public transcription is permitted.
+The locator union currently holds 80 of 96 pilot slots and remains the source-of-truth layer for progress accounting. Localization does not imply that the historical page has been validated or that public transcription is permitted.
 
 ## Other high-value pending blocks
 
