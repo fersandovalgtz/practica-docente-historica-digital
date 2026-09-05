@@ -30,7 +30,9 @@ The machine-readable queue is `data/samples/freeze_conversion_queue_0_1.csv`.
 
 ### P2 — El Maestro, tomo II, núm. 3
 
-`PDHD-F000050` and `PDHD-F000052` share the Internet Archive primary object. The professional/editorial target is already narrowed by direct primary OCR, while the control target has a stable reader-page locator. Both require page-image verification and exact structural boundaries. The registered chronology conflict must remain explicit; freezing a span does not authorize silent normalization of the object's date.
+`PDHD-F000050` and `PDHD-F000052` now share a direct primary-OCR anchor specific to the December issue opening rather than the earlier generic `/page/1` reader route. Internet Archive's full-text derivative shows the preceding number reaching printed p. 224; the next front matter opens *EL MAESTRO / Revista de Cultura Nacional*, names Enrique Monteverde and Agustín Loera y Chávez, gives the Gante 3 office/registration block and sumario, and is followed by the SEP/Talleres Gráficos imprint marked `MEXICO, DICIEMBRE DE 1921`.
+
+This makes P2 the most tightly localized unresolved pair in the sprint. The remaining gate is no longer issue identification: it is mapping this post-p.224 OCR region to the corresponding scan leaf, visually checking the page image and fixing separate B and D boundaries. The registered chronology conflict remains explicit because primary OCR, while stronger than a secondary citation, is still below image-verified imprint evidence in PDHD's hierarchy.
 
 ### P3 — El Maestro, additional issue-opening controls
 
@@ -48,15 +50,17 @@ This turns the sprint from a manually curated reminder into a reproducible proje
 
 At the current cut the complete direct-primary conversion set contains **seven fragments**: two P1, two P2, two P3 and one P4. All **7/7** now have structured retrieval provenance.
 
+`scripts/prepare_freeze_review.py` provides the deterministic handoff from this queue to manual primary-page review. It copies stable IDs, source locators, priority and slot roles without pre-asserting verification: every new review record begins with `source_image_verified=no` and `decision=pending_primary_visual_review`. CI checks that all seven current candidates can be prepared reproducibly.
+
 ## Retrieval status at this cut
 
-The source-access passes did not justify any new freeze promotion. This is an evidentiary result rather than a failed sprint: all direct-primary candidates now have a documented recovery route and none has been promoted without the required visual gate.
+The source-access passes have not justified any new freeze promotion. This is an evidentiary result rather than a failed sprint: all direct-primary candidates have a documented recovery route and none has been promoted without the required visual gate.
 
 For `PDHD-F000034` and `PDHD-F000036`, BVMC resolves the exact 15 September 1904 issue and the direct first-page image candidate. The exact issue PDF is also resolved, but its roughly 9.5 MB response cannot be rendered through the current automated research route. A UNAM scholarly facsimile independently reproduces the inaugural cover and first-page roster/programmatic matter, while BVMC's own catalog metadata confirms Alberto Correa's directorship, editorial/administrative roles, publication cadence and subscription conditions. This triangulation materially strengthens retrieval confidence but still does not satisfy the project's explicit `visible_reproduced_facsimile != primary_object_crosscheck` rule. The attempt remains `PDHD-RA000005`.
 
-For `PDHD-F000050` and `PDHD-F000052`, Internet Archive resolves the primary tomo II object and primary OCR narrows the December 1921 issue opening, including the director/office region and a December 1921 imprint. Because the corresponding page image/reader leaf has not yet been visually inspected, the OCR evidence remains retrieval evidence rather than a fixed coder span. The attempt is `PDHD-RA000006`.
+For `PDHD-F000050` and `PDHD-F000052`, `PDHD-RA000006` now records the exact post-p.224 OCR sequence described above. This supersedes the weaker generic reader-page route previously attached to the control slot and ties both P2 candidates to the same December issue opening. Internet Archive also exposes derivative links for OCR page index and page-number JSON, but those derivative downloads currently return cache misses in the research environment; the full PDF likewise redirects through a delivery host that cannot be opened here. The next defensible action therefore remains leaf mapping followed by direct visual inspection, not inference from OCR.
 
-`PDHD-F000044` and `PDHD-F000048` now have explicit retrieval attempts `PDHD-RA000007` and `PDHD-RA000008`. Peer-reviewed *Signos Históricos* independently links the exact Internet Archive reader targets to *El Maestro* núm. 2 and núm. 4 of 1921. This independently secures issue identity and reader routing, but the control spans remain unfrozen because a scholarly link to a reader leaf is not equivalent to visual inspection of that leaf.
+`PDHD-F000044` and `PDHD-F000048` have explicit retrieval attempts `PDHD-RA000007` and `PDHD-RA000008`. Peer-reviewed *Signos Históricos* independently links the exact Internet Archive reader targets to *El Maestro* núm. 2 and núm. 4 of 1921. This independently secures issue identity and reader routing, but the control spans remain unfrozen because a scholarly link to a reader leaf is not equivalent to visual inspection of that leaf.
 
 `PDHD-F000060` is covered by `PDHD-RA000009`. Google Books resolves the selected 1928 volume and exposes `Title Page` as a selected-page route tied to `PR5`; its record identifies the University of California scan and the 1928 SEP publication. The page-specific route resolves, but the current environment returns cache misses for the plain-text and downloadable-PDF routes and does not expose an auditable page image. The title-page control therefore remains correctly at `locator_candidate`.
 
