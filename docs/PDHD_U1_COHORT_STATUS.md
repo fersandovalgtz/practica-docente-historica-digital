@@ -13,11 +13,11 @@ Reference cut: **2026-09-05**
 | Registered chronology conflicts | 5 | preserved; one resolved by primary-image evidence |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **82 / 96** | 85.4% of reliability slots localized |
-| Fully frozen fragments | **28 / 96** | page-resolved conversion phase active |
+| Fragment locator rows resolved/candidate | **83 / 96** | 86.5% of reliability slots localized |
+| Fully frozen fragments | **29 / 96** | page-resolved conversion phase active |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **82 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Twenty-eight units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **83 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Twenty-nine units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -25,11 +25,11 @@ The first reliability corpus remains frozen in `data/samples/pilot_document_sele
 
 ## Frozen-fragment evidence
 
-Four selected documents now have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
+Six selected documents now have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
 
 `PDHD-D000003`, *La Enseñanza Primaria*, tomo I, núm. 11, 1 December 1901, now contributes a complete four-slot batch from a directly retrieved Google Books primary PDF whose issue identity is independently matched by the UNAM/HNDM record. `PDHD-F000025` fixes the explicit-method prescription on printed p. 168. `PDHD-F000026` fixes the discrete masthead role identifying Gregorio Torres Quintero as Jefe de Redacción on p. 161. `PDHD-F000027` fixes the complete source-critical conclusion of *Los ejercicios físicos en la escuela* on p. 163. `PDHD-F000028` fixes the separate tomo/date/number cartouche on p. 161 as a deliberately non-analytical control. The primary PDF maps those printed pages to physical PDF pages 182, 175, 177 and 175 respectively.
 
-`PDHD-D000031`, *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, contributes three frozen units from direct BVMC image inspection: `PDHD-F000038`–`PDHD-F000040`.
+`PDHD-D000031`, *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, now contributes a complete four-slot batch. `PDHD-F000037` fixes a single autonomous teaching-prescription paragraph on printed p. 2 inside *Cómo debe entenderse el método en pedagogía*. The exact nine-page BVMC PDF was recovered through an isolated Actions run and inspected directly. `PDHD-F000038`–`PDHD-F000040` retain the professional/editorial, programmatic source-critical and administrative-control regions on p. 1.
 
 `PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, now contributes a complete four-slot batch from the exact BVMC primary PDF. `PDHD-F000033` fixes an explicit pedagogical-act paragraph on printed p. 12 in Leopoldo Kiel's *Conferencias Pedagógicas*. `PDHD-F000034` fixes the professional/editorial block on p. 1. `PDHD-F000035` fixes the opening of *15 de Septiembre — Fecha grata* on p. 4 as a source-critical political-educational framing of school, education, liberty and progress, ending before the article shifts toward military commemoration. `PDHD-F000036` fixes the publication-cadence control on p. 1. All four boundaries come from direct inspection of the primary PDF.
 
@@ -49,11 +49,11 @@ The `PDHD-F000033` recovery established the post-sprint exact-pointer workflow: 
 
 ## Remaining localization work
 
-The union of all `fragment_locator_progress*.csv` shards contains **82/96** pilot slots. Twenty-eight are frozen. The remaining **54** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **14 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **83/96** pilot slots. Twenty-nine are frozen. The remaining **54** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **13 slots remain without a locator.**
 
 The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. The active phase now converts strong page-resolved candidates through direct historical-object inspection and opportunistically fills missing deterministic slots when the same inspected page provides structurally distinct evidence.
 
-With `PDHD-D000003` and `PDHD-D000011` complete, the strongest near-term single-slot completion target is `PDHD-F000037` inside the exact BVMC *La Enseñanza Moderna* issue. Other high-value candidates include page-resolved *El Maestro*, *México Intelectual* and *La Escuela Moderna* fragments whose primary objects are already identified.
+With `PDHD-D000003`, `PDHD-D000011` and `PDHD-D000031` complete, the next priority shifts from single-slot BVMC completion to higher-yield unresolved batches. Strong candidates include `PDHD-D000058` (*La Escuela Moderna*), `PDHD-D000006` (*Revista de Instrucción Pública Mexicana*) and page-resolved *El Maestro* or *México Intelectual* fragments whose primary objects are already identified.
 
 ## Evidence rules retained
 
@@ -81,13 +81,13 @@ Mandatory distinctions remain:
 
 `scripts/validate_repository.py` validates the base catalog. `scripts/validate_fragment_shards.py` validates the logical union of locator/frozen shards, fixed-boundary requirements, deterministic document/slot identity and the exact complement represented by the gap queue. `validate_freeze_conversion_queue.py` requires the direct-primary queue to equal the complete eligible set; an empty queue is valid only when that canonical eligible set is also empty.
 
-`validate_retrieval_attempts.py` preserves both blocked attempts and completed recovery routes. `PDHD-RA000010` records the BVMC p. 12 recovery for `PDHD-F000033`. `PDHD-RA000011` records the complete *La Enseñanza Primaria* primary recovery and physical-to-printed page mapping for `PDHD-F000025`–`PDHD-F000028`. `PDHD-RA000012` records the p. 4 BVMC primary inspection that completes `PDHD-D000011`. `validate_status_counts.py` keeps README and this cohort-status document synchronized with CSV source-of-truth counts.
+`validate_retrieval_attempts.py` preserves both blocked attempts and completed recovery routes. `PDHD-RA000010` records the BVMC p. 12 recovery for `PDHD-F000033`. `PDHD-RA000011` records the complete *La Enseñanza Primaria* primary recovery and physical-to-printed page mapping for `PDHD-F000025`–`PDHD-F000028`. `PDHD-RA000012` records the p. 4 BVMC primary inspection that completes `PDHD-D000011`. `PDHD-RA000001` now records the successful recovery of the exact *La Enseñanza Moderna* PDF and the p. 2 inspection that completes `PDHD-D000031`. `validate_status_counts.py` keeps README and this cohort-status document synchronized with CSV source-of-truth counts.
 
 ## What remains before human coding
 
 Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.
 
-The current 28 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with an alternate primary scan. They do not justify coder labeling before the package is complete.
+The current 29 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with an alternate primary scan. They do not justify coder labeling before the package is complete.
 
 ## Rights constraint
 
@@ -97,4 +97,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The project is now at **82/96 localized** and **28/96 frozen**. The direct-primary sprint established the move from 15 to 22 frozen units; post-sprint exact-page recovery has added six more frozen units while the *La Enseñanza Primaria* masthead inspection also reduced the unlocalized complement from 16 to 14. The next quantitative localization checkpoint remains **84/96**, while the stronger scientific priority is converting high-quality existing page pointers and completing near-finished document batches without weakening the evidence hierarchy.
+The project is now at **83/96 localized** and **29/96 frozen**. The direct-primary sprint established the move from 15 to 22 frozen units; post-sprint exact-page recovery has added six more frozen units while the *La Enseñanza Primaria* masthead inspection also reduced the unlocalized complement from 16 to 13. The next quantitative localization checkpoint remains **84/96**, while the stronger scientific priority is converting high-quality existing page pointers and completing near-finished document batches without weakening the evidence hierarchy.

@@ -4,7 +4,7 @@ Reference cut: **2026-09-05**
 
 ## Objective
 
-PDHD-U1 is now at **82/96 localized slots** and **28/96 frozen**. The dedicated direct-primary sprint itself closed at 22/96; the post-sprint exact-page phase has since added `PDHD-F000033`, the complete four-slot `PDHD-D000003` batch and `PDHD-F000035`, which completes `PDHD-D000011`, without weakening the evidence hierarchy.
+PDHD-U1 is now at **83/96 localized slots** and **29/96 frozen**. The dedicated direct-primary sprint itself closed at 22/96; the post-sprint exact-page phase has since added `PDHD-F000033`, the complete four-slot `PDHD-D000003` batch and `PDHD-F000035`, which completes `PDHD-D000011`, without weakening the evidence hierarchy.
 
 `locator_found != fragment_frozen`
 
@@ -74,6 +74,12 @@ The already recovered twenty-page BVMC primary PDF also resolves `PDHD-F000035` 
 
 This conversion completes `PDHD-D000011` at 4/4. It uses `not_transcribed`, `metadata_only` and `BVMC_direct_primary_pdf_inspection`, with no page image or historical transcription committed. The same recovered primary object can therefore support multiple deterministic slots only when each slot has a distinct, explicitly bounded region.
 
+## Fourth post-sprint conversion — complete La Enseñanza Moderna batch
+
+An isolated recovery run downloaded the exact nine-page BVMC PDF for *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, 1 July 1907, clearing the earlier delivery blocker recorded in `PDHD-RA000001`. Direct inspection of printed p. 2 identifies a single autonomous paragraph inside *Cómo debe entenderse el método en pedagogía* that explicitly addresses teaching children, external direction, communication of already known truths and use of investigation. The span ends before the following paragraph returns to defining didactics.
+
+`PDHD-F000037` is frozen on that paragraph as slot A, while `PDHD-F000038`–`PDHD-F000040` retain the three p. 1 spans already fixed. This completes `PDHD-D000031` at 4/4 and removes `PDHD-F000037` from the gap queue.
+
 ## Evidence policy retained
 
 No conversion wave promotes a secondary facsimile, generic reader target, table-of-contents entry or OCR-only region as a frozen span. The mandatory distinctions remain:
@@ -92,8 +98,8 @@ No conversion wave promotes a secondary facsimile, generic reader target, table-
 
 ## Result and next phase
 
-The project moves **15/96 -> 17/96 -> 19/96 -> 21/96 -> 22/96 -> 23/96 -> 27/96 -> 28/96 frozen**. Localization moves from **80/96 to 82/96** because primary inspection of the *La Enseñanza Primaria* masthead resolves two previously missing deterministic slots. Localized-but-not-frozen slots are now **54**, and **14** slots remain without a locator.
+The project moves **15/96 -> 17/96 -> 19/96 -> 21/96 -> 22/96 -> 23/96 -> 27/96 -> 28/96 -> 29/96 frozen**. Localization moves from **80/96 to 83/96**: two new slots came from the *La Enseñanza Primaria* masthead and `PDHD-F000037` moves directly from gap to frozen after primary inspection. Localized-but-not-frozen slots remain **54**, and **13** slots remain without a locator.
 
-The next scientific priority is the comparable single-slot completion opportunity `PDHD-F000037` in the exact *La Enseñanza Moderna* BVMC issue. After that, page-resolved *El Maestro*, *México Intelectual* and *La Escuela Moderna* targets should be prioritized by primary-object tractability and expected batch completion value.
+The next scientific priority shifts to higher-yield incomplete documents. `PDHD-D000058` (*La Escuela Moderna*) and `PDHD-D000006` (*Revista de Instrucción Pública Mexicana*) each combine an identified primary object with multiple unresolved deterministic slots; page-resolved *El Maestro* and *México Intelectual* targets remain secondary priorities according to retrieval tractability and batch-completion value.
 
 Human annotation remains downstream of the complete 96-fragment freeze package.

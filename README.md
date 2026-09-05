@@ -27,8 +27,8 @@ Corte de referencia: **5 de septiembre de 2026**.
 | Conflictos cronológicos preservados | **5** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
-| Slots con localizador candidato/resuelto | **82 / 96** |
-| Fragmentos completamente congelados | **28 / 96** |
+| Slots con localizador candidato/resuelto | **83 / 96** |
+| Fragmentos completamente congelados | **29 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -41,9 +41,9 @@ PDHD incorporó objetos contemporáneos de la SEP con identidad primaria verific
 
 El proyecto ya tiene tres lotes completos de **fragment freezing**. `PDHD-F000013`–`PDHD-F000016`, derivados de una página directamente inspeccionada de *El Escolar Mexicano* del 2 de septiembre de 1888; `PDHD-F000017`–`PDHD-F000020`, derivados de *La Enseñanza Objetiva* del 12 de diciembre de 1891; y `PDHD-F000053`–`PDHD-F000056`, derivados del primer número de *El Maestro. Revista de Cultura Nacional* de 1921, tienen límites estructurales fijos.
 
-A esos doce fragmentos se suman tres unidades directamente inspeccionadas de *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, del 1 de julio de 1907: `PDHD-F000038`–`PDHD-F000040`. La imagen primaria de BVMC permite fijar el bloque editorial/profesional, la región programática de apertura y un bloque administrativo de control. El slot A de ese documento (`PDHD-F000037`) sigue pendiente porque todavía no se ha inspeccionado un pasaje de acto pedagógico explícito con resolución suficiente.
+*La Enseñanza Moderna*, tomo I, segunda época, núm. 1, del 1 de julio de 1907, tiene ya sus cuatro slots congelados. `PDHD-F000037` fija en la p. 2 un párrafo autónomo de *Cómo debe entenderse el método en pedagogía* que prescribe para la enseñanza de los niños dirección exterior, comunicación de conocimientos ya sabidos y uso detallado de la investigación. `PDHD-F000038`–`PDHD-F000040` conservan el bloque editorial/profesional, la región programática de apertura y el control administrativo de la primera página. El PDF primario exacto de BVMC fue recuperado y sus nueve páginas fueron renderizadas antes de fijar el nuevo span.
 
-El número inaugural de *La Enseñanza Normal*, 15 de septiembre de 1904, aporta ahora tres unidades congeladas desde el PDF primario de BVMC. `PDHD-F000034` fija el bloque profesional/editorial de primera página y `PDHD-F000036` fija la línea autónoma de periodicidad como control administrativo. `PDHD-F000033` fija en la p. 12 un párrafo de *Conferencias Pedagógicas* de Leopoldo Kiel que prescribe práctica sostenida con grupos de niños, observación, experimentación y comprobación de los procedimientos de enseñanza. La página histórica fue recuperada e inspeccionada directamente antes de fijar el span.
+El número inaugural de *La Enseñanza Normal*, 15 de septiembre de 1904, aporta un lote completo de cuatro unidades congeladas desde el PDF primario de BVMC. `PDHD-F000033` fija en la p. 12 la prescripción pedagógica de Leopoldo Kiel; `PDHD-F000034` fija el bloque profesional/editorial de primera página; `PDHD-F000035` fija en la p. 4 la apertura político-educativa de *15 de Septiembre — Fecha grata*; y `PDHD-F000036` fija la línea autónoma de periodicidad como control administrativo. Cada span fue delimitado después de inspeccionar directamente la página histórica.
 
 *El Maestro* suma ahora cuatro congelamientos adicionales a su primer lote completo. En tomo II, núm. 3, `PDHD-F000050` fija en `n237` el bloque institucional de la Secretaría de Educación Pública y Talleres Gráficos de la Nación, mientras `PDHD-F000052` fija en `n236` el cartucho bibliográfico de portada como control. La portada identifica explícitamente tomo II, número III, diciembre de 1921 y la imprenta independiente confirma México, diciembre de 1921. Para los números 2 y 4 de 1921, `PDHD-F000044` y `PDHD-F000048` quedan congelados como controles mediante los cartuchos bibliográficos de las portadas primarias `n104` y `n4`, respectivamente.
 
@@ -147,7 +147,7 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **82/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **28/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **83/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **29/96** fragmentos.
 
 La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, el tomo II, núm. 3 ya aporta dos regiones congeladas y los números 2 y 4 de 1921 aportan controles de portada directamente inspeccionados. Entre los targets analíticos pendientes figuran José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Rafael Ramos Pedrueza, *Historia de México*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Los punteros secundarios permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
 
@@ -199,9 +199,9 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **82/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **54 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **23/96** congelados demuestran el pipeline a través de HNDM, BVMC e Internet Archive y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
+La selección documental ya está lista. **83/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **54 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **23/96** congelados demuestran el pipeline a través de HNDM, BVMC e Internet Archive y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
 
-La cola dedicada de conversión directa quedó vacía después de `PDHD-F000060`; el siguiente frente es convertir punteros de página fuertes mediante inspección directa del objeto primario. Quedan **14 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **84/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles. La cola directa queda reducida a `PDHD-F000060`, control `PR5` de *El esfuerzo educativo en México*, todavía pendiente de inspección primaria auditable.
+La cola dedicada de conversión directa quedó vacía después de `PDHD-F000060`; el siguiente frente es convertir punteros de página fuertes mediante inspección directa del objeto primario. Quedan **13 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **84/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles. La cola directa queda reducida a `PDHD-F000060`, control `PR5` de *El esfuerzo educativo en México*, todavía pendiente de inspección primaria auditable.
 
 Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
