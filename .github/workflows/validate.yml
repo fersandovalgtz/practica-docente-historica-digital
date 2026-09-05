@@ -30,6 +30,8 @@ jobs:
         run: python scripts/validate_fragment_shards.py
       - name: Validate direct-primary freeze-conversion queue
         run: python scripts/validate_freeze_conversion_queue.py
+      - name: Check deterministic freeze-review preparation
+        run: python scripts/prepare_freeze_review.py --check
       - name: Validate public pilot status counts
         run: python scripts/validate_status_counts.py
       - name: Self-test annotation agreement calculator
