@@ -195,8 +195,9 @@ def main() -> int:
                 + ", ".join(stale)
             )
 
-    if not rows:
-        ERRORS.append("freeze-conversion queue is empty")
+    # An empty queue is valid only when the canonical eligible set is also empty.
+    # Completeness is enforced by the exact set equality above, so this does not
+    # weaken the validator or permit an eligible candidate to disappear silently.
 
     if ERRORS:
         for error in ERRORS:

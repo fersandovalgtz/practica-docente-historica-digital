@@ -4,9 +4,9 @@ Reference cut: **2026-09-05**
 
 ## Objective
 
-PDHD-U1 remains at **80/96 localized slots** and has advanced from 15 to **21/96 frozen** through three completed direct-primary conversion waves.
+PDHD-U1 remains at **80/96 localized slots** and has advanced from 15 to **22/96 frozen** through four completed direct-primary conversion waves.
 
-The sprint prioritizes conversion of already localized direct-primary candidates into fixed coder spans. No row is promoted merely to improve the metric.
+The sprint converts already localized direct-primary candidates into fixed coder spans. No row is promoted merely to improve the metric.
 
 `locator_found != fragment_frozen`
 
@@ -14,61 +14,47 @@ The sprint prioritizes conversion of already localized direct-primary candidates
 
 ## Completed P1 — La Enseñanza Normal
 
-`PDHD-F000034` and `PDHD-F000036` crossed the freeze gate after direct inspection of the exact BVMC primary PDF for the inaugural 15 September 1904 issue.
-
-`PDHD-F000034` fixes the first-page professional/editorial block. `PDHD-F000036` fixes the autonomous publication-cadence line as the smallest defensible administrative control span. Both use `not_transcribed`, `metadata_only` and `BVMC_direct_primary_pdf_inspection`.
+`PDHD-F000034` and `PDHD-F000036` crossed the freeze gate after direct inspection of the exact BVMC primary PDF for the inaugural 15 September 1904 issue. The first fixes the professional/editorial block. The second fixes the autonomous publication-cadence line as an administrative control.
 
 ## Completed P2 — El Maestro, tomo II, núm. 3
 
-`PDHD-F000050` and `PDHD-F000052` crossed the freeze gate after the Internet Archive retrieval path was corrected from an erroneous Search Inside mapping to BookReader `n232–n238`.
-
-Direct inspection showed `n236` as the tomo II, núm. III cover dated diciembre de 1921; `n237` as the issue-specific Secretaría de Educación Pública / Talleres Gráficos imprint ending México, diciembre de 1921; and `n238` as the opening of *La inconsciencia de la hora* on printed p. 227.
-
-`PDHD-F000050` is fixed on the institutional imprint in `n237`. `PDHD-F000052` is fixed on the bibliographic title/volume/number/date cartouche in `n236`. Both use `not_transcribed`, `metadata_only` and `Internet_Archive_direct_primary_image_inspection`.
-
-The same image evidence resolves `PDHD-X000005` to canonical **1921-12**, while retaining the secondary 1922 listing as a documented discrepancy.
+`PDHD-F000050` and `PDHD-F000052` crossed the gate after the Internet Archive route was corrected to BookReader `n232–n238`. Direct inspection fixed the institutional imprint in `n237` and the bibliographic cover cartouche in `n236`. The same evidence resolved `PDHD-X000005` to canonical **1921-12**, preserving the secondary 1922 discrepancy.
 
 ## Completed P3 — El Maestro issue-opening controls
 
-`PDHD-F000044` and `PDHD-F000048` have now crossed the freeze gate as deliberately non-analytical control spans.
+`PDHD-F000044` and `PDHD-F000048` crossed the gate after one-day primary-image retrieval around the registered reader anchors. The issue-II control is fixed on the `n104` bibliographic cartouche. The issue-IV control is fixed on the `n4` cartouche. Cover illustrations are excluded.
 
-A one-day GitHub Actions retrieval workflow downloaded short primary-image windows around the registered reader targets. The workflow did not alter scientific state; it only exposed auditable source images for manual inspection.
-
-For `PDHD-F000044`, the registered reader target `n103` led to a window in which `n104` is the unequivocal cover for núm. II of 1921. The frozen boundary is the bibliographic cartouche containing the issue number, Mexico and the Roman-numeral year. The illustration and other cover matter are excluded.
-
-For `PDHD-F000048`, the registered reader target `n6` led to a window in which `n4` is the unequivocal cover for núm. IV of 1921. Again, only the bibliographic cartouche is fixed; the illustration and surrounding cover matter are excluded.
-
-Both use `not_transcribed`, `metadata_only` and `Internet_Archive_direct_primary_image_inspection`. Their registry rows are stored in `frozen_fragments_el_maestro_controls_w18.csv`.
-
-This conversion explicitly demonstrates:
+This conversion demonstrates:
 
 `reader_page_target != analytical_span`
 
-The reader route found the relevant neighborhood; the final frozen span was selected only after visual inspection of the primary image.
+The reader route identified a neighborhood; only direct primary-image inspection fixed the final span.
 
-## Current direct-primary queue
+## Completed P4 — El esfuerzo educativo en México
 
-The machine-readable queue now contains exactly **one fragment**.
+`PDHD-F000060` now crosses the direct-primary gate.
 
-### P4 — El esfuerzo educativo en México
+The registered Google Books selected-page route identifies `PR5` as the title page of *El esfuerzo educativo en México*, tomo I. Initial browser/cache retrieval was insufficient for image verification. A separate HathiTrust recovery attempt also yielded zero auditable images despite two full-view volume-I copies; this remains a documented delivery failure rather than evidence of source absence.
 
-`PDHD-F000060` points to Google Books page `PR5`. The title-page control remains a candidate until the page itself can be directly inspected and its access/transcription decisions are fixed.
+A dedicated Google Books workflow then fetched the live `PR5` HTML, resolved the current public PDF download link, downloaded a valid 29.9 MB PDF and rendered the first twelve PDF pages. Google Books' own page model maps `PR5` to book order 6. In the rendered PDF sequence, after the Google digitization front matter, the same leaf is image 009.
 
-The current blocker is not bibliographic identity. `PDHD-D000066` and `PR5` are already resolved. The blocker is auditable primary-page rendering: the current route has not yet yielded a directly inspectable page image.
+Visual inspection confirms the title, the 1924–1928 governmental framing, J. M. Puig Casauranc, `Tomo I` and the Secretaría de Educación Pública publication line. `PDHD-F000060` is fixed on the bibliographic title-page core from the main title through the volume/publisher lines, excluding handwritten/library annotations and the Google digitization watermark.
 
-## Queue completeness and provenance
+The record uses `not_transcribed`, `metadata_only` and `Google_Books_direct_primary_pdf_image_inspection`. No source image or historical transcription is committed.
 
-`scripts/validate_freeze_conversion_queue.py` requires the queue to equal the complete set of non-frozen locator rows whose canonical `boundary_status` belongs to the direct-primary conversion states. Once a row becomes `fixed`/`frozen`, it must disappear from the queue.
+## Direct-primary queue closed
 
-At this cut the complete direct-primary set is exactly `PDHD-F000060`.
+`data/samples/freeze_conversion_queue_0_1.csv` now contains only its header. `scripts/validate_freeze_conversion_queue.py` requires that this empty queue equal the complete eligible set of non-frozen direct-primary conversion states. If a qualifying locator remains or is introduced later, CI must reject an incorrectly empty queue.
 
-Completed retrieval attempts for P1, P2 and P3 remain in `retrieval_attempts.csv` with `superseded_by_locator`, preserving the technical path without presenting a resolved blocker as current. The P4 attempt remains open until a primary page can be inspected.
+P1 through P4 retrieval provenance remains in `retrieval_attempts.csv`. Completed routes use `superseded_by_locator`; unsuccessful delivery attempts remain described inside their provenance notes rather than being erased.
+
+The empty direct-primary queue does **not** mean the 96-fragment package is complete. It means the near-ready conversion cohort that motivated this sprint has been exhausted under the current evidence-state definitions.
 
 ## Evidence policy retained
 
-None of the three conversion waves weakens PDHD's source-critical distinctions. P1 uses a directly inspected first-party PDF. P2 and P3 use directly inspected primary BookReader page images. No secondary facsimile, generic reader route or OCR-only region is promoted as a frozen span.
+None of the four conversion waves weakens PDHD's source-critical distinctions. P1 uses a directly inspected first-party PDF. P2 and P3 use directly inspected Internet Archive page images. P4 uses a directly retrieved and rendered primary Google Books PDF. No secondary facsimile, generic reader target, table-of-contents entry or OCR-only region is promoted as a frozen span.
 
-The following distinctions remain mandatory:
+The mandatory distinctions remain:
 
 `secondary_page_citation != primary_page_inspection`
 
@@ -82,10 +68,10 @@ The following distinctions remain mandatory:
 
 `fixed_coder_span != validated_annotation`
 
-## Success criterion
+## Sprint result and next phase
 
-The sprint has moved the project **15/96 -> 17/96 -> 19/96 -> 21/96 frozen** while localization remains **80/96**. The number of localized-but-not-frozen slots therefore falls from 65 to 63, then 61, and now to **59**.
+The sprint moves the project **15/96 -> 17/96 -> 19/96 -> 21/96 -> 22/96 frozen** while localization remains **80/96**. Localized-but-not-frozen slots fall from 65 to **58**.
 
-The immediate scientific objective is to resolve `PDHD-F000060` without weakening the primary-image gate. After that, the sprint should pivot from the direct-primary queue to the strongest remaining page-resolved candidates, prioritizing those where primary inspection can convert existing exact page pointers rather than adding weaker discovery evidence.
+The next scientific phase pivots from the direct-primary queue to strong existing page-resolved candidates. Priority should go to cases where an exact secondary or section pointer can be converted through direct inspection of the historical object. `PDHD-F000033` in *La Enseñanza Normal* is a particularly attractive next target because the exact issue and p. 12 pointer are already resolved and the remaining problem is primary PDF page recovery rather than source discovery.
 
 Human annotation remains downstream of the complete 96-fragment freeze package.
