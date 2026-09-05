@@ -42,21 +42,25 @@ The machine-readable queue is `data/samples/freeze_conversion_queue_0_1.csv`.
 
 ## Queue completeness and CI
 
-`scripts/validate_freeze_conversion_queue.py` validates both row-level integrity and queue completeness. The queue must equal the complete set of non-frozen locator rows whose canonical `boundary_status` belongs to the current direct-primary conversion states. An eligible fragment omitted from the queue, a stale row that is no longer eligible or a row already promoted to `frozen` causes CI to fail.
+`scripts/validate_freeze_conversion_queue.py` validates row-level integrity, queue completeness and retrieval-provenance coverage. The queue must equal the complete set of non-frozen locator rows whose canonical `boundary_status` belongs to the current direct-primary conversion states. An eligible fragment omitted from the queue, a stale row that is no longer eligible, a row already promoted to `frozen`, or a queue fragment without a structured entry in `retrieval_attempts.csv` causes CI to fail.
 
-This turns the sprint from a manually curated reminder into a reproducible projection of the canonical locator shards. Priority remains a human source-critical decision, but eligibility is machine-checked.
+This turns the sprint from a manually curated reminder into a reproducible projection of the canonical locator shards. Priority remains a human source-critical decision, but eligibility and retrieval coverage are machine-checked.
 
-At the current cut the complete direct-primary conversion set contains **seven fragments**: two P1, two P2, two P3 and one P4.
+At the current cut the complete direct-primary conversion set contains **seven fragments**: two P1, two P2, two P3 and one P4. All **7/7** now have structured retrieval provenance.
 
 ## Retrieval status at this cut
 
-The first source-access pass did not justify any new freeze promotion.
+The source-access passes did not justify any new freeze promotion. This is an evidentiary result rather than a failed sprint: all direct-primary candidates now have a documented recovery route and none has been promoted without the required visual gate.
 
-For `PDHD-F000034` and `PDHD-F000036`, BVMC resolves the exact 15 September 1904 issue and the direct first-page image candidate, but the available automated route does not expose the high-resolution page/PDF in a form that permits auditable visual boundary confirmation. The attempt is versioned as `PDHD-RA000005` in `data/samples/retrieval_attempts.csv`.
+For `PDHD-F000034` and `PDHD-F000036`, BVMC resolves the exact 15 September 1904 issue and the direct first-page image candidate. The exact issue PDF is also resolved, but its roughly 9.5 MB response cannot be rendered through the current automated research route. A UNAM scholarly facsimile independently reproduces the inaugural cover and first-page roster/programmatic matter, while BVMC's own catalog metadata confirms Alberto Correa's directorship, editorial/administrative roles, publication cadence and subscription conditions. This triangulation materially strengthens retrieval confidence but still does not satisfy the project's explicit `visible_reproduced_facsimile != primary_object_crosscheck` rule. The attempt remains `PDHD-RA000005`.
 
-For `PDHD-F000050` and `PDHD-F000052`, Internet Archive resolves the primary tomo II object and primary OCR narrows the December 1921 issue opening, including the director/office region and a December 1921 imprint. Because the corresponding page image/reader leaf has not yet been visually inspected, the OCR evidence remains retrieval evidence rather than a fixed coder span. The attempt is versioned as `PDHD-RA000006`.
+For `PDHD-F000050` and `PDHD-F000052`, Internet Archive resolves the primary tomo II object and primary OCR narrows the December 1921 issue opening, including the director/office region and a December 1921 imprint. Because the corresponding page image/reader leaf has not yet been visually inspected, the OCR evidence remains retrieval evidence rather than a fixed coder span. The attempt is `PDHD-RA000006`.
 
-The same principle governs HNDM retrieval. Resolving an issue and a sequential page identifier is useful provenance, but it does not count as visual inspection of the historical page when the viewer does not expose readable page content in the research environment.
+`PDHD-F000044` and `PDHD-F000048` now have explicit retrieval attempts `PDHD-RA000007` and `PDHD-RA000008`. Peer-reviewed *Signos Históricos* independently links the exact Internet Archive reader targets to *El Maestro* núm. 2 and núm. 4 of 1921. This independently secures issue identity and reader routing, but the control spans remain unfrozen because a scholarly link to a reader leaf is not equivalent to visual inspection of that leaf.
+
+`PDHD-F000060` is covered by `PDHD-RA000009`. Google Books resolves the selected 1928 volume and exposes `Title Page` as a selected-page route tied to `PR5`; its record identifies the University of California scan and the 1928 SEP publication. The page-specific route resolves, but the current environment returns cache misses for the plain-text and downloadable-PDF routes and does not expose an auditable page image. The title-page control therefore remains correctly at `locator_candidate`.
+
+The same principle governs HNDM retrieval outside the seven-fragment conversion set. Resolving an issue and a sequential page identifier is useful provenance, but it does not count as visual inspection of the historical page when the viewer does not expose readable page content in the research environment.
 
 ## Excluded from fast promotion
 
