@@ -1,7 +1,6 @@
 fragment_id,document_id,slot,priority,retrieval_route,current_blocker,target_evidence
 PDHD-F000001,PDHD-D000065,A,high,HNDM_or_UNAM_issue_page_recovery,"El Periquito no. 4 is object-resolved but no issue-page passage has been inspected",direct_primary_pedagogical_passage
 PDHD-F000002,PDHD-D000065,B,medium,HNDM_or_UNAM_issue_page_recovery,"Publication identity is known but no page-level professional/editorial region is resolved for no. 4",direct_primary_professional_region
-PDHD-F000003,PDHD-D000065,C,high,HNDM_or_UNAM_issue_page_recovery,"HNDM describes the serial's pedagogical mission but does not localize that content inside the selected no. 4",direct_primary_historically_salient_passage
 PDHD-F000004,PDHD-D000065,D,medium,HNDM_or_UNAM_issue_page_recovery,"No page-level administrative or deliberately non-analytical control region has been inspected",direct_primary_control_region
 PDHD-F000005,PDHD-D000064,A,high,HNDM_alias_page_recovery,"UNAM-RI to HNDM crosswalk is resolved; only p. 8 is currently page-resolved and it fills slot B",direct_primary_instructional_or_prescriptive_passage
 PDHD-F000007,PDHD-D000064,C,medium,HNDM_alias_page_recovery,"Selected issue lacks a second page-level content pointer beyond the Liceo de Niñas item",direct_primary_source_criticism_passage
