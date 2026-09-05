@@ -1,0 +1,70 @@
+name: Sync La Enseñanza Normal p4 status
+
+on:
+  push:
+    branches:
+      - freeze-ensenanza-normal-p4
+    paths:
+      - ".github/workflows/sync-ensenanza-normal-p4.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: freeze-ensenanza-normal-p4
+
+      - name: Synchronize README cohort and sprint
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def update(path_name, replacements):
+              path = Path(path_name)
+              text = path.read_text(encoding='utf-8')
+              for old, new in replacements:
+                  count = text.count(old)
+                  if count != 1:
+                      raise SystemExit(f'{path_name}: expected exactly one occurrence of {old!r}; found {count}')
+                  text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+
+          update('README.md', [
+              ('| Fragmentos completamente congelados | **27 / 96** |', '| Fragmentos completamente congelados | **28 / 96** |'),
+              ('su unión contiene **27/96** fragmentos', 'su unión contiene **28/96** fragmentos'),
+              ('**55 localizadores todavía no congelados**', '**54 localizadores todavía no congelados**'),
+              ('''*La Enseñanza Normal* tiene ya congelados `PDHD-F000033`, `PDHD-F000034` y `PDHD-F000036` en el número inaugural del 15 de septiembre de 1904. La inspección del PDF primario de BVMC fija la prescripción de Leopoldo Kiel en p. 12 como acto pedagógico explícito, la región profesional/editorial de p. 1 y una línea administrativa de periodicidad como control. El puntero secundario de la tesis de la UNAM sirvió para recuperación, pero la promoción de `PDHD-F000033` se realizó sólo después de inspeccionar directamente la página histórica.''', '''*La Enseñanza Normal* tiene ya sus cuatro slots congelados en el número inaugural del 15 de septiembre de 1904. `PDHD-F000033` fija la prescripción de Leopoldo Kiel en p. 12 como acto pedagógico explícito; `PDHD-F000034` fija la región profesional/editorial de p. 1; `PDHD-F000035` fija en p. 4 la apertura de *15 de Septiembre — Fecha grata* como pasaje de crítica de fuentes sobre escuela, educación, libertad y progreso; y `PDHD-F000036` fija la línea administrativa de periodicidad como control. Los punteros secundarios sólo orientaron la recuperación: cada promoción se realizó después de inspeccionar directamente el PDF primario de BVMC.''')
+          ])
+
+          update('docs/PDHD_U1_COHORT_STATUS.md', [
+              ('| Fully frozen fragments | **27 / 96** | page-resolved conversion phase active |', '| Fully frozen fragments | **28 / 96** | page-resolved conversion phase active |'),
+              ('Twenty-seven units have crossed the stronger frozen-fragment gate.', 'Twenty-eight units have crossed the stronger frozen-fragment gate.'),
+              ('''`PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, contributes three frozen units from the exact BVMC primary PDF. `PDHD-F000034` fixes the professional/editorial block on p. 1 and `PDHD-F000036` fixes the publication-cadence control on the same page. `PDHD-F000033` fixes an explicit pedagogical-act paragraph on printed p. 12 in Leopoldo Kiel's *Conferencias Pedagógicas*. Direct inspection converted the earlier exact secondary page pointer into a fixed primary span.''', '''`PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, now contributes a complete four-slot batch from the exact BVMC primary PDF. `PDHD-F000033` fixes an explicit pedagogical-act paragraph on printed p. 12 in Leopoldo Kiel's *Conferencias Pedagógicas*. `PDHD-F000034` fixes the professional/editorial block on p. 1. `PDHD-F000035` fixes the opening of *15 de Septiembre — Fecha grata* on p. 4 as a source-critical political-educational framing of school, education, liberty and progress, ending before the article shifts toward military commemoration. `PDHD-F000036` fixes the publication-cadence control on p. 1. All four boundaries come from direct inspection of the primary PDF.'''),
+              ('Twenty-seven are frozen. The remaining **55** located rows', 'Twenty-eight are frozen. The remaining **54** located rows'),
+              ('''With `PDHD-D000003` complete, the strongest near-term targets include `PDHD-F000035` on p. 4 of the already retrieved inaugural *La Enseñanza Normal* PDF, `PDHD-F000037` inside the exact BVMC *La Enseñanza Moderna* issue, and page-resolved *El Maestro* and *México Intelectual* candidates whose primary objects are already identified.''', '''With `PDHD-D000003` and `PDHD-D000011` complete, the strongest near-term single-slot completion target is `PDHD-F000037` inside the exact BVMC *La Enseñanza Moderna* issue. Other high-value candidates include page-resolved *El Maestro*, *México Intelectual* and *La Escuela Moderna* fragments whose primary objects are already identified.'''),
+              ('`PDHD-RA000011` records the complete *La Enseñanza Primaria* primary recovery and physical-to-printed page mapping for `PDHD-F000025`–`PDHD-F000028`.', '`PDHD-RA000011` records the complete *La Enseñanza Primaria* primary recovery and physical-to-printed page mapping for `PDHD-F000025`–`PDHD-F000028`. `PDHD-RA000012` records the p. 4 BVMC primary inspection that completes `PDHD-D000011`.'),
+              ('The current 27 frozen units demonstrate', 'The current 28 frozen units demonstrate'),
+              ('The project is now at **82/96 localized** and **27/96 frozen**.', 'The project is now at **82/96 localized** and **28/96 frozen**.'),
+              ('post-sprint exact-page recovery has added five more frozen units', 'post-sprint exact-page recovery has added six more frozen units')
+          ])
+
+          update('docs/FREEZE_CONVERSION_SPRINT_0_1.md', [
+              ('PDHD-U1 is now at **82/96 localized slots** and **27/96 frozen**. The dedicated direct-primary sprint itself closed at 22/96; the post-sprint exact-page phase has since added `PDHD-F000033` and the complete four-slot `PDHD-D000003` batch without weakening the evidence hierarchy.', 'PDHD-U1 is now at **82/96 localized slots** and **28/96 frozen**. The dedicated direct-primary sprint itself closed at 22/96; the post-sprint exact-page phase has since added `PDHD-F000033`, the complete four-slot `PDHD-D000003` batch and `PDHD-F000035`, which completes `PDHD-D000011`, without weakening the evidence hierarchy.'),
+              ('''## Evidence policy retained''', '''## Third post-sprint conversion — complete La Enseñanza Normal batch\n\nThe already recovered twenty-page BVMC primary PDF also resolves `PDHD-F000035` on printed p. 4. Direct inspection confirms the opening of *15 de Septiembre — Fecha grata* and its source-critical framing of school, national education, liberty and progress. The frozen span begins at the article heading, crosses the column break through the opening paragraph on Libertad y Progreso and stops before the following paragraph changes to military commemoration.\n\nThis conversion completes `PDHD-D000011` at 4/4. It uses `not_transcribed`, `metadata_only` and `BVMC_direct_primary_pdf_inspection`, with no page image or historical transcription committed. The same recovered primary object can therefore support multiple deterministic slots only when each slot has a distinct, explicitly bounded region.\n\n## Evidence policy retained'''),
+              ('The project moves **15/96 -> 17/96 -> 19/96 -> 21/96 -> 22/96 -> 23/96 -> 27/96 frozen**.', 'The project moves **15/96 -> 17/96 -> 19/96 -> 21/96 -> 22/96 -> 23/96 -> 27/96 -> 28/96 frozen**.'),
+              ('Localized-but-not-frozen slots are now **55**, and **14** slots remain without a locator.', 'Localized-but-not-frozen slots are now **54**, and **14** slots remain without a locator.'),
+              ('''The next scientific priority is to complete near-finished batches with already identified primary objects. `PDHD-F000035` on p. 4 of the inaugural *La Enseñanza Normal* PDF is especially attractive because the exact BVMC object has already been retrieved and its remaining slot would complete that document at 4/4. `PDHD-F000037` in the exact *La Enseñanza Moderna* BVMC issue is the next comparable single-slot completion opportunity.''', '''The next scientific priority is the comparable single-slot completion opportunity `PDHD-F000037` in the exact *La Enseñanza Moderna* BVMC issue. After that, page-resolved *El Maestro*, *México Intelectual* and *La Escuela Moderna* targets should be prioritized by primary-object tractability and expected batch completion value.''')
+          ])
+
+      - name: Self-remove and commit status sync
+        run: |
+          rm .github/workflows/sync-ensenanza-normal-p4.yml
+          git config user.name 'PDHD status sync'
+          git config user.email 'actions@users.noreply.github.com'
+          git add README.md docs/PDHD_U1_COHORT_STATUS.md docs/FREEZE_CONVERSION_SPRINT_0_1.md .github/workflows/sync-ensenanza-normal-p4.yml
+          git commit -m 'Synchronize status after La Enseñanza Normal completion'
+          git push origin HEAD:freeze-ensenanza-normal-p4
