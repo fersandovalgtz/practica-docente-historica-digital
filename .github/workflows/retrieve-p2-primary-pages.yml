@@ -22,7 +22,11 @@ jobs:
           import urllib.request
 
           item = "n1n3elmaestrorev02mexi"
-          pages = [272, 274, 275, 276, 277]
+          # scandata/page-number reconciliation places the December 1921 issue
+          # opening in BookReader leaves n232-n238. The earlier n272-n277
+          # mapping corresponded to later printed pages and is intentionally
+          # superseded here.
+          pages = [232, 233, 234, 235, 236, 237, 238]
           out = pathlib.Path("p2-primary-pages")
           out.mkdir()
           report = []
