@@ -14,10 +14,10 @@ Reference cut: **2026-09-05**
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
 | Fragment locator rows resolved/candidate | **80 / 96** | 83.3% of reliability slots localized |
-| Fully frozen fragments | **15 / 96** | three complete batches plus one three-slot primary-image batch |
+| Fully frozen fragments | **17 / 96** | three complete batches plus one three-slot and one two-slot primary batch |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **80 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **80 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Seventeen units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -29,15 +29,17 @@ Three selected documents have complete four-slot batches. `PDHD-D000002`, *El Es
 
 A fourth document contributes a partial but fully frozen three-slot batch: `PDHD-D000031`, *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, 1 July 1907. BVMC directly exposes the primary first-page image. Direct image inspection fixes `PDHD-F000038` as the editorial/professional masthead region, `PDHD-F000039` as the opening programmatic article region and `PDHD-F000040` as the publication/subscription administrative control. `PDHD-F000037` remains empty because no explicit pedagogical-act span has yet been inspected at sufficient resolution.
 
-HNDM remains `metadata_only`; the BVMC first-page batch is also stored conservatively as `metadata_only`. GitHub retains structural boundaries and provenance rather than source images or full transcriptions.
+`PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, now contributes a two-slot frozen batch from the exact BVMC primary PDF. `PDHD-F000034` fixes the first-page professional/editorial block from the `CUERPO DE REDACCION` heading through the collaborator line, stopping before the programmatic article opening. `PDHD-F000036` fixes the autonomous publication-cadence line as the smallest defensible administrative control span. `PDHD-F000033` on p. 12 remains pending primary inspection and the source-critical slot remains unresolved.
+
+HNDM remains `metadata_only`; BVMC-derived frozen records are also stored conservatively as `metadata_only`. GitHub retains structural boundaries and provenance rather than source images or full transcriptions.
 
 ## Three-quarter localization batch
 
-`fragment_locator_progress_threshold72_w9.csv` added eight deterministic slots without changing the frozen count.
+`fragment_locator_progress_threshold72_w9.csv` originally added eight deterministic slots without changing the frozen count. Two of those rows have now crossed the stronger gate.
 
-`PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, gained two first-page targets: `PDHD-F000034` for the professional/editorial region and `PDHD-F000036` for publication/subscription administration. Both are tied to the exact BVMC object but remain candidates until high-resolution structural boundaries are checked.
+`PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, originally gained two first-page targets: `PDHD-F000034` for the professional/editorial region and `PDHD-F000036` for publication administration. Direct inspection of the exact BVMC primary PDF on 5 September 2026 fixed both boundaries. Their canonical locator rows are now `fixed`/`frozen` and the corresponding frozen records are stored in `frozen_fragments_ensenanza_normal_w16.csv`.
 
-The *El Maestro* block gained four additional slots. `PDHD-F000044` reserves the stable Internet Archive opening scan for núm. 2 (1921) as a control candidate. `PDHD-F000047` targets Rafael Ramos Pedrueza's *Historia de México*, núm. 4 (1921), pp. 341–348. `PDHD-F000048` reserves the stable opening scan of núm. 4 as a control candidate. `PDHD-F000052` reserves the opening reader page of tomo II, núm. 3 as a control while preserving the existing 1922/December-1921 chronology conflict.
+The *El Maestro* block gained four additional slots. `PDHD-F000044` reserves the stable Internet Archive opening scan for núm. 2 (1921) as a control candidate. `PDHD-F000047` targets Rafael Ramos Pedrueza's *Historia de México*, núm. 4 (1921), pp. 341–348. `PDHD-F000048` reserves the stable opening scan of núm. 4 as a control candidate. `PDHD-F000052` reserves the opening region of tomo II, núm. 3 as a control while preserving the existing 1922/December-1921 chronology conflict.
 
 `PDHD-F000045` targets Dionisio Montelongo Jr.'s *La ilustración de las masas*, pp. 363–365, but carries `issue_number_check_pending`: the secondary bibliography places the July 1921 item under a number incompatible with the working issue sequence. PDHD therefore records the page lead without silently normalizing the issue number or promoting it to primary evidence.
 
@@ -65,7 +67,7 @@ The page range is therefore resolved as a secondary page pointer for the explici
 
 ## Primary OCR and exact-page additions
 
-`fragment_locator_progress_primary_ocr_w13.csv` adds two further deterministic slots and advances the effective localization count from 76 to **78/96** without changing the frozen count.
+`fragment_locator_progress_primary_ocr_w13.csv` adds two further deterministic slots and advances the effective localization count from 76 to **78/96** without changing the frozen count at the time of that localization wave.
 
 `PDHD-F000027`, attached to the 1 December 1901 issue of *La Enseñanza Primaria*, now targets Gregorio Torres Quintero's *Los ejercicios físicos en la escuela*, pp. 161–163. A UNAM thesis annex supplies the exact historical citation. This resolves the source-critical page range for slot C, but it remains `secondary_page_pointer_primary_check_pending` until the HNDM page itself is inspected and the coder span is structurally bounded.
 
@@ -75,7 +77,7 @@ The same OCR evidence strengthens the December 1921 side of chronology conflict 
 
 ## El Periquito page recovery
 
-`fragment_locator_progress_el_periquito_w14.csv` moves the effective pilot from 78 to **79/96** without changing the frozen count.
+`fragment_locator_progress_el_periquito_w14.csv` moves the effective pilot from 78 to **79/96** without changing the frozen count at that cut.
 
 `PDHD-F000003`, slot C for `PDHD-D000065`, now targets p. 2 of *El Periquito*, núm. 4, 6 November 1870. A Biblioteca Nacional de México scholarly monograph gives the exact historical citation for a self-referential item titled *El Periquito* in that issue while analyzing animal symbolism and newspaper naming. Because this is an exact secondary page pointer rather than direct inspection of the HNDM page, the row remains `secondary_page_pointer_primary_check_pending` and `locator_candidate`.
 
@@ -83,7 +85,7 @@ HNDM's primary descriptor independently confirms that the third-era run consists
 
 ## 80-slot threshold: México Intelectual
 
-`fragment_locator_progress_mexico_intelectual_w15.csv` moves the pilot from 79 to **80/96**, reaching the operational localization threshold without changing the frozen count.
+`fragment_locator_progress_mexico_intelectual_w15.csv` moves the pilot from 79 to **80/96**, reaching the operational localization threshold without changing the frozen count at that cut.
 
 `PDHD-F000011`, slot C for `PDHD-D000063`, now targets *La Escuela Normal de Jalapa*, pp. 26–27 of *México Intelectual*, vol. 1 (1889). The exact historical reference appears in a 2022 volume edited by the Sociedad Mexicana de Historia de la Educación and evaluated by academic peers. The cited item is methodologically appropriate for the source-critical slot because it documents the normal-school institution at the center of the publication's intellectual and professional network.
 
@@ -107,7 +109,7 @@ The Mistral citation exposed the fifth registered chronology conflict. Signos Hi
 
 ## Fragment-localization progress
 
-The union of all `fragment_locator_progress*.csv` shards contains **80/96** pilot slots. Fifteen are frozen. The remaining **65** located rows include direct primary-page candidates, direct primary OCR regions pending image verification, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **16 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **80/96** pilot slots. Seventeen are frozen. The remaining **63** located rows include direct primary-page candidates, direct primary OCR regions pending image verification, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **16 slots remain without a locator.**
 
 The retrieval chain remains:
 
@@ -139,7 +141,7 @@ The mandatory distinctions remain:
 
 Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.
 
-The current 15 frozen units demonstrate that the pipeline works across HNDM and BVMC primary interfaces and across late-nineteenth-, early-twentieth- and postrevolutionary documentary settings. They do not justify coder labeling before the package is complete.
+The current 17 frozen units demonstrate that the pipeline works across HNDM and BVMC primary interfaces and across late-nineteenth-, early-twentieth- and postrevolutionary documentary settings. They do not justify coder labeling before the package is complete.
 
 ## Rights constraint
 
@@ -149,4 +151,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The project is now at **80/96 localized**. The 80/96 operational threshold has been reached. The next quantitative checkpoint is **84/96 localized**, but the stronger scientific priority remains raising the frozen count beyond **15/96**, especially by converting direct page/scan/OCR candidates into exact image-verified coder spans rather than adding weaker references.
+The project is now at **80/96 localized**. The 80/96 operational threshold has been reached. The next quantitative checkpoint is **84/96 localized**, but the stronger scientific priority remains raising the frozen count beyond **17/96**, especially by converting direct page/scan/OCR candidates into exact source-verified coder spans rather than adding weaker references.
