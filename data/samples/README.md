@@ -18,11 +18,21 @@ A content lead is not required for every locator: direct primary-page inspection
 
 Locator and freeze work may be split into auditable shards such as `fragment_locator_progress*.csv` and `frozen_fragments*.csv`. Their logical union is validated by `scripts/validate_fragment_shards.py`; a fragment ID may occur only once across all shards. `fragment_gap_queue_0_1.csv` must remain the exact complement of the locator union.
 
+## Freeze-conversion queue
+
+`freeze_conversion_queue_0_1.csv` is a derived operational queue for localized fragments that already point to a direct primary object or equivalent first-party surrogate and are close to the `frozen` gate. It does not create a new fragment state and it is not part of the logical locator union.
+
+The queue records the remaining conversion blocker and the next source-critical action. Inclusion therefore means **priority for verification**, not evidentiary promotion. Rows remain governed by their canonical `fragment_locator_progress*.csv` state until direct inspection, exact boundary selection, transcription/access decisions and the other requirements of `docs/FRAGMENT_FREEZE_PROTOCOL.md` are complete.
+
+The current sprint is documented in `docs/FREEZE_CONVERSION_SPRINT_0_1.md`.
+
 The distinction is intentional:
 
 `content_found != page_localized`
 
 `promoted_content_lead != frozen_fragment`
+
+`freeze_conversion_priority != frozen_fragment`
 
 `public_pilot_metadata != public_source_text`
 
