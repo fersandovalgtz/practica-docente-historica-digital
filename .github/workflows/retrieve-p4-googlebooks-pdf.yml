@@ -1,0 +1,120 @@
+name: Retrieve PDHD P4 Google Books title-page window
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/retrieve-p4-googlebooks-pdf.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve current Google Books PDF link
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import urllib.parse
+          import urllib.request
+
+          out = pathlib.Path("p4-googlebooks-title-page")
+          out.mkdir()
+          report = {}
+          page_url = "https://books.google.com/books?cad=1&id=O2oLAQAAIAAJ&pg=PR5&source=gbs_selected_pages"
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+          }
+
+          try:
+              req = urllib.request.Request(page_url, headers=headers)
+              with urllib.request.urlopen(req, timeout=45) as response:
+                  raw = response.read()
+                  report["page_status"] = response.status
+                  report["page_content_type"] = response.headers.get("Content-Type", "")
+              text = raw.decode("utf-8", errors="replace")
+              (out / "selected-page.html").write_text(text, encoding="utf-8")
+              decoded = html.unescape(text)
+
+              candidates = re.findall(
+                  r'https?://books\.google\.com/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',
+                  decoded,
+              )
+              if not candidates:
+                  candidates = [
+                      urllib.parse.urljoin("https://books.google.com", m)
+                      for m in re.findall(
+                          r'href=["\']([^"\']*?/books/download/[^"\']+?\.pdf\?[^"\']+)["\']',
+                          decoded,
+                      )
+                  ]
+              report["pdf_candidates"] = candidates[:10]
+
+              pdf_url = next((u for u in candidates if "output=pdf" in u), candidates[0] if candidates else None)
+              report["selected_pdf_url"] = pdf_url
+              if pdf_url:
+                  req = urllib.request.Request(pdf_url, headers=headers)
+                  with urllib.request.urlopen(req, timeout=90) as response:
+                      body = response.read()
+                      report["pdf_status"] = response.status
+                      report["pdf_content_type"] = response.headers.get("Content-Type", "")
+                  report["pdf_bytes"] = len(body)
+                  if len(body) > 100000 and body.startswith(b"%PDF"):
+                      (out / "volume1.pdf").write_bytes(body)
+                      report["pdf_saved"] = True
+                  else:
+                      (out / "pdf-response.bin").write_bytes(body)
+                      report["pdf_saved"] = False
+              else:
+                  report["pdf_saved"] = False
+          except Exception as exc:
+              report["error"] = f"{type(exc).__name__}: {exc}"
+              report["pdf_saved"] = False
+
+          (out / "retrieval-report.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+
+      - name: Render first twelve PDF pages when available
+        shell: bash
+        run: |
+          set -u
+          out="p4-googlebooks-title-page"
+          if [ -f "$out/volume1.pdf" ]; then
+            if ! command -v pdftoppm >/dev/null 2>&1; then
+              sudo apt-get update -qq
+              sudo apt-get install -y -qq poppler-utils
+            fi
+            mkdir -p "$out/rendered"
+            pdftoppm -f 1 -l 12 -jpeg -r 170 "$out/volume1.pdf" "$out/rendered/page"
+            ls -lh "$out/rendered" || true
+          else
+            echo "No PDF available to render"
+          fi
+
+      - name: Upload one-day primary-review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-p4-googlebooks-title-page-review
+          path: p4-googlebooks-title-page/
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Require at least one rendered page
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(p4-googlebooks-title-page/rendered/*.jpg)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No auditable Google Books page image was recovered"
+            exit 1
+          fi
+          echo "Recovered ${#files[@]} rendered primary pages"
