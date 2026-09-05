@@ -28,7 +28,7 @@ Corte de referencia: **5 de septiembre de 2026**.
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
 | Slots con localizador candidato/resuelto | **82 / 96** |
-| Fragmentos completamente congelados | **27 / 96** |
+| Fragmentos completamente congelados | **28 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -147,7 +147,7 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **82/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **27/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **82/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **28/96** fragmentos.
 
 La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, el tomo II, núm. 3 ya aporta dos regiones congeladas y los números 2 y 4 de 1921 aportan controles de portada directamente inspeccionados. Entre los targets analíticos pendientes figuran José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Rafael Ramos Pedrueza, *Historia de México*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Los punteros secundarios permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
 
@@ -155,7 +155,7 @@ Los reader targets de Internet Archive se mantienen como rutas de recuperación,
 
 *México intelectual* tiene ya sus cuatro slots localizados en el tomo I. La p. 5 se usa para el slot A por la formulación programática de difusión de métodos, sistemas y enseñanza pedagógica moderna; la p. 2 alimenta el componente profesional/institucional; la p. 6 se reserva como control administrativo por contener precios e instrucciones de correspondencia; y `PDHD-F000011` resuelve ahora el slot C con *La Escuela Normal de Jalapa*, pp. 26–27. Este último puntero procede de un volumen de historia de la educación editado por la Sociedad Mexicana de Historia de la Educación y evaluado por pares. Los cuatro permanecen sujetos al estatus de evidencia individual de sus respectivos shards; el nuevo slot C sigue pendiente de cotejo contra la página histórica.
 
-*La Enseñanza Normal* tiene ya congelados `PDHD-F000033`, `PDHD-F000034` y `PDHD-F000036` en el número inaugural del 15 de septiembre de 1904. La inspección del PDF primario de BVMC fija la prescripción de Leopoldo Kiel en p. 12 como acto pedagógico explícito, la región profesional/editorial de p. 1 y una línea administrativa de periodicidad como control. El puntero secundario de la tesis de la UNAM sirvió para recuperación, pero la promoción de `PDHD-F000033` se realizó sólo después de inspeccionar directamente la página histórica.
+*La Enseñanza Normal* tiene ya sus cuatro slots congelados en el número inaugural del 15 de septiembre de 1904. `PDHD-F000033` fija la prescripción de Leopoldo Kiel en p. 12 como acto pedagógico explícito; `PDHD-F000034` fija la región profesional/editorial de p. 1; `PDHD-F000035` fija en p. 4 la apertura de *15 de Septiembre — Fecha grata* como pasaje de crítica de fuentes sobre escuela, educación, libertad y progreso; y `PDHD-F000036` fija la línea administrativa de periodicidad como control. Los punteros secundarios sólo orientaron la recuperación: cada promoción se realizó después de inspeccionar directamente el PDF primario de BVMC.
 
 *La Enseñanza Primaria*, tomo I, núm. 11, del 1 de diciembre de 1901, aporta ahora un lote completo de cuatro fragmentos congelados. Un workflow de recuperación resolvió y descargó una copia primaria del volumen I en Google Books, mientras la identidad del número se mantiene cotejada de manera independiente con UNAM/HNDM. `PDHD-F000025` fija en la p. 168 una prescripción metodológica de Ponciano Rodríguez; `PDHD-F000026` fija en la p. 161 el cargo editorial de Gregorio Torres Quintero; `PDHD-F000027` fija en la p. 163 la conclusión del debate sobre ejercicios físicos, fatiga, reposo y trabajo intelectual; y `PDHD-F000028` usa el cartucho tomo/fecha/número de la p. 161 como control no analítico. La inspección primaria también elimina B y D de la cola de gaps. No se publican imágenes ni transcripciones históricas.
 
@@ -199,7 +199,7 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **82/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **55 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **23/96** congelados demuestran el pipeline a través de HNDM, BVMC e Internet Archive y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
+La selección documental ya está lista. **82/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **54 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **23/96** congelados demuestran el pipeline a través de HNDM, BVMC e Internet Archive y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
 
 La cola dedicada de conversión directa quedó vacía después de `PDHD-F000060`; el siguiente frente es convertir punteros de página fuertes mediante inspección directa del objeto primario. Quedan **14 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **84/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles. La cola directa queda reducida a `PDHD-F000060`, control `PR5` de *El esfuerzo educativo en México*, todavía pendiente de inspección primaria auditable.
 
