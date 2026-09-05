@@ -1,6 +1,6 @@
 # PDHD-U1 cohort status
 
-Reference cut: **2026-09-04**
+Reference cut: **2026-09-05**
 
 ## Current thresholds
 
@@ -13,11 +13,11 @@ Reference cut: **2026-09-04**
 | Registered chronology conflicts | 5 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **76 / 96** | 79.2% of reliability slots localized |
+| Fragment locator rows resolved/candidate | **78 / 96** | 81.25% of reliability slots localized |
 | Fully frozen fragments | **15 / 96** | three complete batches plus one three-slot primary-image batch |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **76 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **78 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -59,9 +59,19 @@ These additions preserve the rule:
 
 ## La Enseñanza Primaria page recovery
 
-`PDHD-F000025` moves the pilot from 75 to **76 localized slots**. A Universidad Pedagógica Nacional publication gives the exact historical citation for Ponciano Rodríguez's *El método en los libros de texto*, *La Enseñanza Primaria* 1(11), pp. 167–168. Independent historical scholarship identifies the issue as 1 December 1901 and confirms the article's focus on textbook method.
+`PDHD-F000025` moved the pilot from 75 to **76 localized slots**. A Universidad Pedagógica Nacional publication gives the exact historical citation for Ponciano Rodríguez's *El método en los libros de texto*, *La Enseñanza Primaria* 1(11), pp. 167–168. Independent historical scholarship identifies the issue as 1 December 1901 and confirms the article's focus on textbook method.
 
 The page range is therefore resolved as a secondary page pointer for the explicit-pedagogical-act slot. It is **not frozen**: the historical HNDM page still has to be directly inspected and the coder span structurally bounded.
+
+## Primary OCR and exact-page additions
+
+`fragment_locator_progress_primary_ocr_w13.csv` adds two further deterministic slots and advances the effective localization count from 76 to **78/96** without changing the frozen count.
+
+`PDHD-F000027`, attached to the 1 December 1901 issue of *La Enseñanza Primaria*, now targets Gregorio Torres Quintero's *Los ejercicios físicos en la escuela*, pp. 161–163. A UNAM thesis annex supplies the exact historical citation. This resolves the source-critical page range for slot C, but it remains `secondary_page_pointer_primary_check_pending` until the HNDM page itself is inspected and the coder span is structurally bounded.
+
+`PDHD-F000050`, attached to *El Maestro*, tomo II, núm. 3, now targets the issue-opening professional/editorial region. Internet Archive's OCR derivative for the scanned primary volume exposes the title, named directors Enrique Monteverde and Agustín Loera y Chávez, office/contact material and a December 1921 imprint in the issue opening. PDHD treats this as `direct_primary_ocr_region_image_check_pending`: OCR materially improves retrieval and chronology evidence but does not substitute for inspection of the corresponding page image.
+
+The same OCR evidence strengthens the December 1921 side of chronology conflict `PDHD-X000005`. The working catalog year is not silently overwritten because the primary image/imprint remains the next evidentiary gate.
 
 ## El Maestro expansion
 
@@ -69,7 +79,7 @@ The postrevolutionary press block extends beyond the first frozen issue. Exact s
 
 These remain locator candidates until the historical pages themselves are inspected. Internet Archive supplies stable reader targets for the selected objects, which are treated as retrieval/control candidates rather than page-level analytical proof.
 
-The Mistral citation exposed the fifth registered chronology conflict. Signos Históricos identifies tomo II, núm. 3 as 1922, while a UNAM thesis cites *Lecturas escolares. El cardo* in tomo II, no. III, December 1921. `PDHD-X000005` preserves the disagreement; the working catalog retains 1922 at year precision pending original-imprint inspection.
+The Mistral citation exposed the fifth registered chronology conflict. Signos Históricos identifies tomo II, núm. 3 as 1922, while a UNAM thesis cites *Lecturas escolares. El cardo* in tomo II, no. III, December 1921. `PDHD-X000005` preserves the disagreement. Direct OCR inspection of the scanned primary volume now exposes an issue-opening December 1921 imprint, materially strengthening that side of the conflict; the working catalog still retains 1922 at year precision until the corresponding page image/imprint is directly inspected.
 
 ## SEP memory blocks
 
@@ -79,7 +89,7 @@ The Mistral citation exposed the fifth registered chronology conflict. Signos Hi
 
 ## Fragment-localization progress
 
-The union of all `fragment_locator_progress*.csv` shards contains **76/96** pilot slots. Fifteen are frozen. The remaining **61** located rows include direct primary-page candidates, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **20 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **78/96** pilot slots. Fifteen are frozen. The remaining **63** located rows include direct primary-page candidates, direct primary OCR regions pending image verification, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **18 slots remain without a locator.**
 
 The retrieval chain remains:
 
@@ -92,6 +102,8 @@ The mandatory distinctions remain:
 `visible_reproduced_facsimile != primary_object_crosscheck`
 
 `reader_page_target != analytical_span`
+
+`primary_ocr_region != image_verified_span`
 
 `table_of_contents_entry != passage`
 
@@ -119,4 +131,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The project is now at **76/96 localized**. The next operational threshold remains **80/96 located**, while the stronger scientific priority is to raise the frozen count beyond **15/96**, especially by converting direct page/scan candidates into exact coder spans rather than adding weaker references.
+The project is now at **78/96 localized**. The previous 80/96 operational threshold is now within two slots, while the stronger scientific priority remains raising the frozen count beyond **15/96**, especially by converting direct page/scan/OCR candidates into exact image-verified coder spans rather than adding weaker references.
