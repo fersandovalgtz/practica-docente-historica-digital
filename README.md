@@ -28,7 +28,7 @@ Corte de referencia: **5 de septiembre de 2026**.
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
 | Slots con localizador candidato/resuelto | **80 / 96** |
-| Fragmentos completamente congelados | **17 / 96** |
+| Fragmentos completamente congelados | **19 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -43,9 +43,11 @@ El proyecto ya tiene tres lotes completos de **fragment freezing**. `PDHD-F00001
 
 A esos doce fragmentos se suman tres unidades directamente inspeccionadas de *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, del 1 de julio de 1907: `PDHD-F000038`–`PDHD-F000040`. La imagen primaria de BVMC permite fijar el bloque editorial/profesional, la región programática de apertura y un bloque administrativo de control. El slot A de ese documento (`PDHD-F000037`) sigue pendiente porque todavía no se ha inspeccionado un pasaje de acto pedagógico explícito con resolución suficiente.
 
-El número inaugural de *La Enseñanza Normal*, 15 de septiembre de 1904, aporta ahora dos unidades adicionales congeladas desde el PDF primario de BVMC. `PDHD-F000034` fija el bloque profesional/editorial de primera página y `PDHD-F000036` fija la línea autónoma de periodicidad como control administrativo. El slot A (`PDHD-F000033`) permanece pendiente de cotejo primario en p. 12.
+El número inaugural de *La Enseñanza Normal*, 15 de septiembre de 1904, aporta dos unidades adicionales congeladas desde el PDF primario de BVMC. `PDHD-F000034` fija el bloque profesional/editorial de primera página y `PDHD-F000036` fija la línea autónoma de periodicidad como control administrativo. El slot A (`PDHD-F000033`) permanece pendiente de cotejo primario en p. 12.
 
-Como HNDM permanece `metadata_only` y la reutilización de objetos BVMC se maneja conservadoramente, el repositorio conserva localizadores, límites y metadatos de preparación; no publica el texto histórico ni las imágenes de página.
+El tomo II, núm. 3 de *El Maestro* aporta ahora dos unidades congeladas desde imágenes primarias de Internet Archive. `PDHD-F000050` fija en `n237` el bloque institucional de la Secretaría de Educación Pública y Talleres Gráficos de la Nación; `PDHD-F000052` fija en `n236` el cartucho bibliográfico de portada como control. La portada identifica explícitamente tomo II, número III, diciembre de 1921, y la imprenta independiente de `n237` confirma México, diciembre de 1921.
+
+Como HNDM permanece `metadata_only` y la reutilización de objetos BVMC e Internet Archive se maneja conservadoramente, el repositorio conserva localizadores, límites y metadatos de preparación; no publica el texto histórico ni las imágenes de página.
 
 ## Ecosistema de fuentes
 
@@ -143,9 +145,9 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **80/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **17/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **80/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **19/96** fragmentos.
 
-La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, se añadieron localizadores para los números 2 y 4 de 1921 y para el tomo II, núm. 3. Entre ellos figuran José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Rafael Ramos Pedrueza, *Historia de México*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Todos los punteros secundarios permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
+La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, se añadieron localizadores para los números 2 y 4 de 1921 y se congelaron dos regiones del tomo II, núm. 3. Entre los targets pendientes figuran José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Rafael Ramos Pedrueza, *Historia de México*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Los punteros secundarios permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
 
 Internet Archive aporta además lectores estables para la apertura de los números seleccionados. Esos targets se usan como candidatos de control y recuperación, no como sustitutos de la inspección de página ni como spans congelados. Una referencia a Dionisio Montelongo Jr., *La ilustración de las masas*, pp. 363–365, se conserva con `issue_number_check_pending` porque la fuente secundaria presenta una numeración incompatible con la secuencia del número de julio; no se fuerza una normalización.
 
@@ -159,9 +161,9 @@ El mismo número incorpora `PDHD-F000027`: una tesis de la UNAM localiza Gregori
 
 *El Periquito* incorpora `PDHD-F000003`: una monografía académica de la Biblioteca Nacional de México cita el texto homónimo en el número 4, fechado el 6 de noviembre de 1870, p. 2, dentro de su análisis de la simbolización animal en la prensa. El dato coincide exactamente con el objeto piloto de Campeche y resuelve el slot C como puntero secundario de página para crítica de fuentes. La página histórica del volumen encuadernado en HNDM continúa pendiente de inspección, por lo que el fragmento no está congelado.
 
-`PDHD-F000050`, correspondiente a *El Maestro*, tomo II, núm. 3, utiliza ahora el OCR primario derivado del escaneo de Internet Archive para localizar la región editorial/profesional de apertura. El OCR expone título, directores, oficinas y material de contacto y, en la apertura del mismo número, un pie temporal de diciembre de 1921. Se conserva como `direct_primary_ocr_region_image_check_pending`: sirve para recuperación y crítica cronológica, pero no equivale a una lectura verificada de la imagen ni a un span fijo.
+`PDHD-F000050` y `PDHD-F000052`, correspondientes a *El Maestro*, tomo II, núm. 3, ya cruzaron el gate de imagen primaria. El workflow corregido recuperó BookReader `n232–n238`; la inspección directa fija `F000050` en el bloque institucional SEP/Talleres de `n237` y `F000052` en el cartucho bibliográfico de la portada `n236`. `n238` comienza *La inconsciencia de la hora* en la p. 227 y confirma la secuencia interna del número.
 
-El caso de *El Maestro*, tomo II, núm. 3 conserva una discrepancia cronológica. Una fuente académica identifica el objeto digital como 1922, mientras una tesis de la UNAM cita *Lecturas escolares. El cardo* en diciembre de 1921. La evidencia OCR primaria incorporada posteriormente refuerza diciembre de 1921 al exponer ese mes y año en la apertura del número. El conflicto sigue preservado en `data/catalog/chronology_conflicts.csv`; PDHD no sustituye todavía el año de trabajo 1922 hasta inspeccionar directamente la página/impronta correspondiente.
+El conflicto cronológico de *El Maestro*, tomo II, núm. 3 queda resuelto a **1921-12**. La portada `n236` identifica tomo II, número III y diciembre de 1921; la imprenta `n237` confirma independientemente México, diciembre de 1921. `PDHD-X000005` conserva el registro secundario de 1922 como discrepancia historiográfica, pero la cronología canónica adopta ahora la evidencia primaria a precisión mensual.
 
 El volumen II de la *Memoria de la Secretaría de Educación Pública* de 1937 ya tiene sus cuatro slots localizados. Dos proceden directamente del índice de Google Books —Consejo Nacional de la Educación Superior y de la Investigación, p. 41, y Distribución de Becas en la República, p. 40—. Otros dos son punteros secundarios verificables: p. 371 para la relación entre trabajo manual y desarrollo educativo, y p. 444 para estadísticas de asistencia a bibliotecas. Estos últimos no se congelarán sin cotejo primario.
 
@@ -193,11 +195,11 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 `pilot_content_leads.csv` conserva hallazgos de contenido antes de su promoción a página. Toda fila promovida declara ahora un `promoted_fragment_id`; `validate_content_leads.py` comprueba que ese fragmento exista en los shards, corresponda al mismo documento y no sea reclamado por otro lead. La cadena queda explícita como `issue identity -> content lead -> promoted_fragment_id -> page locator -> frozen fragment`.
 
-`retrieval_attempts.csv` conserva intentos de acceso primario que todavía no producen un localizador o un span congelado. `validate_retrieval_attempts.py` verifica IDs, correspondencia documento-fragmento, URLs, estados de bloqueo y rutas siguientes. Esto permite registrar resultados negativos —por ejemplo, un PDF exacto demasiado grande para el interfaz automatizado o un volumen HNDM sin page IDs recuperados— sin confundirlos con evidencia analítica.
+`retrieval_attempts.csv` conserva intentos de acceso primario y sus desenlaces. `validate_retrieval_attempts.py` verifica IDs, correspondencia documento-fragmento, URLs, estados de bloqueo y rutas siguientes. Los intentos que culminan en localizadores congelados se conservan como `superseded_by_locator`, de modo que el historial técnico permanece auditable sin confundirse con un bloqueo vigente.
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **80/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **63 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **17/96** congelados demuestran el pipeline a través de HNDM y BVMC y cubren ya prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
+La selección documental ya está lista. **80/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **61 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **19/96** congelados demuestran el pipeline a través de HNDM, BVMC e Internet Archive y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
 
 Quedan **16 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **84/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles.
 
