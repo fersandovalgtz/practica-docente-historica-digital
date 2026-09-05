@@ -13,11 +13,11 @@ Reference cut: **2026-09-05**
 | Registered chronology conflicts | 5 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **78 / 96** | 81.25% of reliability slots localized |
+| Fragment locator rows resolved/candidate | **79 / 96** | 82.3% of reliability slots localized |
 | Fully frozen fragments | **15 / 96** | three complete batches plus one three-slot primary-image batch |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **78 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **79 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -73,6 +73,14 @@ The page range is therefore resolved as a secondary page pointer for the explici
 
 The same OCR evidence strengthens the December 1921 side of chronology conflict `PDHD-X000005`. The working catalog year is not silently overwritten because the primary image/imprint remains the next evidentiary gate.
 
+## El Periquito page recovery
+
+`fragment_locator_progress_el_periquito_w14.csv` moves the effective pilot from 78 to **79/96** without changing the frozen count.
+
+`PDHD-F000003`, slot C for `PDHD-D000065`, now targets p. 2 of *El Periquito*, núm. 4, 6 November 1870. A Biblioteca Nacional de México scholarly monograph gives the exact historical citation for a self-referential item titled *El Periquito* in that issue while analyzing animal symbolism and newspaper naming. Because this is an exact secondary page pointer rather than direct inspection of the HNDM page, the row remains `secondary_page_pointer_primary_check_pending` and `locator_candidate`.
+
+HNDM's primary descriptor independently confirms that the third-era run consists of nos. 1–4, from 16 October through 6 November 1870, that each issue has four pages in two columns and that the bound collection must be sought under *La Escuela de primeras letras*. The page image/page ID for p. 2 remains the next primary gate.
+
 ## El Maestro expansion
 
 The postrevolutionary press block extends beyond the first frozen issue. Exact secondary page pointers are registered for José U. Escobar's *Las tribus indígenas mexicanas* (I,2, pp. 173–176), José Suirob's *Orientación obrera* (I,2, pp. 145–147), Grupo Claridad's *La internacional de los intelectuales* (I,2, pp. 133–135), Abel Ayala's *Mejores maestros* (I,4, pp. 351–352), Rafael Ramos Pedrueza's *Historia de México* (núm. 4, pp. 341–348), Gabriela Mistral's *Lecturas escolares. El cardo* (II,III, pp. 299–300) and Rufino Blanco-Fombona's *Democracia Criolla* (II,3, pp. 293–297).
@@ -89,11 +97,11 @@ The Mistral citation exposed the fifth registered chronology conflict. Signos Hi
 
 ## Fragment-localization progress
 
-The union of all `fragment_locator_progress*.csv` shards contains **78/96** pilot slots. Fifteen are frozen. The remaining **63** located rows include direct primary-page candidates, direct primary OCR regions pending image verification, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **18 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **79/96** pilot slots. Fifteen are frozen. The remaining **64** located rows include direct primary-page candidates, direct primary OCR regions pending image verification, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **17 slots remain without a locator.**
 
 The retrieval chain remains:
 
-`issue identity -> content lead -> page-level fragment locator -> frozen fragment -> human annotation`
+`issue identity -> content lead -> promoted_fragment_id -> page-level fragment locator -> frozen fragment -> human annotation`
 
 The mandatory distinctions remain:
 
@@ -115,7 +123,7 @@ The mandatory distinctions remain:
 
 `scripts/validate_repository.py` validates the base catalog. `scripts/validate_fragment_shards.py` validates the logical union of all locator/frozen shards, including deterministic document/slot identity, duplicate protection, fixed-boundary requirements and cross-checking between frozen rows and locator rows. It also requires `fragment_gap_queue_0_1.csv` to equal the exact complement of the localized fragment IDs.
 
-`validate_object_aliases.py` protects cross-repository bridges. `validate_content_leads.py` protects the transition from issue-level discovery to page-level evidence. GitHub Actions runs these checks together with the annotation-agreement self-test and deterministic 96-slot manifest check.
+`validate_object_aliases.py` protects cross-repository bridges. `validate_content_leads.py` now requires every promoted lead to declare a `promoted_fragment_id`, confirms that the referenced locator exists in the shard union, verifies document identity and rejects duplicate lead claims on a fragment. `validate_retrieval_attempts.py` separately validates structured provenance for primary-source retrieval attempts that remain blocked or incomplete, preserving object URLs, affected fragment IDs, blocker states and the next recovery route without misclassifying a failed access attempt as page evidence. `validate_status_counts.py` keeps README and this cohort-status document synchronized with the CSV source of truth. GitHub Actions runs these checks together with the annotation-agreement self-test and deterministic 96-slot manifest check.
 
 ## What remains before human coding
 
@@ -131,4 +139,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The project is now at **78/96 localized**. The previous 80/96 operational threshold is now within two slots, while the stronger scientific priority remains raising the frozen count beyond **15/96**, especially by converting direct page/scan/OCR candidates into exact image-verified coder spans rather than adding weaker references.
+The project is now at **79/96 localized**. The 80/96 operational threshold is one slot away, while the stronger scientific priority remains raising the frozen count beyond **15/96**, especially by converting direct page/scan/OCR candidates into exact image-verified coder spans rather than adding weaker references.
