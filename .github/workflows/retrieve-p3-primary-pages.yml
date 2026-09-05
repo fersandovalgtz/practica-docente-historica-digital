@@ -1,0 +1,120 @@
+name: Retrieve PDHD P3 primary pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/retrieve-p3-primary-pages.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Retrieve P3 Internet Archive page windows
+        shell: python
+        run: |
+          import json
+          import pathlib
+          import urllib.request
+
+          targets = {
+              "PDHD-F000044": {
+                  "item": "n1n3elmaestrorevista01mexi",
+                  "pages": list(range(100, 107)),
+                  "registered_target": 103,
+              },
+              "PDHD-F000048": {
+                  "item": "elmaestrorevista146mexi",
+                  "pages": list(range(4, 11)),
+                  "registered_target": 6,
+              },
+          }
+
+          out = pathlib.Path("p3-primary-pages")
+          out.mkdir()
+          report = []
+
+          def fetch(url):
+              req = urllib.request.Request(
+                  url,
+                  headers={"User-Agent": "PDHD-U1-source-verification/0.1 (+https://github.com/fersandovalgtz/practica-docente-historica-digital)"},
+              )
+              with urllib.request.urlopen(req, timeout=45) as response:
+                  body = response.read()
+                  return response.geturl(), response.headers.get("Content-Type", ""), body
+
+          for fragment_id, target in targets.items():
+              item = target["item"]
+              for page in target["pages"]:
+                  candidates = [
+                      f"https://archive.org/download/{item}/page/n{page}",
+                      f"https://api.archivelab.org/books/{item}/pages/{page}",
+                      f"https://archive.org/download/{item}/page/n{page}.jpg",
+                  ]
+                  saved = False
+                  for url in candidates:
+                      try:
+                          final_url, content_type, body = fetch(url)
+                          row = {
+                              "fragment_id": fragment_id,
+                              "item": item,
+                              "page": page,
+                              "registered_target": target["registered_target"],
+                              "requested_url": url,
+                              "final_url": final_url,
+                              "content_type": content_type,
+                              "bytes": len(body),
+                              "magic": body[:16].hex(),
+                          }
+                          is_jpeg = body.startswith(b"\xff\xd8\xff")
+                          is_png = body.startswith(b"\x89PNG\r\n\x1a\n")
+                          is_jp2 = body[4:12] == b"jP  \r\n\x87\n" or body.startswith(b"\x00\x00\x00\x0cjP  \r\n\x87\n")
+                          stem = f"{fragment_id}_{item}_n{page}"
+                          if is_jpeg or "image/jpeg" in content_type:
+                              path = out / f"{stem}.jpg"
+                              path.write_bytes(body)
+                              row["saved_as"] = path.name
+                              saved = True
+                          elif is_png or "image/png" in content_type:
+                              path = out / f"{stem}.png"
+                              path.write_bytes(body)
+                              row["saved_as"] = path.name
+                              saved = True
+                          elif is_jp2 or "image/jp2" in content_type:
+                              path = out / f"{stem}.jp2"
+                              path.write_bytes(body)
+                              row["saved_as"] = path.name
+                              saved = True
+                          else:
+                              row["saved_as"] = None
+                          report.append(row)
+                          if saved:
+                              break
+                      except Exception as exc:
+                          report.append({
+                              "fragment_id": fragment_id,
+                              "item": item,
+                              "page": page,
+                              "registered_target": target["registered_target"],
+                              "requested_url": url,
+                              "error": repr(exc),
+                          })
+                  if not saved:
+                      print(f"WARNING: no image saved for {fragment_id} page n{page}")
+
+          (out / "retrieval_report.json").write_text(
+              json.dumps(report, indent=2, ensure_ascii=False),
+              encoding="utf-8",
+          )
+          print(json.dumps(report, indent=2, ensure_ascii=False))
+
+      - name: Upload ephemeral source-review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-p3-primary-page-review
+          path: p3-primary-pages/
+          if-no-files-found: error
+          retention-days: 1
