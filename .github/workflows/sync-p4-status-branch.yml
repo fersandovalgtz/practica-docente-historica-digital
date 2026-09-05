@@ -1,0 +1,63 @@
+name: Sync P4 status on branch
+
+on:
+  push:
+    branches: [freeze-el-esfuerzo-p4-control]
+    paths:
+      - ".github/workflows/sync-p4-status-branch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: freeze-el-esfuerzo-p4-control
+      - name: Update README status markers and P4 note
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("README.md")
+          text = path.read_text(encoding="utf-8")
+
+          replacements = {
+              "| Fragmentos completamente congelados | **21 / 96** |": "| Fragmentos completamente congelados | **22 / 96** |",
+              "su unión contiene **21/96** fragmentos": "su unión contiene **22/96** fragmentos",
+              "**59 localizadores todavía no congelados**": "**58 localizadores todavía no congelados**",
+              "Los **21/96** congelados": "Los **22/96** congelados",
+          }
+          for old, new in replacements.items():
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"Expected exactly one README marker {old!r}; found {count}")
+              text = text.replace(old, new)
+
+          anchor = "Como HNDM permanece `metadata_only` y la reutilización de objetos BVMC e Internet Archive se maneja conservadoramente, el repositorio conserva localizadores, límites y metadatos de preparación; no publica el texto histórico ni las imágenes de página."
+          p4 = """`PDHD-F000060`, control de *El esfuerzo educativo en México* (1928), cruza ahora el mismo gate de imagen primaria. Google Books expone `PR5`; un workflow de recuperación resolvió el PDF público vigente desde el HTML de la página seleccionada y renderizó las primeras hojas. La correspondencia `PR5` → orden 6 del libro → imagen PDF 009 se verificó antes de fijar el núcleo bibliográfico de la portada como control. La cola de conversión directa queda vacía; esto no equivale a completar el paquete de 96 fragmentos.\n\n"""
+          if p4.strip() not in text:
+              if anchor not in text:
+                  raise SystemExit("P4 insertion anchor not found")
+              text = text.replace(anchor, p4 + anchor, 1)
+
+          next_anchor = "Quedan **16 slots sin localizador**."
+          queue_note = "La cola dedicada de conversión directa quedó vacía después de `PDHD-F000060`; el siguiente frente es convertir punteros de página fuertes mediante inspección directa del objeto primario. "
+          if queue_note.strip() not in text:
+              if next_anchor not in text:
+                  raise SystemExit("Next-gate insertion anchor not found")
+              text = text.replace(next_anchor, queue_note + next_anchor, 1)
+
+          path.write_text(text, encoding="utf-8")
+      - name: Remove temporary workflow and commit synchronized README
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "PDHD status sync"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/sync-p4-status-branch.yml
+          git add README.md
+          git commit -m "Synchronize README after P4 freeze"
+          git push origin HEAD:freeze-el-esfuerzo-p4-control
