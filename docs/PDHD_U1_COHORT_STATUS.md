@@ -14,10 +14,10 @@ Reference cut: **2026-09-05**
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
 | Fragment locator rows resolved/candidate | **80 / 96** | 83.3% of reliability slots localized |
-| Fully frozen fragments | **19 / 96** | three complete batches plus three partial primary-source batches |
+| Fully frozen fragments | **21 / 96** | three complete batches plus five partial primary-source batches |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **80 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Nineteen units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **80 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Twenty-one units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -31,27 +31,27 @@ Three selected documents have complete four-slot batches. `PDHD-D000002`, *El Es
 
 `PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, contributes a two-slot frozen batch from the exact BVMC primary PDF. `PDHD-F000034` fixes the first-page professional/editorial block and `PDHD-F000036` fixes the autonomous publication-cadence line as an administrative control. `PDHD-F000033` on p. 12 remains pending primary inspection.
 
-`PDHD-D000053`, *El Maestro*, tomo II, núm. 3, now contributes a two-slot frozen batch from directly inspected Internet Archive BookReader images. `PDHD-F000050` uses leaf `n237` for the issue-specific institutional imprint block of the Secretaría de Educación Pública and Talleres Gráficos de la Nación. `PDHD-F000052` uses leaf `n236` for the title/volume/number/date cartouche as a deliberately non-analytical control. Both remain `metadata_only` and `not_transcribed`; no Internet Archive source image or historical full text is committed.
+`PDHD-D000053`, *El Maestro*, tomo II, núm. 3, contributes a two-slot frozen batch from directly inspected Internet Archive BookReader images. `PDHD-F000050` uses leaf `n237` for the issue-specific institutional imprint block of the Secretaría de Educación Pública and Talleres Gráficos de la Nación. `PDHD-F000052` uses leaf `n236` for the title/volume/number/date cartouche as a deliberately non-analytical control.
 
-## El Maestro II.3 chronology and image verification
+Two additional *El Maestro* control slots now cross the same primary-image gate. `PDHD-F000044`, attached to núm. 2 of 1921, is fixed on the issue-identification cartouche of BookReader leaf `n104`, whose cover explicitly shows `NUM II`, `MEXICO` and `MCMXXI`. `PDHD-F000048`, attached to núm. 4 of 1921, is fixed on the corresponding cartouche of leaf `n4`, which explicitly shows `NUM IV`, `MEXICO` and `MCMXXI`. In both cases the frozen span excludes the cover illustration and uses only the bibliographic control region.
 
-The P2 retrieval route is now closed. The initial Search Inside to BookReader mapping was incorrect and retrieved later pages. Scandata/page-number reconciliation moved the target to `n232–n238`, after which the corrected GitHub Actions workflow recovered the seven primary JPEGs successfully.
+All Internet Archive frozen controls remain `metadata_only` and `not_transcribed`; no source image or historical full text is committed.
 
-Direct inspection produces a coherent issue sequence. `n236` explicitly identifies *El Maestro*, tomo II, número III, diciembre de 1921, México. `n237` independently records `SECRETARIA DE EDUCACION PUBLICA`, Talleres Gráficos de la Nación and `MEXICO, DICIEMBRE DE 1921`. `n238` begins *La inconsciencia de la hora* on printed p. 227.
+## El Maestro image-verification sequence
 
-This evidence resolves chronology conflict `PDHD-X000005` at month precision. A secondary scholarly source had listed tomo II, núm. 3 as 1922 while a UNAM thesis cited December 1921. PDHD now adopts **1921-12** as the canonical date because two independent regions of the registered primary scan agree. The 1922 listing remains preserved in the conflict registry as a documented scholarly/catalog discrepancy.
+The P2 retrieval route corrected an erroneous Search Inside to BookReader mapping by reconciling scandata and page numbering. Direct inspection of `n236` and `n237` resolved tomo II, núm. 3 to **1921-12** at month precision and closed `PDHD-X000005` while retaining the secondary 1922 listing as a documented discrepancy.
 
-The evidentiary sequence matters:
+The P3 retrieval route then used short windows around the registered reader targets rather than assuming that the original target leaf itself was the final span. For `PDHD-F000044`, the window around `n103` exposed the unambiguous núm. II cover at `n104`. For `PDHD-F000048`, the window around `n6` exposed the unambiguous núm. IV cover at `n4`. This preserves the distinction:
 
-`primary_ocr_region != image_verified_span`
+`reader_page_target != analytical_span`
 
-The earlier OCR materially improved retrieval, but only the primary image inspection supported the final chronology decision and fragment boundaries.
+The registered reader route supported retrieval; only the visually inspected primary image supported the final frozen boundary.
 
 ## Remaining localization work
 
-The union of all `fragment_locator_progress*.csv` shards contains **80/96** pilot slots. Nineteen are frozen. The remaining **61** located rows include direct primary-page candidates, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **16 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **80/96** pilot slots. Twenty-one are frozen. The remaining **59** located rows include direct section starts, reproduced facsimiles, exact scholarly page pointers and other candidates that have not crossed the exact-boundary primary-inspection gate. **16 slots remain without a locator.**
 
-The current direct-primary freeze-conversion queue contains three fragments: `PDHD-F000044`, `PDHD-F000048` and `PDHD-F000060`. The first two are *El Maestro* issue-opening control candidates with stable Internet Archive reader targets. The third is the `PR5` Google Books title-page control for *El esfuerzo educativo en México*. None is frozen until its exact primary span and access decisions are fixed.
+The direct-primary freeze-conversion queue is now reduced to one fragment: `PDHD-F000060`, the `PR5` title-page control for *El esfuerzo educativo en México* in Google Books. It remains unfrozen until a primary page image can be inspected directly and the smallest defensible control span plus access/transcription decisions are fixed.
 
 The locator union currently holds 80 of 96 pilot slots and remains the source-of-truth layer for progress accounting. Localization does not imply that the historical page has been validated or that public transcription is permitted.
 
@@ -93,13 +93,13 @@ Mandatory distinctions remain:
 
 `scripts/validate_repository.py` validates the base catalog. `scripts/validate_fragment_shards.py` validates the logical union of all locator/frozen shards, including deterministic document/slot identity, duplicate protection, fixed-boundary requirements and cross-checking between frozen rows and locator rows. It also requires `fragment_gap_queue_0_1.csv` to equal the exact complement of the localized fragment IDs.
 
-`validate_object_aliases.py` protects cross-repository bridges. `validate_content_leads.py` checks promoted content leads against the locator union. `validate_retrieval_attempts.py` preserves blocked attempts and completed recovery routes; completed P1/P2 attempts now use `superseded_by_locator`. `validate_status_counts.py` keeps README and this cohort-status document synchronized with the CSV source of truth.
+`validate_object_aliases.py` protects cross-repository bridges. `validate_content_leads.py` checks promoted content leads against the locator union. `validate_retrieval_attempts.py` preserves blocked attempts and completed recovery routes; completed P1, P2 and P3 attempts use `superseded_by_locator`. `validate_status_counts.py` keeps README and this cohort-status document synchronized with the CSV source of truth.
 
 ## What remains before human coding
 
 Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.
 
-The current 19 frozen units demonstrate that the pipeline works across HNDM, BVMC and Internet Archive primary interfaces and across late-nineteenth-, early-twentieth- and postrevolutionary documentary settings. They do not justify coder labeling before the package is complete.
+The current 21 frozen units demonstrate that the pipeline works across HNDM, BVMC and Internet Archive primary interfaces and across late-nineteenth-, early-twentieth- and postrevolutionary documentary settings. They do not justify coder labeling before the package is complete.
 
 ## Rights constraint
 
@@ -109,4 +109,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The project is now at **80/96 localized**. The 80/96 operational threshold has been reached. The next quantitative checkpoint is **84/96 localized**, but the stronger scientific priority remains raising the frozen count beyond **19/96**, especially by converting direct page/scan candidates into exact source-verified coder spans rather than adding weaker references.
+The project is now at **80/96 localized**. The 80/96 operational threshold has been reached. The next quantitative checkpoint is **84/96 localized**, but the stronger scientific priority remains raising the frozen count beyond **21/96**, beginning with direct primary inspection of `PDHD-F000060` and then converting stronger page-resolved candidates without weakening the evidence hierarchy.
