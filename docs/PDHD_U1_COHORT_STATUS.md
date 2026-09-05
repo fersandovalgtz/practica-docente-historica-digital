@@ -13,11 +13,11 @@ Reference cut: **2026-09-05**
 | Registered chronology conflicts | 5 | explicitly preserved |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **79 / 96** | 82.3% of reliability slots localized |
+| Fragment locator rows resolved/candidate | **80 / 96** | 83.3% of reliability slots localized |
 | Fully frozen fragments | **15 / 96** | three complete batches plus one three-slot primary-image batch |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **79 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **80 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Fifteen units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -81,6 +81,16 @@ The same OCR evidence strengthens the December 1921 side of chronology conflict 
 
 HNDM's primary descriptor independently confirms that the third-era run consists of nos. 1–4, from 16 October through 6 November 1870, that each issue has four pages in two columns and that the bound collection must be sought under *La Escuela de primeras letras*. The page image/page ID for p. 2 remains the next primary gate.
 
+## 80-slot threshold: México Intelectual
+
+`fragment_locator_progress_mexico_intelectual_w15.csv` moves the pilot from 79 to **80/96**, reaching the operational localization threshold without changing the frozen count.
+
+`PDHD-F000011`, slot C for `PDHD-D000063`, now targets *La Escuela Normal de Jalapa*, pp. 26–27 of *México Intelectual*, vol. 1 (1889). The exact historical reference appears in a 2022 volume edited by the Sociedad Mexicana de Historia de la Educación and evaluated by academic peers. The cited item is methodologically appropriate for the source-critical slot because it documents the normal-school institution at the center of the publication's intellectual and professional network.
+
+The supporting source is secondary. An attempted page-image inspection of the scholarly PDF failed at the remote cache layer, and the historical UNAM/HNDM page itself has not yet been inspected. The locator therefore remains `secondary_page_pointer_primary_check_pending`, `metadata_only` and `locator_candidate`. No coder boundary is asserted.
+
+This addition completes the four deterministic localization slots for `PDHD-D000063`: p. 5 for the pedagogical/programmatic target, p. 2 for the professional/institutional target, pp. 26–27 for the source-critical target and p. 6 for the administrative control target. Their evidentiary strengths remain individually governed by their respective shard rows.
+
 ## El Maestro expansion
 
 The postrevolutionary press block extends beyond the first frozen issue. Exact secondary page pointers are registered for José U. Escobar's *Las tribus indígenas mexicanas* (I,2, pp. 173–176), José Suirob's *Orientación obrera* (I,2, pp. 145–147), Grupo Claridad's *La internacional de los intelectuales* (I,2, pp. 133–135), Abel Ayala's *Mejores maestros* (I,4, pp. 351–352), Rafael Ramos Pedrueza's *Historia de México* (núm. 4, pp. 341–348), Gabriela Mistral's *Lecturas escolares. El cardo* (II,III, pp. 299–300) and Rufino Blanco-Fombona's *Democracia Criolla* (II,3, pp. 293–297).
@@ -97,7 +107,7 @@ The Mistral citation exposed the fifth registered chronology conflict. Signos Hi
 
 ## Fragment-localization progress
 
-The union of all `fragment_locator_progress*.csv` shards contains **79/96** pilot slots. Fifteen are frozen. The remaining **64** located rows include direct primary-page candidates, direct primary OCR regions pending image verification, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **17 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **80/96** pilot slots. Fifteen are frozen. The remaining **65** located rows include direct primary-page candidates, direct primary OCR regions pending image verification, direct reader/scan targets, direct section starts, reproduced facsimiles and exact scholarly page pointers. **16 slots remain without a locator.**
 
 The retrieval chain remains:
 
@@ -139,4 +149,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The project is now at **79/96 localized**. The 80/96 operational threshold is one slot away, while the stronger scientific priority remains raising the frozen count beyond **15/96**, especially by converting direct page/scan/OCR candidates into exact image-verified coder spans rather than adding weaker references.
+The project is now at **80/96 localized**. The 80/96 operational threshold has been reached. The next quantitative checkpoint is **84/96 localized**, but the stronger scientific priority remains raising the frozen count beyond **15/96**, especially by converting direct page/scan/OCR candidates into exact image-verified coder spans rather than adding weaker references.
