@@ -4,7 +4,7 @@ Reference cut: **2026-09-05**
 
 ## Objective
 
-PDHD-U1 is now at **82/96 localized slots** and **28/96 frozen**. The dedicated direct-primary sprint itself closed at 22/96; the post-sprint exact-page phase has since added `PDHD-F000033`, the complete four-slot `PDHD-D000003` batch and `PDHD-F000035`, which completes `PDHD-D000011`, without weakening the evidence hierarchy.
+PDHD-U1 is now at **83/96 localized slots** and **29/96 frozen**. The dedicated direct-primary sprint itself closed at 22/96; the post-sprint primary-recovery phase has since added `PDHD-F000033`, the complete four-slot `PDHD-D000003` batch, `PDHD-F000035` and `PDHD-F000037`, without weakening the evidence hierarchy.
 
 `locator_found != fragment_frozen`
 
@@ -74,6 +74,20 @@ The already recovered twenty-page BVMC primary PDF also resolves `PDHD-F000035` 
 
 This conversion completes `PDHD-D000011` at 4/4. It uses `not_transcribed`, `metadata_only` and `BVMC_direct_primary_pdf_inspection`, with no page image or historical transcription committed. The same recovered primary object can therefore support multiple deterministic slots only when each slot has a distinct, explicitly bounded region.
 
+## Fourth post-sprint conversion — complete La Enseñanza Moderna batch
+
+`PDHD-F000037` closes the remaining slot A for `PDHD-D000031`, *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, 1 July 1907.
+
+The issue was already object-resolved in BVMC and its first page had supplied frozen B/C/D regions, but no explicit pedagogical-act passage beyond the opening had been inspected. A dedicated recovery workflow downloaded the exact 8 MB-class BVMC primary PDF and rendered all nine pages. Direct visual inspection of printed p. 6 identifies *Clase de colores* and a compact lesson plan.
+
+The frozen coder span begins at `Principio`, includes the contiguous `Medio`, `Fin`, `Método` and `Procedimiento` lines, and ends before `Ilustraciones`. The following `Objeto inmediato` block and teacher-pupil demonstration dialogue are excluded. This creates a compact explicit-action unit describing how the lesson is opened, how colors are mixed, how children's attention is directed and which methodological/procedural frame is used.
+
+`PDHD-F000037` therefore moves directly from the gap queue to a fixed primary span. It increases both localization and freezing in one step and completes `PDHD-D000031` at 4/4.
+
+This conversion demonstrates:
+
+`object_resolved + complete_primary_page_inspection -> new_locator + fixed_span`
+
 ## Evidence policy retained
 
 No conversion wave promotes a secondary facsimile, generic reader target, table-of-contents entry or OCR-only region as a frozen span. The mandatory distinctions remain:
@@ -92,8 +106,8 @@ No conversion wave promotes a secondary facsimile, generic reader target, table-
 
 ## Result and next phase
 
-The project moves **15/96 -> 17/96 -> 19/96 -> 21/96 -> 22/96 -> 23/96 -> 27/96 -> 28/96 frozen**. Localization moves from **80/96 to 82/96** because primary inspection of the *La Enseñanza Primaria* masthead resolves two previously missing deterministic slots. Localized-but-not-frozen slots are now **54**, and **14** slots remain without a locator.
+The project moves **15/96 -> 17/96 -> 19/96 -> 21/96 -> 22/96 -> 23/96 -> 27/96 -> 28/96 -> 29/96 frozen**. Localization moves from **80/96 to 83/96**: the *La Enseñanza Primaria* masthead resolved two previously missing deterministic slots and `PDHD-F000037` resolves one additional gap from direct primary inspection. Localized-but-not-frozen slots remain **54**, and **13** slots remain without a locator.
 
-The next scientific priority is the comparable single-slot completion opportunity `PDHD-F000037` in the exact *La Enseñanza Moderna* BVMC issue. After that, page-resolved *El Maestro*, *México Intelectual* and *La Escuela Moderna* targets should be prioritized by primary-object tractability and expected batch completion value.
+The next scientific priority is cluster recovery rather than isolated discovery. Page-resolved *El Maestro*, *México Intelectual* and *La Escuela Moderna* targets should be prioritized by primary-object tractability and expected batch-completion value. The object-resolved 37-page *Revista de Instrucción Pública Mexicana* issue is also high-value because one complete issue inspection could resolve multiple missing slots.
 
 Human annotation remains downstream of the complete 96-fragment freeze package.
