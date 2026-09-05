@@ -149,6 +149,26 @@ def main() -> int:
             if not row.get(field, "").strip():
                 ERRORS.append(f"{fid}: missing {field}")
 
+    eligible = {
+        fid
+        for fid, row in locators.items()
+        if row.get("boundary_status", "").strip() in DIRECT_PRIMARY_STATES
+        and row.get("freeze_status", "").strip() != "frozen"
+    }
+    if seen != eligible:
+        missing = sorted(eligible - seen)
+        stale = sorted(seen - eligible)
+        if missing:
+            ERRORS.append(
+                "freeze-conversion queue omits eligible direct-primary candidates: "
+                + ", ".join(missing)
+            )
+        if stale:
+            ERRORS.append(
+                "freeze-conversion queue contains rows no longer eligible for direct-primary conversion: "
+                + ", ".join(stale)
+            )
+
     if not rows:
         ERRORS.append("freeze-conversion queue is empty")
 
@@ -163,7 +183,7 @@ def main() -> int:
     distribution = ", ".join(f"{key}={value}" for key, value in counts.items())
     print(
         "PDHD freeze-conversion queue checks passed "
-        f"({len(rows)} direct-primary candidates; {distribution})"
+        f"({len(rows)} complete direct-primary candidates; {distribution})"
     )
     return 0
 
