@@ -4,7 +4,7 @@ Reference cut: **2026-09-05**
 
 ## Objective
 
-PDHD-U1 is now at **82/96 localized slots** and **27/96 frozen**. The dedicated direct-primary sprint itself closed at 22/96; the post-sprint exact-page phase has since added `PDHD-F000033` and the complete four-slot `PDHD-D000003` batch without weakening the evidence hierarchy.
+PDHD-U1 is now at **82/96 localized slots** and **28/96 frozen**. The dedicated direct-primary sprint itself closed at 22/96; the post-sprint exact-page phase has since added `PDHD-F000033`, the complete four-slot `PDHD-D000003` batch and `PDHD-F000035`, which completes `PDHD-D000011`, without weakening the evidence hierarchy.
 
 `locator_found != fragment_frozen`
 
@@ -68,6 +68,12 @@ This batch adds a further methodological distinction:
 
 The alternate primary copy is used to inspect the historical page; secondary scholarship remains only a retrieval guide.
 
+## Third post-sprint conversion — complete La Enseñanza Normal batch
+
+The already recovered twenty-page BVMC primary PDF also resolves `PDHD-F000035` on printed p. 4. Direct inspection confirms the opening of *15 de Septiembre — Fecha grata* and its source-critical framing of school, national education, liberty and progress. The frozen span begins at the article heading, crosses the column break through the opening paragraph on Libertad y Progreso and stops before the following paragraph changes to military commemoration.
+
+This conversion completes `PDHD-D000011` at 4/4. It uses `not_transcribed`, `metadata_only` and `BVMC_direct_primary_pdf_inspection`, with no page image or historical transcription committed. The same recovered primary object can therefore support multiple deterministic slots only when each slot has a distinct, explicitly bounded region.
+
 ## Evidence policy retained
 
 No conversion wave promotes a secondary facsimile, generic reader target, table-of-contents entry or OCR-only region as a frozen span. The mandatory distinctions remain:
@@ -86,8 +92,8 @@ No conversion wave promotes a secondary facsimile, generic reader target, table-
 
 ## Result and next phase
 
-The project moves **15/96 -> 17/96 -> 19/96 -> 21/96 -> 22/96 -> 23/96 -> 27/96 frozen**. Localization moves from **80/96 to 82/96** because primary inspection of the *La Enseñanza Primaria* masthead resolves two previously missing deterministic slots. Localized-but-not-frozen slots are now **55**, and **14** slots remain without a locator.
+The project moves **15/96 -> 17/96 -> 19/96 -> 21/96 -> 22/96 -> 23/96 -> 27/96 -> 28/96 frozen**. Localization moves from **80/96 to 82/96** because primary inspection of the *La Enseñanza Primaria* masthead resolves two previously missing deterministic slots. Localized-but-not-frozen slots are now **54**, and **14** slots remain without a locator.
 
-The next scientific priority is to complete near-finished batches with already identified primary objects. `PDHD-F000035` on p. 4 of the inaugural *La Enseñanza Normal* PDF is especially attractive because the exact BVMC object has already been retrieved and its remaining slot would complete that document at 4/4. `PDHD-F000037` in the exact *La Enseñanza Moderna* BVMC issue is the next comparable single-slot completion opportunity.
+The next scientific priority is the comparable single-slot completion opportunity `PDHD-F000037` in the exact *La Enseñanza Moderna* BVMC issue. After that, page-resolved *El Maestro*, *México Intelectual* and *La Escuela Moderna* targets should be prioritized by primary-object tractability and expected batch completion value.
 
 Human annotation remains downstream of the complete 96-fragment freeze package.
