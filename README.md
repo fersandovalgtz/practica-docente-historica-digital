@@ -16,7 +16,7 @@ PDHD distingue entre **fuente**, **identidad documental**, **derechos**, **proce
 
 ## Estado científico de PDHD-U1
 
-Corte de referencia: **5 de septiembre de 2026**.
+Corte de referencia: **6 de septiembre de 2026**.
 
 | Capa | Estado |
 |---|---:|
@@ -28,7 +28,7 @@ Corte de referencia: **5 de septiembre de 2026**.
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
 | Slots con localizador candidato/resuelto | **83 / 96** |
-| Fragmentos completamente congelados | **30 / 96** |
+| Fragmentos completamente congelados | **33 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -48,6 +48,8 @@ El número inaugural de *La Enseñanza Normal*, 15 de septiembre de 1904, aporta
 *El Maestro* suma ahora cuatro congelamientos adicionales a su primer lote completo. En tomo II, núm. 3, `PDHD-F000050` fija en `n237` el bloque institucional de la Secretaría de Educación Pública y Talleres Gráficos de la Nación, mientras `PDHD-F000052` fija en `n236` el cartucho bibliográfico de portada como control. La portada identifica explícitamente tomo II, número III, diciembre de 1921 y la imprenta independiente confirma México, diciembre de 1921. Para los números 2 y 4 de 1921, `PDHD-F000044` y `PDHD-F000048` quedan congelados como controles mediante los cartuchos bibliográficos de las portadas primarias `n104` y `n4`, respectivamente.
 
 `PDHD-F000060`, control de *El esfuerzo educativo en México* (1928), cruza ahora el mismo gate de imagen primaria. Google Books expone `PR5`; un workflow de recuperación resolvió el PDF público vigente desde el HTML de la página seleccionada y renderizó las primeras hojas. La correspondencia `PR5` → orden 6 del libro → imagen PDF 009 se verificó antes de fijar el núcleo bibliográfico de la portada como control. La cola de conversión directa queda vacía; esto no equivale a completar el paquete de 96 fragmentos.
+
+El mismo PDF primario permite completar ahora los tres slots analíticos de `PDHD-D000066`. `PDHD-F000057` queda fijado en la p. 125 sobre formación práctica supervisada de futuros maestros; `PDHD-F000058`, en la p. 18, sobre la documentación de la visita del inspector; y `PDHD-F000059`, en la p. 104, como unidad de crítica de fuentes sobre la cuantificación oficial de escuelas, maestros y asistencia en pueblos categorizados como indígenas. Los tres registros conservan sólo metadatos de localización, límites y procedencia.
 
 Como HNDM permanece `metadata_only` y la reutilización de objetos BVMC e Internet Archive se maneja conservadoramente, el repositorio conserva localizadores, límites y metadatos de preparación; no publica el texto histórico ni las imágenes de página.
 
@@ -147,7 +149,7 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **83/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **30/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **83/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **33/96** fragmentos.
 
 La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, el tomo II, núm. 3 ya aporta dos regiones congeladas y los números 2 y 4 de 1921 aportan controles de portada directamente inspeccionados. Entre los targets analíticos pendientes figuran José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Rafael Ramos Pedrueza, *Historia de México*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Los punteros secundarios permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
 
@@ -201,7 +203,7 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **83/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **53 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **30/96** congelados demuestran el pipeline a través de HNDM, BVMC e Internet Archive y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
+La selección documental ya está lista. **83/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **50 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **33/96** congelados demuestran el pipeline a través de HNDM, BVMC, Internet Archive y Google Books y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
 
 La cola dedicada de conversión directa quedó vacía después de `PDHD-F000060`; el siguiente frente es convertir punteros de página fuertes mediante inspección directa del objeto primario. Quedan **13 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **84/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles. `PDHD-F000060` ya fue inspeccionado en la página primaria `PR5`, congelado y retirado de cualquier cola pendiente.
 
