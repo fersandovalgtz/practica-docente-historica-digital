@@ -13,51 +13,80 @@ jobs:
   retrieve:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve live Google Books PDF and page index
+      - name: Probe candidate Google Books objects and resolve public PDF
         shell: python
         run: |
-          import html,json,pathlib,re,urllib.request
+          import html,json,pathlib,re,urllib.request,urllib.error
           out=pathlib.Path('memoria-sep-1937-primary'); out.mkdir()
-          bid='KRV2_jMW8-wC'
+          candidates=['08ygAAAAMAAJ','KRV2_jMW8-wC']
           headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
-          url=f'https://books.google.com/books?id={bid}&pg=PA41'
-          req=urllib.request.Request(url,headers=headers)
-          with urllib.request.urlopen(req,timeout=60) as r: body=r.read()
-          text=html.unescape(body.decode('utf-8',errors='replace'))
-          (out/'selected-page.html').write_text(text,encoding='utf-8')
-          urls=re.findall(r'https?://books\.google\.com/books/download/[^\"\s<>]+?\.pdf\?[^\"\s<>]+',text)
-          clean=[]
-          for u in urls:
-              u=u.replace('\\u0026','&')
-              if u not in clean: clean.append(u)
-          print({'pdf_candidates':len(clean),'html_bytes':len(body)})
-          if not clean: raise SystemExit('No public PDF link exposed')
-          (out/'pdf-url.txt').write_text(clean[0],encoding='utf-8')
-          req=urllib.request.Request(clean[0],headers=headers)
-          with urllib.request.urlopen(req,timeout=180) as r: pdf=r.read()
-          if not pdf.startswith(b'%PDF'): raise SystemExit(f'not PDF: {pdf[:30]!r}')
-          (out/'volume.pdf').write_bytes(pdf)
-          # Recover page-label/order pairs from embedded Google page index.
-          pairs=[]
-          for m in re.finditer(r'"pid":"([^"]+)".*?"pageNumber":"([^"]*)".*?"order":(\d+)',text):
-              pairs.append({'pid':m.group(1),'pageNumber':m.group(2),'order':int(m.group(3))})
-          (out/'page-index.json').write_text(json.dumps(pairs,ensure_ascii=False,indent=2),encoding='utf-8')
-          print({'pdf_bytes':len(pdf),'page_pairs':len(pairs),'targets':[p for p in pairs if p['pageNumber'] in {'40','41','371','444'} or p['pid'] in {'PA40','PA41','PA371','PA444','PP7','PR5'}]})
+          report=[]
+          chosen=None
+          for bid in candidates:
+              item={'id':bid,'pages':[],'pdf_candidates':[]}
+              texts=[]
+              for pg in ['PA1','PA40','PA41','PA371','PA444','PP7']:
+                  url=f'https://books.google.com/books?id={bid}&pg={pg}'
+                  try:
+                      req=urllib.request.Request(url,headers=headers)
+                      with urllib.request.urlopen(req,timeout=60) as r: body=r.read()
+                      text=html.unescape(body.decode('utf-8',errors='replace'))
+                      texts.append(text)
+                      (out/f'{bid}-{pg}.html').write_text(text,encoding='utf-8')
+                      meta={}
+                      for key in ['is_browsable','is_public_domain','can_download_pdf','has_scanned_text','is_ebook','fullview']:
+                          m=re.search(rf'"?{key}"?\s*[:=]\s*(true|false)',text,re.I)
+                          if m: meta[key]=m.group(1).lower()=='true'
+                      urls=re.findall(r'https?://books\.google\.com/books/download/[^\"\s<>]+?\.pdf\?[^\"\s<>]+',text)
+                      urls=[u.replace('\\u0026','&') for u in urls]
+                      item['pages'].append({'pg':pg,'status':200,'bytes':len(body),'meta':meta,'pdf_count':len(set(urls))})
+                      for u in urls:
+                          if u not in item['pdf_candidates']: item['pdf_candidates'].append(u)
+                  except urllib.error.HTTPError as exc:
+                      item['pages'].append({'pg':pg,'status':exc.code})
+                  except Exception as exc:
+                      item['pages'].append({'pg':pg,'error':repr(exc)})
+              joined='\n'.join(texts)
+              pairs=[]
+              for m in re.finditer(r'"pid":"([^"]+)".*?"pageNumber":"([^"]*)".*?"order":(\d+)',joined):
+                  x={'pid':m.group(1),'pageNumber':m.group(2),'order':int(m.group(3))}
+                  if x not in pairs: pairs.append(x)
+              item['page_index_count']=len(pairs)
+              item['target_pairs']=[p for p in pairs if p.get('pageNumber') in {'40','41','371','444'} or p.get('pid') in {'PA40','PA41','PA371','PA444','PP7','PR5','PA1'}]
+              (out/f'{bid}-page-index.json').write_text(json.dumps(pairs,ensure_ascii=False,indent=2),encoding='utf-8')
+              if item['pdf_candidates'] and chosen is None:
+                  for pdf_url in item['pdf_candidates']:
+                      try:
+                          req=urllib.request.Request(pdf_url,headers=headers)
+                          with urllib.request.urlopen(req,timeout=180) as r: pdf=r.read()
+                          if pdf.startswith(b'%PDF'):
+                              (out/'volume.pdf').write_bytes(pdf)
+                              (out/'chosen-id.txt').write_text(bid,encoding='utf-8')
+                              (out/'pdf-url.txt').write_text(pdf_url,encoding='utf-8')
+                              (out/'page-index.json').write_text(json.dumps(pairs,ensure_ascii=False,indent=2),encoding='utf-8')
+                              item['downloaded_pdf_bytes']=len(pdf)
+                              chosen=bid
+                              break
+                      except Exception as exc:
+                          item.setdefault('pdf_errors',[]).append(repr(exc))
+              report.append(item)
+          (out/'probe-report.json').write_text(json.dumps({'chosen':chosen,'candidates':report},ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps({'chosen':chosen,'candidates':[{k:v for k,v in x.items() if k!='pdf_candidates'} for x in report]},ensure_ascii=False,indent=2))
 
-      - name: Identity gate and render target windows
+      - name: Identity gate and render target windows when PDF exists
         shell: bash
         run: |
           set -euo pipefail
+          out=memoria-sep-1937-primary
+          if [ ! -f "$out/volume.pdf" ]; then echo 'No candidate exposed a public PDF; preserving probe only.'; exit 0; fi
           sudo apt-get update -qq
           sudo apt-get install -y -qq poppler-utils
-          out=memoria-sep-1937-primary
           pdfinfo "$out/volume.pdf" > "$out/pdfinfo.txt"
           pdftotext -layout "$out/volume.pdf" "$out/volume.txt" || true
           pages=$(pdfinfo "$out/volume.pdf" | awk '/^Pages:/ {print $2}')
-          echo "pages=$pages"
-          # Primary-object identity gate: front matter must identify 1937 and the SEP memory.
-          pdftotext -f 1 -l 30 -layout "$out/volume.pdf" "$out/front.txt" || true
-          grep -Eiq '1937|31 de agosto de 1937|1936.*1937' "$out/front.txt" || { echo '1937 identity not visible in first 30 pages'; cat "$out/front.txt"; exit 1; }
+          echo "pages=$pages chosen=$(cat "$out/chosen-id.txt")"
+          pdftotext -f 1 -l 35 -layout "$out/volume.pdf" "$out/front.txt" || true
+          grep -Eiq '1937|31 de agosto de 1937|1936.*1937|septiembre de 1936.*agosto de 1937' "$out/front.txt" || { echo '1937 identity not visible in first 35 pages'; cat "$out/front.txt"; exit 1; }
           grep -Eiq 'MEMORIA|SECRETAR.I?A DE EDUCACI' "$out/front.txt" || { echo 'SEP memory identity missing'; exit 1; }
           mkdir -p "$out/rendered"
           python - <<'PY'
@@ -65,18 +94,13 @@ jobs:
           out=pathlib.Path('memoria-sep-1937-primary')
           total=int(re.search(r'^Pages:\s+(\d+)',(out/'pdfinfo.txt').read_text(),re.M).group(1))
           pairs=json.loads((out/'page-index.json').read_text())
-          render=set(range(1,min(total,35)+1))
-          target_labels={'40','41','371','444'}
-          selected=[]
+          render=set(range(1,min(total,35)+1)); selected=[]
           for p in pairs:
-              if p.get('pageNumber') in target_labels:
-                  # Google order is zero-based-ish relative to book; empirical PDF mapping may differ by +1/+2, so render +/-4 around order+1.
-                  approx=p['order']+1
-                  selected.append(p)
-                  render.update(range(max(1,approx-4),min(total,approx+4)+1))
-          # fallback broad offsets if page index extraction is incomplete
+              if p.get('pageNumber') in {'40','41','371','444'}:
+                  selected.append(p); approx=p['order']+1
+                  render.update(range(max(1,approx-5),min(total,approx+5)+1))
           for printed in (40,41,371,444):
-              for off in range(0,45,5):
+              for off in range(0,60,5):
                   q=printed+off
                   if 1 <= q <= total: render.add(q)
           for p in sorted(render):
@@ -86,21 +110,22 @@ jobs:
           print({'pdf_pages':total,'selected_index_pairs':selected,'render_count':len(render)})
           PY
 
-      - name: Extract searchable neighborhoods
+      - name: Extract searchable neighborhoods when PDF exists
         shell: python
         run: |
           import json,pathlib,re,unicodedata
           out=pathlib.Path('memoria-sep-1937-primary')
+          if not (out/'volume.txt').exists():
+              print('No PDF text; probe-only run'); raise SystemExit(0)
           pages=(out/'volume.txt').read_text(encoding='utf-8',errors='replace').split('\f')
-          terms=['TRABAJO MANUAL','CONSEJO NACIONAL','EDUCACION SUPERIOR','INVESTIGACION','DISTRIBUCION DE BECAS','BECAS','BIBLIOTECAS','ASISTENCIA','LECTORES','USUARIOS']
+          terms=['TRABAJO MANUAL','CONSEJO NACIONAL','EDUCACION SUPERIOR','INVESTIGACION','DISTRIBUCION DE BECAS','BECAS','BIBLIOTECAS','ASISTENCIA','LECTORES','USUARIOS','APLICACIONES PRACTICAS']
           hits=[]
           for i,p in enumerate(pages,start=1):
               n=unicodedata.normalize('NFD',p.upper()); n=''.join(c for c in n if unicodedata.category(c)!='Mn')
               found=[t for t in terms if t in n]
-              if found:
-                  hits.append({'physical':i,'terms':found,'snippet':re.sub(r'\s+',' ',p)[:5000]})
+              if found: hits.append({'physical':i,'terms':found,'snippet':re.sub(r'\s+',' ',p)[:6000]})
           (out/'text-hits.json').write_text(json.dumps(hits,ensure_ascii=False,indent=2),encoding='utf-8')
-          print(json.dumps(hits[:80],ensure_ascii=False,indent=2))
+          print(json.dumps(hits[:100],ensure_ascii=False,indent=2))
 
       - name: Upload primary review artifact
         uses: actions/upload-artifact@v4
