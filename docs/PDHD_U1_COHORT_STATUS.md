@@ -14,7 +14,7 @@ Reference cut: **2026-09-05**
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
 | Fragment locator rows resolved/candidate | **83 / 96** | 86.5% of reliability slots localized |
-| Fully frozen fragments | **37 / 96** | page-resolved conversion phase active |
+| Fully frozen fragments | **41 / 96** | page-resolved conversion phase active |
 | Human-validated pedagogical fragments | 0 | not started |
 
 The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **83 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Thirty units have crossed the stronger frozen-fragment gate.
@@ -53,7 +53,7 @@ The `PDHD-F000033` recovery established the post-sprint exact-pointer workflow: 
 
 ## Remaining localization work
 
-The union of all `fragment_locator_progress*.csv` shards contains **83/96** pilot slots. Thirty are frozen. The remaining **46** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **13 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **83/96** pilot slots. Thirty are frozen. The remaining **42** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **13 slots remain without a locator.**
 
 The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. The active phase now converts strong page-resolved candidates through direct historical-object inspection and opportunistically fills missing deterministic slots when the same inspected page provides structurally distinct evidence.
 
