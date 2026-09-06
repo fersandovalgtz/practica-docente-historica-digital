@@ -1,0 +1,125 @@
+name: Probe Mexico Intelectual 1889 primary copies
+
+on:
+  push:
+    branches: [freeze-mexico-intelectual-1889]
+    paths:
+      - ".github/workflows/probe-mexico-intelectual-1889.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Recover canonical document and alias rows
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p mexico-intelectual-probe
+          grep '^PDHD-D000063,' data/catalog/documents.csv | tee mexico-intelectual-probe/document-row.txt || true
+          grep 'PDHD-D000063' data/catalog/object_aliases.csv | tee mexico-intelectual-probe/aliases.txt || true
+          grep 'PDHD-D000063' data/catalog/chronology_conflicts.csv | tee mexico-intelectual-probe/chronology.txt || true
+          grep 'PDHD-D000063' data/samples/fragment_locator_progress*.csv | tee mexico-intelectual-probe/locator-rows.txt || true
+
+      - name: Probe Internet Archive and Google Books catalogs
+        shell: python
+        run: |
+          import html,json,pathlib,re,urllib.parse,urllib.request,urllib.error
+          out=pathlib.Path('mexico-intelectual-probe')
+          headers={'User-Agent':'Mozilla/5.0 PDHD-source-verification/0.1','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          result={}
+          # Internet Archive exact/fuzzy title search.
+          queries={
+            'exact':'title:("Mexico Intelectual") AND year:[1889 TO 1890]',
+            'creator':'title:("Mexico Intelectual") AND (creator:(Rebsamen) OR creator:(Fuentes))',
+            'jalapa':'title:("Mexico Intelectual") AND description:(Jalapa)',
+          }
+          ia={}
+          for label,q in queries.items():
+              params=urllib.parse.urlencode({'q':q,'fl[]':['identifier','title','creator','date','year','description','identifier-ark','external-identifier'],'rows':100,'output':'json'},doseq=True)
+              try:
+                  req=urllib.request.Request('https://archive.org/advancedsearch.php?'+params,headers=headers)
+                  with urllib.request.urlopen(req,timeout=60) as r: data=json.loads(r.read().decode())
+                  ia[label]={'numFound':data.get('response',{}).get('numFound'),'docs':data.get('response',{}).get('docs',[])}
+              except Exception as exc: ia[label]={'error':repr(exc)}
+          result['internet_archive']=ia
+
+          # Google Books web-search result pages: collect IDs, then inspect each candidate's metadata.
+          gqueries=[
+            '"México Intelectual" 1889 Rebsamen',
+            '"Mexico Intelectual" 1889 Jalapa',
+            'intitle:"Mexico Intelectual" 1889',
+          ]
+          ids=[]; searches=[]
+          for q in gqueries:
+              url='https://books.google.com/books?'+urllib.parse.urlencode({'q':q,'hl':'es'})
+              try:
+                  req=urllib.request.Request(url,headers=headers)
+                  with urllib.request.urlopen(req,timeout=60) as r: body=r.read()
+                  text=html.unescape(body.decode('utf-8',errors='replace'))
+                  found=sorted(set(re.findall(r'(?:id=|books\?id=)([A-Za-z0-9_-]{12})',text)))
+                  searches.append({'query':q,'status':200,'bytes':len(body),'ids':found})
+                  for x in found:
+                      if x not in ids: ids.append(x)
+              except Exception as exc: searches.append({'query':q,'error':repr(exc)})
+          result['google_searches']=searches
+          probes=[]
+          for bid in ids[:60]:
+              item={'id':bid}
+              try:
+                  url=f'https://books.google.com/books?id={bid}&pg=PA1&hl=es'
+                  req=urllib.request.Request(url,headers=headers)
+                  with urllib.request.urlopen(req,timeout=60) as r: body=r.read()
+                  text=html.unescape(body.decode('utf-8',errors='replace'))
+                  item['bytes']=len(body)
+                  # compact title/year context
+                  m=re.search(r'<h1 class="booktitle">(.*?)</h1>',text,re.S)
+                  if m: item['booktitle']=re.sub('<[^>]+>','',m.group(1)).strip()
+                  item['mentions_mexico_intelectual']='México Intelectual' in text or 'Mexico Intelectual' in text
+                  item['mentions_1889']='1889' in text
+                  item['mentions_jalapa']='Jalapa' in text or 'Xalapa' in text
+                  for key in ['is_browsable','is_public_domain','can_download_pdf','has_scanned_text','is_ebook','is_free_ebook']:
+                      mm=re.search(rf'"?{key}"?\s*[:=]\s*(true|false)',text,re.I)
+                      if mm: item[key]=mm.group(1).lower()=='true'
+                  urls=re.findall(r'https?://books\.google\.com/books/download/[^\"\s<>]+?\.pdf\?[^\"\s<>]+',text)
+                  item['pdf_candidates']=len(set(urls))
+              except Exception as exc: item['error']=repr(exc)
+              probes.append(item)
+          result['google_candidates']=probes
+          (out/'catalog-probe.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(result,ensure_ascii=False,indent=2))
+
+      - name: Probe canonical source URL when directly downloadable
+        shell: python
+        run: |
+          import csv,pathlib,urllib.request,urllib.error
+          out=pathlib.Path('mexico-intelectual-probe')
+          row=next(csv.DictReader(open('data/catalog/documents.csv',encoding='utf-8')))
+          with open('data/catalog/documents.csv',encoding='utf-8') as f:
+              for r in csv.DictReader(f):
+                  if r['document_id']=='PDHD-D000063': row=r; break
+          url=row.get('source_url','')
+          print({'source_id':row.get('source_id'),'source_url':url,'source_identifier':row.get('source_identifier'),'date':row.get('publication_date'),'volume':row.get('volume')})
+          if not url: raise SystemExit(0)
+          headers={'User-Agent':'Mozilla/5.0 PDHD-source-verification/0.1'}
+          try:
+              req=urllib.request.Request(url,headers=headers)
+              with urllib.request.urlopen(req,timeout=60) as resp:
+                  body=resp.read(2_000_000)
+                  (out/'canonical-source-prefix.bin').write_bytes(body)
+                  (out/'canonical-source-headers.txt').write_text(str(resp.headers),encoding='utf-8')
+                  print({'status':resp.status,'content_type':resp.headers.get('Content-Type'),'bytes_read':len(body),'prefix':body[:20]})
+          except urllib.error.HTTPError as exc:
+              print({'source_http_error':exc.code,'content_type':exc.headers.get('Content-Type')})
+          except Exception as exc: print({'source_error':repr(exc)})
+
+      - name: Upload probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-mexico-intelectual-1889-probe
+          path: mexico-intelectual-probe/
+          retention-days: 1
