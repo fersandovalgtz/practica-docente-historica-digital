@@ -1,0 +1,115 @@
+name: Retrieve Revista Instruccion Publica 1896 issue
+
+on:
+  push:
+    branches: [freeze-revista-instruccion-publica-1896]
+    paths:
+      - ".github/workflows/retrieve-revista-instruccion-publica-1896.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Recover D000006 state and traverse exact HNDM issue
+        shell: python
+        run: |
+          import csv,html,json,pathlib,re,time,urllib.parse,urllib.request,urllib.error
+          out=pathlib.Path('revista-instruccion-1896-primary'); out.mkdir()
+          # Audit current locator/gap state before retrieval.
+          state={'locators':[],'gaps':[]}
+          for path in pathlib.Path('data/samples').glob('fragment_locator_progress*.csv'):
+              with path.open(encoding='utf-8',newline='') as f:
+                  for r in csv.DictReader(f):
+                      if r.get('document_id')=='PDHD-D000006': state['locators'].append({'file':str(path),**r})
+          with open('data/samples/fragment_gap_queue_0_1.csv',encoding='utf-8',newline='') as f:
+              for r in csv.DictReader(f):
+                  if r.get('document_id')=='PDHD-D000006': state['gaps'].append(r)
+          (out/'pre-retrieval-state.json').write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(state,ensure_ascii=False,indent=2))
+
+          serial='558075bf7d1e63c9fea1a411'
+          base='https://hndm.iib.unam.mx'
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.7'}
+          current=f'{base}/consulta/publicacion/visualizar/{serial}?anio=1896&mes=03&dia=15&intPagina=1&tipo=publicacion'
+          mapping=[]; seen=set()
+          for seq in range(1,45):
+              item={'sequence':seq,'viewer_url':current}
+              try:
+                  req=urllib.request.Request(current,headers=headers)
+                  with urllib.request.urlopen(req,timeout=90) as r: body=r.read()
+                  text=html.unescape(body.decode('utf-8',errors='replace'))
+                  item['bytes']=len(body)
+                  # Require target identity/date in the viewer where exposed.
+                  item['title_hit']='Revista de la Instrucción Pública Mexicana' in text or 'Revista de la Instruccion Publica Mexicana' in text
+                  item['date_hit']='1896' in text
+                  pdfids=list(dict.fromkeys(re.findall(r'/consulta/publicacion/pdf/([0-9a-f]{24})\.pdf',text,re.I)))
+                  if not pdfids:
+                      item['error']='no_current_pdf_id'; mapping.append(item); break
+                  pid=pdfids[0]; item['pdf_id']=pid
+                  if pid in seen:
+                      item['error']='page_cycle_detected'; mapping.append(item); break
+                  seen.add(pid)
+                  pdfurl=f'{base}/consulta/publicacion/pdf/{pid}.pdf?coleccion=&palabras='
+                  preq=urllib.request.Request(pdfurl,headers=headers)
+                  with urllib.request.urlopen(preq,timeout=90) as pr: pdf=pr.read()
+                  if not pdf.startswith(b'%PDF'):
+                      item['error']='non_pdf_payload'; mapping.append(item); break
+                  (out/f'seq-{seq:03d}-{pid}.pdf').write_bytes(pdf)
+                  item['pdf_url']=pdfurl; item['pdf_bytes']=len(pdf)
+                  mnext=re.search(r'<a href="([^"]*\?pagina=([0-9a-f]{24})[^\"]*)"[^>]*class="siguienteLink"',text,re.I)
+                  if not mnext:
+                      item['end_of_sequence']=True; mapping.append(item); break
+                  href=html.unescape(mnext.group(1)); item['next_page_id']=mnext.group(2)
+                  current=urllib.parse.urljoin(base,href)
+              except urllib.error.HTTPError as exc:
+                  item.update(status=exc.code,error='HTTPError'); mapping.append(item); break
+              except Exception as exc:
+                  item['error']=repr(exc); mapping.append(item); break
+              mapping.append(item); time.sleep(0.12)
+          (out/'viewer-map.json').write_text(json.dumps(mapping,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(mapping,ensure_ascii=False,indent=2))
+          unique=len([x for x in mapping if x.get('pdf_id')])
+          if unique < 35: raise SystemExit(f'scientific gate failed: only {unique} unique pages recovered')
+
+      - name: Render all recovered primary pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          out=revista-instruccion-1896-primary
+          mkdir -p "$out/rendered" "$out/text"
+          for f in "$out"/seq-*.pdf; do
+            [ -e "$f" ] || continue
+            stem=$(basename "$f" .pdf)
+            pdftotext -layout "$f" "$out/text/$stem.txt" || true
+            pdftoppm -f 1 -l 1 -singlefile -jpeg -r 220 "$f" "$out/rendered/$stem" >/dev/null 2>&1 || true
+          done
+          python - <<'PY'
+          import json,pathlib,re,unicodedata
+          out=pathlib.Path('revista-instruccion-1896-primary')
+          terms=['LECCION','LECCIÓN','METODO','MÉTODO','PROFESOR','MAESTRO','ALUMNO','ESCUELA','INSPECTOR','NOMBRAMIENTO','PERSONAL','SECRETARIA','SECRETARÍA','PROGRAMA','EJERCICIO','PEDAGOG','EXAMEN','REGLAMENTO','DIRECTOR']
+          rows=[]
+          for p in sorted((out/'text').glob('*.txt')):
+              txt=p.read_text(encoding='utf-8',errors='replace')
+              norm=unicodedata.normalize('NFD',txt.upper()); norm=''.join(c for c in norm if unicodedata.category(c)!='Mn')
+              hits=[]
+              for term in terms:
+                  t=unicodedata.normalize('NFD',term.upper()); t=''.join(c for c in t if unicodedata.category(c)!='Mn')
+                  if t in norm: hits.append(term)
+              rows.append({'file':p.name,'terms':hits,'numeric_lines':re.findall(r'(?m)^\s*([0-9]{1,3})\s*$',txt)[:12],'snippet':re.sub(r'\s+',' ',txt)[:6000]})
+          (out/'page-text-summary.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(rows,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Upload primary review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-revista-instruccion-publica-1896-primary-review
+          path: revista-instruccion-1896-primary/
+          retention-days: 1
