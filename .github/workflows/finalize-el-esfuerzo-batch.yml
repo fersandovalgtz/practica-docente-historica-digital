@@ -1,0 +1,160 @@
+name: Finalize El esfuerzo educativo analytical batch
+
+on:
+  push:
+    branches: [retrieve-el-esfuerzo-analytical-slots]
+    paths:
+      - ".github/workflows/finalize-el-esfuerzo-batch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: retrieve-el-esfuerzo-analytical-slots
+          fetch-depth: 0
+
+      - name: Promote verified locators and synchronize status counts
+        shell: python
+        run: |
+          import csv
+          import re
+          from pathlib import Path
+
+          root = Path('.')
+          locator_path = root / 'data/samples/fragment_locator_progress_0_1.csv'
+          with locator_path.open(encoding='utf-8', newline='') as fh:
+              reader = csv.DictReader(fh)
+              fields = reader.fieldnames
+              rows = list(reader)
+
+          updates = {
+              'PDHD-F000057': {
+                  'page': '125',
+                  'source_locator': 'p125-cursos-rapidos-practicas-ensenanza',
+                  'locator_evidence_url': 'https://books.google.com/books?id=O2oLAQAAIAAJ&pg=PA125',
+                  'boundary_status': 'fixed',
+                  'public_text_status': 'metadata_only',
+                  'freeze_status': 'frozen',
+                  'preparation_note': "Direct Google Books primary-PDF inspection maps printed p. 125 to physical PDF page 211. The fixed span is subsection 3º on Cursos Rápidos de Orientación Vocacional through the paragraph prescribing supervised initiation into teaching practice; it stops before the implementation-status paragraph. No historical text or source image is committed.",
+                  'checked_at': '2026-09-06',
+              },
+              'PDHD-F000058': {
+                  'page': '18',
+                  'source_locator': 'p18-inspector-visit-supervision-record',
+                  'locator_evidence_url': 'https://books.google.com/books?id=O2oLAQAAIAAJ&pg=PA18',
+                  'boundary_status': 'fixed',
+                  'public_text_status': 'metadata_only',
+                  'freeze_status': 'frozen',
+                  'preparation_note': "Direct Google Books primary-PDF inspection maps printed p. 18 to physical PDF page 104. The fixed span is the inspector-visit result sentence block documenting supervisory classes, talks, assemblies, locally acquired material and improvements; it excludes adjacent attendance statistics. No historical text or source image is committed.",
+                  'checked_at': '2026-09-06',
+              },
+              'PDHD-F000059': {
+                  'page': '104',
+                  'source_locator': 'p104-indigenous-school-statistical-table',
+                  'locator_evidence_url': 'https://books.google.com/books?id=O2oLAQAAIAAJ&pg=PA104',
+                  'boundary_status': 'fixed',
+                  'public_text_status': 'metadata_only',
+                  'freeze_status': 'frozen',
+                  'preparation_note': "Direct Google Books primary-PDF inspection maps printed p. 104 to physical PDF page 190. The fixed source-critical span is complete Tabla núm. 5, including its descriptive heading, state rows, totals and departmental signature, while excluding blank margins and digitization watermark. No table transcription or source image is committed.",
+                  'checked_at': '2026-09-06',
+              },
+          }
+
+          seen = set()
+          for row in rows:
+              fid = row.get('fragment_id')
+              if fid in updates:
+                  row.update(updates[fid])
+                  seen.add(fid)
+          missing = set(updates) - seen
+          if missing:
+              raise SystemExit(f'Missing locator rows: {sorted(missing)}')
+
+          with locator_path.open('w', encoding='utf-8', newline='') as fh:
+              writer = csv.DictWriter(fh, fieldnames=fields, lineterminator='\n')
+              writer.writeheader()
+              writer.writerows(rows)
+
+          def union_ids(pattern):
+              out = set()
+              for path in sorted((root / 'data/samples').glob(pattern)):
+                  with path.open(encoding='utf-8', newline='') as fh:
+                      for row in csv.DictReader(fh):
+                          fid = row.get('fragment_id', '').strip()
+                          if fid:
+                              out.add(fid)
+              return out
+
+          located = len(union_ids('fragment_locator_progress*.csv'))
+          frozen = len(union_ids('frozen_fragments*.csv'))
+          with (root / 'data/samples/fragment_gap_queue_0_1.csv').open(encoding='utf-8', newline='') as fh:
+              gaps = len(list(csv.DictReader(fh)))
+          not_frozen = located - frozen
+          if (located, frozen, gaps) != (83, 33, 13):
+              raise SystemExit(f'Unexpected source-of-truth counts: located={located}, frozen={frozen}, gaps={gaps}')
+
+          readme_path = root / 'README.md'
+          readme = readme_path.read_text(encoding='utf-8')
+          replacements = [
+              (r'(\| Slots con localizador candidato/resuelto \| \*\*)\d+( / 96\*\* \|)', rf'\g<1>{located}\g<2>'),
+              (r'(\| Fragmentos completamente congelados \| \*\*)\d+( / 96\*\* \|)', rf'\g<1>{frozen}\g<2>'),
+              (r'(su unión contiene \*\*)\d+(/96\*\* slots)', rf'\g<1>{located}\g<2>'),
+              (r'(su unión contiene \*\*)\d+(/96\*\* fragmentos)', rf'\g<1>{frozen}\g<2>'),
+              (r'(\*\*)\d+(/96 slots tienen ya un localizador documentado\.\*\*)', rf'\g<1>{located}\g<2>'),
+              (r'(\*\*)\d+( localizadores todavía no congelados\*\*)', rf'\g<1>{not_frozen}\g<2>'),
+              (r'(Quedan \*\*)\d+( slots sin localizador\*\*)', rf'\g<1>{gaps}\g<2>'),
+          ]
+          for pattern, repl in replacements:
+              readme, n = re.subn(pattern, repl, readme, count=1)
+              if n != 1:
+                  raise SystemExit(f'README marker mismatch for {pattern!r}: {n}')
+          readme = readme.replace('Corte de referencia: **5 de septiembre de 2026**.', 'Corte de referencia: **6 de septiembre de 2026**.', 1)
+          anchor = "`PDHD-F000060`, control de *El esfuerzo educativo en México* (1928), cruza ahora el mismo gate de imagen primaria. Google Books expone `PR5`; un workflow de recuperación resolvió el PDF público vigente desde el HTML de la página seleccionada y renderizó las primeras hojas. La correspondencia `PR5` → orden 6 del libro → imagen PDF 009 se verificó antes de fijar el núcleo bibliográfico de la portada como control. La cola de conversión directa queda vacía; esto no equivale a completar el paquete de 96 fragmentos."
+          addition = anchor + "\n\nEl mismo PDF primario permite completar ahora los tres slots analíticos de `PDHD-D000066`. `PDHD-F000057` queda fijado en la p. 125 sobre formación práctica supervisada de futuros maestros; `PDHD-F000058`, en la p. 18, sobre la documentación de la visita del inspector; y `PDHD-F000059`, en la p. 104, como unidad de crítica de fuentes sobre la cuantificación oficial de escuelas, maestros y asistencia en pueblos categorizados como indígenas. Los tres registros conservan sólo metadatos de localización, límites y procedencia."
+          if addition not in readme:
+              if anchor not in readme:
+                  raise SystemExit('README El esfuerzo anchor not found')
+              readme = readme.replace(anchor, addition, 1)
+          readme_path.write_text(readme, encoding='utf-8')
+
+          cohort_path = root / 'docs/PDHD_U1_COHORT_STATUS.md'
+          cohort = cohort_path.read_text(encoding='utf-8')
+          replacements = [
+              (r'(\| Fragment locator rows resolved/candidate \| \*\*)\d+( / 96\*\* \|)', rf'\g<1>{located}\g<2>'),
+              (r'(\| Fully frozen fragments \| \*\*)\d+( / 96\*\* \|)', rf'\g<1>{frozen}\g<2>'),
+              (r'(now has \*\*)\d+( of the 96 deterministic reliability slots\*\*)', rf'\g<1>{located}\g<2>'),
+              (r'(contains \*\*)\d+(/96\*\* pilot slots)', rf'\g<1>{located}\g<2>'),
+              (r'(remaining \*\*)\d+(\*\* located rows)', rf'\g<1>{not_frozen}\g<2>'),
+              (r'(\*\*)\d+( slots remain without a locator\.\*\*)', rf'\g<1>{gaps}\g<2>'),
+              (r'(project is now at \*\*)\d+(/96 localized\*\*)', rf'\g<1>{located}\g<2>'),
+          ]
+          for pattern, repl in replacements:
+              cohort, n = re.subn(pattern, repl, cohort, count=1)
+              if n != 1:
+                  raise SystemExit(f'Cohort marker mismatch for {pattern!r}: {n}')
+          cohort_path.write_text(cohort, encoding='utf-8')
+
+      - name: Run fragment and status validators
+        shell: bash
+        run: |
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_status_counts.py
+
+      - name: Commit finalized batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "PDHD source verification"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/samples/fragment_locator_progress_0_1.csv README.md docs/PDHD_U1_COHORT_STATUS.md
+          if git diff --cached --quiet; then
+            echo "No finalization changes to commit"
+            exit 0
+          fi
+          git commit -m "Finalize El esfuerzo educativo analytical batch"
+          git push origin HEAD:retrieve-el-esfuerzo-analytical-slots
