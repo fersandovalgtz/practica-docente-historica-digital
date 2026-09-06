@@ -1,0 +1,121 @@
+name: Finalize Memoria SEP 1938 batch v2
+
+on:
+  push:
+    branches: [freeze-memoria-sep-1938]
+    paths:
+      - ".github/workflows/finalize-memoria-sep-1938-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: freeze-memoria-sep-1938
+          fetch-depth: 0
+
+      - name: Freeze verified volume-II fragments
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          loc = root / 'data/samples/fragment_locator_progress_0_1.csv'
+          replacements = {
+              'PDHD-F000093,': '''PDHD-F000093,PDHD-D000075,A,23,p23-coordinacion-maestros-agronomos-tecnica-pedagogica,https://books.google.com/books?id=X3oQAAAAYAAJ&pg=RA2-PA23,fixed,metadata_only,frozen,"Direct primary inspection of volume II fixes printed p. 23: subsection i) Coordinación de labores entre maestros y agrónomos, from its heading through the sentence prescribing academias at least weekly; stop before j) Control de ex alumnos. The span prescribes reciprocal professional guidance, acquisition of pedagogical technique and organized teacher learning. Google Books RA2-PA23 is order 688 and maps to physical PDF page 691.",2026-09-06''',
+              'PDHD-F000094,': '''PDHD-F000094,PDHD-D000075,B,339,p339-departamento-supervision-funciones-autoridad,https://books.google.com/books?id=X3oQAAAAYAAJ&pg=RA2-PA339,fixed,metadata_only,frozen,"Direct primary inspection of volume II fixes printed p. 339: opening paragraph on creation of the Departamento de Supervisión plus dispositions 1º-3º, ending before disposition 4º. The span defines supervisory jurisdiction, staffing with inspectors and sector chiefs, compliance monitoring and reporting obligations across SEP dependencies. Google Books RA2-PA339 is order 1004 and maps to physical PDF page 1007.",2026-09-06''',
+              'PDHD-F000095,': '''PDHD-F000095,PDHD-D000075,C,71,p71-articulo-123-school-category-table,https://books.google.com/books?id=X3oQAAAAYAAJ&pg=RA2-PA71,fixed,metadata_only,frozen,"Direct primary inspection of volume II fixes printed p. 71: the paragraph introducing 1,455 Article 123 schools and the complete table that classifies company-supported schools as Urbanas, Semiurbanas or Rurales through the totals row; exclude the preceding pupil totals and the following paragraph on private schools. Google Books RA2-PA71 is order 736 and maps to physical PDF page 739. The official classification scheme is retained as a source-critical unit.",2026-09-06''',
+              'PDHD-F000096,': '''PDHD-F000096,PDHD-D000075,D,269,p269-oficina-juridica-revalidacion-title-roster,https://books.google.com/books?id=X3oQAAAAYAAJ&pg=RA2-PA269,fixed,metadata_only,frozen,"Direct primary inspection of volume II fixes printed p. 269: the standalone title/roster region OFICINA JURIDICA Y DE REVALIDACION DE ESTUDIOS and the JEFE line naming Lic. Luis Flores Esponda; exclude blank margins and Google digitization watermark. Google Books RA2-PA269 is order 934 and maps to physical PDF page 937. Selected as a deliberately non-analytical administrative control.",2026-09-06''',
+          }
+          lines = loc.read_text(encoding='utf-8').splitlines()
+          out, seen = [], set()
+          for line in lines:
+              key = next((k for k in replacements if line.startswith(k)), None)
+              if key:
+                  out.append(replacements[key]); seen.add(key)
+              else:
+                  out.append(line)
+          if seen != set(replacements):
+              raise SystemExit(f'Missing locator rows: {sorted(set(replacements)-seen)}')
+          loc.write_text('\n'.join(out) + '\n', encoding='utf-8')
+
+          frozen_path = root / 'data/samples/frozen_fragments_0_1.csv'
+          frozen = frozen_path.read_text(encoding='utf-8').rstrip('\n')
+          rows = [
+              '''PDHD-F000093,PDHD-D000075,A,23,p23-coordinacion-maestros-agronomos-tecnica-pedagogica,https://books.google.com/books?id=X3oQAAAAYAAJ&pg=RA2-PA23,"Printed p. 23: subsection i) Coordinación de labores entre maestros y agrónomos, from the subsection heading through the sentence requiring academias at least weekly; exclude the preceding livestock paragraph and stop before j) Control de ex alumnos.",not_transcribed,Google_Books_direct_primary_pdf_image_inspection,metadata_only,explicit_pedagogical_act,frozen,"The public Google Books HTML exposed a live 37.1 MB PDF containing 1,021 physical pages. Page-index inspection establishes that the selected 1938 material belongs to the RA2 block: RA2-PA23 is order 688 and physical page 691. Visual inspection fixes reciprocal pedagogical guidance between agronomists and normal-school teachers plus weekly academias. No source text or image is committed.",2026-09-06''',
+              '''PDHD-F000094,PDHD-D000075,B,339,p339-departamento-supervision-funciones-autoridad,https://books.google.com/books?id=X3oQAAAAYAAJ&pg=RA2-PA339,"Printed p. 339: from the opening paragraph explaining creation and effective start of the Departamento de Supervisión through dispositions 1º, 2º and 3º; stop before disposition 4º.",not_transcribed,Google_Books_direct_primary_pdf_image_inspection,metadata_only,institutional_relation,frozen,"Google Books RA2-PA339 is order 1004 and physical PDF page 1007. Direct visual inspection fixes the supervisory authority of the Department, inspector/sector-chief staffing, compliance review and cross-dependency reporting duties as a compact institutional-relation unit. No source text or image is committed.",2026-09-06''',
+              '''PDHD-F000095,PDHD-D000075,C,71,p71-articulo-123-school-category-table,https://books.google.com/books?id=X3oQAAAAYAAJ&pg=RA2-PA71,"Printed p. 71: paragraph introducing the 1,455 escuelas Artículo 123 and the complete company-by-category table through the Sumas row; exclude the preceding pupil-total block and the following paragraph on private primary schools.",not_transcribed,Google_Books_direct_primary_pdf_image_inspection,metadata_only,source_criticism_salient,frozen,"Google Books RA2-PA71 is order 736 and physical PDF page 739. Direct visual inspection fixes an official classification of company-supported schools into Urbanas, Semiurbanas and Rurales, preserving the administrative categories themselves as evidence requiring source criticism. No table transcription or image is committed.",2026-09-06''',
+              '''PDHD-F000096,PDHD-D000075,D,269,p269-oficina-juridica-revalidacion-title-roster,https://books.google.com/books?id=X3oQAAAAYAAJ&pg=RA2-PA269,"Printed p. 269: standalone title/roster region from OFICINA JURIDICA Y DE REVALIDACION DE ESTUDIOS through JEFE: LIC. LUIS FLORES ESPONDA; exclude blank margins and the Google digitization watermark.",not_transcribed,Google_Books_direct_primary_pdf_image_inspection,metadata_only,control,frozen,"Google Books RA2-PA269 is order 934 and physical PDF page 937. Visual inspection confirms a deliberately low-pedagogical-content administrative title/roster page suitable as the control slot. No source image is committed.",2026-09-06''',
+          ]
+          for row in rows:
+              fid = row.split(',', 1)[0]
+              if not re.search(rf'(?m)^{re.escape(fid)},', frozen):
+                  frozen += '\n' + row
+          frozen_path.write_text(frozen + '\n', encoding='utf-8')
+
+      - name: Synchronize status surfaces
+        shell: python
+        run: |
+          import csv, re
+          from pathlib import Path
+          root = Path('.')
+          def ids(pattern):
+              out=set()
+              for p in (root/'data/samples').glob(pattern):
+                  with p.open(encoding='utf-8', newline='') as f:
+                      out.update(r['fragment_id'].strip() for r in csv.DictReader(f) if r.get('fragment_id','').strip())
+              return out
+          located=len(ids('fragment_locator_progress*.csv')); frozen=len(ids('frozen_fragments*.csv'))
+          with (root/'data/samples/fragment_gap_queue_0_1.csv').open(encoding='utf-8', newline='') as f:
+              gaps=len(list(csv.DictReader(f)))
+          pending=located-frozen
+          if (located,frozen,gaps)!=(83,41,13): raise SystemExit((located,frozen,gaps))
+
+          rp=root/'README.md'; t=rp.read_text(encoding='utf-8')
+          changes=[
+              (r'(\| Fragmentos completamente congelados \| \*\*)\d+( / 96\*\* \|)',rf'\g<1>{frozen}\g<2>'),
+              (r'(su unión contiene \*\*)\d+(/96\*\* fragmentos)',rf'\g<1>{frozen}\g<2>'),
+              (r'(\*\*)\d+( localizadores todavía no congelados\*\*)',rf'\g<1>{pending}\g<2>'),
+              (r'(Los \*\*)\d+(/96\*\* congelados demuestran)',rf'\g<1>{frozen}\g<2>'),
+          ]
+          for pat,repl in changes:
+              t,n=re.subn(pat,repl,t,count=1)
+              if n!=1: raise SystemExit(f'README marker {pat}: {n}')
+          anchor='`PDHD-D000071`, *Las misiones culturales, 1932-1933*, aporta ahora otro lote completo A–D después de recuperar e inspeccionar directamente el PDF primario de Google Books. La revisión corrige además el desfase de los números mostrados por los pasajes populares: `PDHD-F000077` se fija en la p. impresa 24 (Google `PA26`) para la preparación profesional y las clases de demostración; `PDHD-F000078` en la p. 23 (`PA25`) para la jerarquía del Jefe de Misión dentro del Consejo Consultivo; `PDHD-F000079` en la p. 34 (`PA36`) para la autolimitación oficial del alcance de la acción educativa frente a las condiciones económicas; y `PDHD-F000080` usa `PP7` como control bibliográfico. No se publica texto histórico ni imagen de fuente.'
+          add=anchor+'\n\nLa *Memoria de la Secretaría de Educación Pública* de 1938 (`PDHD-D000075`) suma también un lote completo A–D tras recuperar un PDF de 1,021 imágenes y resolver su estructura multivolumen. Los localizadores correctos pertenecen al bloque Google `RA2`: `PDHD-F000093` se fija en p. 23 (`RA2-PA23`) sobre coordinación formativa entre maestros normalistas y agrónomos; `PDHD-F000094` en p. 339 (`RA2-PA339`) sobre facultades del Departamento de Supervisión; `PDHD-F000095` en p. 71 (`RA2-PA71`) como unidad de crítica de fuentes sobre la clasificación oficial de escuelas Artículo 123; y `PDHD-F000096` en p. 269 (`RA2-PA269`) como control administrativo. La distinción `PA`/`RA2-PA` queda preservada para impedir que páginas homónimas de distintos volúmenes se confundan.'
+          if add not in t:
+              if anchor not in t: raise SystemExit('README anchor missing')
+              t=t.replace(anchor,add,1)
+          rp.write_text(t,encoding='utf-8')
+
+          cp=root/'docs/PDHD_U1_COHORT_STATUS.md'; c=cp.read_text(encoding='utf-8')
+          changes=[
+              (r'(\| Fully frozen fragments \| \*\*)\d+( / 96\*\* \|)',rf'\g<1>{frozen}\g<2>'),
+              (r'(remaining \*\*)\d+(\*\* located rows)',rf'\g<1>{pending}\g<2>'),
+          ]
+          for pat,repl in changes:
+              c,n=re.subn(pat,repl,c,count=1)
+              if n!=1: raise SystemExit(f'cohort marker {pat}: {n}')
+          cp.write_text(c,encoding='utf-8')
+
+      - name: Run validators
+        shell: bash
+        run: |
+          python scripts/validate_repository.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_status_counts.py
+
+      - name: Commit finalized batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "PDHD source verification"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/samples/fragment_locator_progress_0_1.csv data/samples/frozen_fragments_0_1.csv README.md docs/PDHD_U1_COHORT_STATUS.md
+          git commit -m "Freeze Memoria SEP 1938 batch"
+          git push origin HEAD:freeze-memoria-sep-1938
