@@ -1,0 +1,170 @@
+name: Finalize Sistema Escuelas Rurales 1927 batch
+
+on:
+  push:
+    branches: [freeze-sistema-escuelas-rurales-1927]
+    paths:
+      - ".github/workflows/finalize-sistema-escuelas-rurales-1927.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: freeze-sistema-escuelas-rurales-1927
+          fetch-depth: 0
+
+      - name: Replace disconfirmed secondary pointers with primary-inspected spans
+        shell: python
+        run: |
+          import csv, io
+          from pathlib import Path
+
+          def csv_line(values):
+              b=io.StringIO(); csv.writer(b,lineterminator='').writerow(values); return b.getvalue()
+
+          loc=Path('data/samples/fragment_locator_progress_0_1.csv')
+          lines=loc.read_text(encoding='utf-8').splitlines()
+          replacements={
+            'PDHD-F000065': csv_line([
+              'PDHD-F000065','PDHD-D000068','A','285-286','p285-286-metodo-proyectos-excursiones-exhibicion',
+              'https://archive.org/download/elsistemadeescue00mexi/elsistemadeescue00mexi.pdf#page=323',
+              'fixed','metadata_only','frozen',
+              'Direct inspection of the exact 1927 SEP primary PDF replaces the former secondary p. 256 pointer, whose attributed Cuernavaca-normal content is absent from printed pp. 255-256 in this edition. The fixed span begins on printed p. 285 / physical PDF 323 with the statement that the school adopted the Project Method, continues onto printed p. 286 / physical 324 through field, industrial-center and workshop visits, and ends with the sentence describing public exhibition of each completed project with music and song. Stop before the planned Pacific-coast geography excursion.',
+              '2026-09-06'
+            ]),
+            'PDHD-F000066': csv_line([
+              'PDHD-F000066','PDHD-D000068','B','72','p72-reclutamiento-preparacion-entusiasmo-maestro-rural',
+              'https://archive.org/download/elsistemadeescue00mexi/elsistemadeescue00mexi.pdf#page=110',
+              'fixed','metadata_only','frozen',
+              'Direct primary inspection confirms printed p. 72 / physical PDF 110. The fixed span begins with the complete paragraph opening Creemos que lo que se ha logrado es bastante and continues through the sentence stating that enthusiasm and self-sacrifice compensated for lack of technical preparation; stop before the rhetorical question that follows. This directly supports the professional/recruitment slot without relying on the earlier secondary characterization.',
+              '2026-09-06'
+            ]),
+            'PDHD-F000067': csv_line([
+              'PDHD-F000067','PDHD-D000068','C','256','p256-raza-mazateca-lengua-representacion-oficial',
+              'https://archive.org/download/elsistemadeescue00mexi/elsistemadeescue00mexi.pdf#page=294',
+              'fixed','metadata_only','frozen',
+              'Direct primary inspection disproves the former pp. 255-256 Cuernavaca Normal organization pointer for this edition: those pages belong to Misión de Oaxaca y Chiapas. The replacement source-critical span is printed p. 256 / physical PDF 294, from the opening official characterization of the raza mazateca through the paragraph on preservation and mixture of language immediately before the heading Costumbres Regionales. The unit is retained to expose the racializing and linguistic classificatory logic of the official source rather than to reproduce it as neutral description.',
+              '2026-09-06'
+            ]),
+            'PDHD-F000068': csv_line([
+              'PDHD-F000068','PDHD-D000068','D','unnumbered','pdf15-title-page-bibliographic-control',
+              'https://archive.org/download/elsistemadeescue00mexi/elsistemadeescue00mexi.pdf#page=15',
+              'fixed','metadata_only','frozen',
+              'Direct primary inspection replaces the former p. 255 student-origin-table pointer, which is not present on that page in the exact 1927 volume. The fixed control is physical PDF page 15: the bibliographic title-page core from El sistema de escuelas rurales en México through Publicaciones de la Secretaría de Educación Pública, Talleres Gráficos de la Nación, México and 1927; exclude the lower library stamp and blank margins.',
+              '2026-09-06'
+            ]),
+          }
+          seen=set(); out=[]
+          for line in lines:
+              fid=line.split(',',1)[0]
+              if fid in replacements:
+                  out.append(replacements[fid]); seen.add(fid)
+              else: out.append(line)
+          missing=set(replacements)-seen
+          if missing: raise SystemExit(f'Missing locator rows: {sorted(missing)}')
+          loc.write_text('\n'.join(out)+'\n',encoding='utf-8')
+
+          frozen=Path('data/samples/frozen_fragments_0_1.csv')
+          flines=frozen.read_text(encoding='utf-8').splitlines()
+          existing={x.split(',',1)[0] for x in flines[1:] if x}
+          rows=[
+            csv_line([
+              'PDHD-F000065','PDHD-D000068','A','285-286','p285-286-metodo-proyectos-excursiones-exhibicion',
+              'https://archive.org/download/elsistemadeescue00mexi/elsistemadeescue00mexi.pdf#page=323',
+              'Printed pp. 285-286: begin with the statement adopting the Método de Proyectos near the end of p. 285; continue across the page break through the description of field, industrial-center and workshop visits and the sentence on exhibiting each completed project to parents with music and song; stop before the paragraph planning a geography excursion to the Pacific coast.',
+              'not_transcribed','Internet_Archive_exact_primary_pdf_image_inspection','metadata_only','explicit_pedagogical_act','frozen',
+              'Internet Archive item elsistemadeescue00mexi is the exact SEP/Talleres Gráficos de la Nación 1927 volume. Printed pp. 285-286 map to physical PDF pages 323-324. Visual inspection fixes an explicit project-method teaching unit and simultaneously disconfirms the older secondary p. 256 attribution. No source text or image is committed.',
+              '2026-09-06'
+            ]),
+            csv_line([
+              'PDHD-F000066','PDHD-D000068','B','72','p72-reclutamiento-preparacion-entusiasmo-maestro-rural',
+              'https://archive.org/download/elsistemadeescue00mexi/elsistemadeescue00mexi.pdf#page=110',
+              'Printed p. 72: the complete paragraph beginning Creemos que lo que se ha logrado es bastante through the sentence stating that enthusiasm and self-sacrifice compensated for lack of technical preparation; stop before the following rhetorical question.',
+              'not_transcribed','Internet_Archive_exact_primary_pdf_image_inspection','metadata_only','institutional_relation','frozen',
+              'Printed p. 72 maps to physical PDF page 110. The primary page directly characterizes rural-teacher recruitment from workers with little formal preparation and the official valuation of experience, enthusiasm and self-sacrifice. The boundary is visually fixed; no historical transcription or image is committed.',
+              '2026-09-06'
+            ]),
+            csv_line([
+              'PDHD-F000067','PDHD-D000068','C','256','p256-raza-mazateca-lengua-representacion-oficial',
+              'https://archive.org/download/elsistemadeescue00mexi/elsistemadeescue00mexi.pdf#page=294',
+              'Printed p. 256: from the opening official paragraph characterizing the raza mazateca through the paragraph discussing language preservation, Spanish mixing and political struggle; stop immediately before Costumbres Regionales.',
+              'not_transcribed','Internet_Archive_exact_primary_pdf_image_inspection','metadata_only','source_criticism_salient','frozen',
+              'Printed p. 256 maps to physical PDF page 294. Primary inspection shows that the earlier scholarly pp. 255-256 Cuernavaca-normal attribution does not describe these pages in this exact edition. The replacement span is retained as evidence of the official source’s racial and linguistic classificatory framework, making the contradiction itself methodologically productive. No source text or image is committed.',
+              '2026-09-06'
+            ]),
+            csv_line([
+              'PDHD-F000068','PDHD-D000068','D','unnumbered','pdf15-title-page-bibliographic-control',
+              'https://archive.org/download/elsistemadeescue00mexi/elsistemadeescue00mexi.pdf#page=15',
+              'Physical PDF page 15, unnumbered title page: bibliographic core from El sistema de escuelas rurales en México through Publicaciones de la Secretaría de Educación Pública, Talleres Gráficos de la Nación, México and 1927; exclude the lower library stamp and blank margins.',
+              'not_transcribed','Internet_Archive_exact_primary_pdf_image_inspection','metadata_only','control','frozen',
+              'The exact 1927 primary scan provides a clean title-page control on physical PDF page 15. It replaces the old p. 255 student-origin-table candidate after visual inspection showed that no such table occurs there. The control is deliberately non-analytical and no source image is committed.',
+              '2026-09-06'
+            ]),
+          ]
+          for row in rows:
+              if row.split(',',1)[0] not in existing: flines.append(row)
+          frozen.write_text('\n'.join(flines)+'\n',encoding='utf-8')
+
+      - name: Synchronize public status surfaces
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('README.md'); s=p.read_text(encoding='utf-8')
+          replacements={
+            '| Fragmentos completamente congelados | **49 / 96** |':'| Fragmentos completamente congelados | **53 / 96** |',
+            'su unión contiene **49/96** fragmentos.':'su unión contiene **53/96** fragmentos.',
+            '**34 localizadores todavía no congelados**':'**30 localizadores todavía no congelados**',
+            'Los **49/96** congelados demuestran':'Los **53/96** congelados demuestran',
+          }
+          for old,new in replacements.items():
+              if old not in s: raise SystemExit(f'README count anchor missing: {old}')
+              s=s.replace(old,new)
+          marker='\n\n`PDHD-D000069`, *Las misiones culturales en 1927: Las escuelas normales rurales*'
+          para="\n\n`PDHD-D000068`, *El sistema de escuelas rurales en México* (1927), completa A–D desde Internet Archive `elsistemadeescue00mexi`, copia primaria SEP/Talleres Gráficos de la Nación patrocinada por Princeton. La inspección directa produjo además una corrección de procedencia: los antiguos punteros secundarios de pp. 255–256 no contienen en esta edición la organización de la Normal de Cuernavaca ni una tabla de procedencia estudiantil. Por ello `PDHD-F000065` se reemplaza por el Método de Proyectos de la Normal Rural de Tacámbaro en pp. 285–286; `PDHD-F000066` se confirma en p. 72 sobre reclutamiento y preparación del maestro rural; `PDHD-F000067` usa p. 256 como unidad de crítica de fuentes sobre la representación oficial de la población mazateca; y `PDHD-F000068` adopta la portada primaria de 1927 como control bibliográfico. La contradicción entre cita secundaria y página primaria queda preservada en las notas de preparación, no borrada.\n"
+          if para.strip() not in s:
+              if marker not in s: raise SystemExit('README insertion marker missing')
+              s=s.replace(marker,para+marker)
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('docs/PDHD_U1_COHORT_STATUS.md'); t=p.read_text(encoding='utf-8')
+          replacements={
+            '| Fully frozen fragments | **49 / 96** |':'| Fully frozen fragments | **53 / 96** |',
+            'Forty-nine units have crossed the stronger frozen-fragment gate.':'Fifty-three units have crossed the stronger frozen-fragment gate.',
+            'Eleven selected documents now have complete four-slot batches.':'Twelve selected documents now have complete four-slot batches.',
+            'Forty-nine are frozen. The remaining **34** located rows':'Fifty-three are frozen. The remaining **30** located rows',
+            'The current 49 frozen units demonstrate':'The current 53 frozen units demonstrate',
+            'The project is now at **83/96 localized** and **49/96 frozen**.':'The project is now at **83/96 localized** and **53/96 frozen**.',
+          }
+          for old,new in replacements.items():
+              if old not in t: raise SystemExit(f'STATUS count anchor missing: {old}')
+              t=t.replace(old,new)
+          marker='\n\n`PDHD-D000069`, *Las misiones culturales en 1927: Las escuelas normales rurales*'
+          note="\n\n`PDHD-D000068`, *El sistema de escuelas rurales en México* (1927), now contributes a complete A–D batch from Internet Archive item `elsistemadeescue00mexi` (`ark:/13960/t8x951q5m`). The primary scan is the SEP/Talleres Gráficos de la Nación edition, with 404 PDF pages. Direct inspection confirms printed p. 72 at physical page 110 and maps printed pp. 285–286 to physical pages 323–324. More importantly, it disconfirms the prior secondary attribution of Cuernavaca-normal organization and a student-origin table to printed pp. 255–256: those pages belong to the Misión de Oaxaca y Chiapas. The final batch therefore replaces those false content attributions with a directly inspected Project Method span, a professional-recruitment span, a source-critical official representation of the Mazatec population and an unnumbered title-page control.\n"
+          if note.strip() not in t:
+              if marker not in t: raise SystemExit('STATUS insertion marker missing')
+              t=t.replace(marker,note+marker)
+          p.write_text(t,encoding='utf-8')
+
+      - name: Run validators
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_repository.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_status_counts.py
+
+      - name: Commit primary-corrected batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Fernando Sandoval"
+          git config user.email "fernando.sandoval@uacj.mx"
+          git add README.md data/samples/fragment_locator_progress_0_1.csv data/samples/frozen_fragments_0_1.csv docs/PDHD_U1_COHORT_STATUS.md
+          git diff --cached --check
+          git commit -m "Freeze El sistema de escuelas rurales primary batch"
+          git push origin HEAD:freeze-sistema-escuelas-rurales-1927
