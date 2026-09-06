@@ -13,7 +13,7 @@ jobs:
   retrieve:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve exact 1934 Google Books PDF
+      - name: Resolve alternate full-view Google Books PDF
         shell: python
         run: |
           import html
@@ -26,7 +26,7 @@ jobs:
           out = pathlib.Path('memoria-sep-1934-primary-review')
           out.mkdir()
           report = {}
-          book_id = '_nkQAAAAYAAJ'
+          book_id = 'mHgQAAAAYAAJ'
           page_url = f'https://books.google.com/books?id={book_id}&pg=PA29'
           headers = {
               'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
@@ -57,7 +57,7 @@ jobs:
           pdf_url = next((u for u in candidates if 'output=pdf' in u), candidates[0] if candidates else None)
           if not pdf_url:
               (out / 'retrieval-report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
-              raise SystemExit('No public PDF candidate exposed by exact 1934 object')
+              raise SystemExit('No public PDF candidate exposed by alternate 1934 object')
           req = urllib.request.Request(pdf_url, headers=headers)
           with urllib.request.urlopen(req, timeout=180) as response:
               body = response.read()
@@ -95,10 +95,10 @@ jobs:
               text = ''.join(ch for ch in text if unicodedata.category(ch) != 'Mn')
               return re.sub(r'\s+', ' ', re.sub(r'[^A-Z0-9 ]+', ' ', text))
 
-          front = norm('\n'.join(pages[:60]))
+          front = norm('\n'.join(pages[:70]))
           expected = '31 DE AGOSTO DE 1934'
           if expected not in front:
-              (out / 'identity-check.txt').write_text(front[:12000], encoding='utf-8')
+              (out / 'identity-check.txt').write_text(front[:16000], encoding='utf-8')
               raise SystemExit('Primary front matter does not identify 31 DE AGOSTO DE 1934')
 
           targets = {
@@ -155,7 +155,7 @@ jobs:
       - name: Upload one-day primary-review artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pdhd-memoria-sep-1934-primary-review-exact
+          name: pdhd-memoria-sep-1934-primary-review-alt
           path: memoria-sep-1934-primary-review/
           retention-days: 1
           if-no-files-found: error
