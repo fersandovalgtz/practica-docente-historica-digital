@@ -42,14 +42,14 @@ jobs:
               (out / 'selected-page.html').write_text(text, encoding='utf-8')
               decoded = html.unescape(text)
               candidates = re.findall(
-                  r'https?://books\\.google\\.com/books/download/[^"\\'<> ]+?\\.pdf\\?[^"\\'<> ]+',
+                  r"https?://books\.google\.com/books/download/[^\"\s<>]+?\.pdf\?[^\"\s<>]+",
                   decoded,
               )
               if not candidates:
                   candidates = [
                       urllib.parse.urljoin('https://books.google.com', m)
                       for m in re.findall(
-                          r'href=["\\']([^"\\']*?/books/download/[^"\\']+?\\.pdf\\?[^"\\']+)["\\']',
+                          r"href=[\"']([^\"']*?/books/download/[^\"']+?\.pdf\?[^\"']+)[\"']",
                           decoded,
                       )
                   ]
@@ -115,7 +115,6 @@ jobs:
                       found.append(idx)
               matches[key] = found[:20]
 
-          # Also render conservative windows around a plausible front-matter offset.
           render_pages = set()
           for vals in matches.values():
               for p in vals:
