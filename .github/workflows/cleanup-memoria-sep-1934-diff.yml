@@ -1,0 +1,68 @@
+name: Clean Memoria SEP 1934 diff
+
+on:
+  push:
+    branches: [freeze-memoria-sep-1934]
+    paths:
+      - ".github/workflows/cleanup-memoria-sep-1934-diff.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: freeze-memoria-sep-1934
+          fetch-depth: 0
+      - name: Restore baseline CSV formatting and reapply four scientific rows
+        shell: python
+        run: |
+          import csv, io, subprocess
+          from pathlib import Path
+
+          def main_file(path):
+              return subprocess.check_output(['git','show',f'origin/main:{path}'], text=True)
+          def csv_line(values):
+              b=io.StringIO(); csv.writer(b,lineterminator='').writerow(values); return b.getvalue()
+
+          locpath='data/samples/fragment_locator_progress_0_1.csv'
+          base=main_file(locpath).splitlines()
+          replacements={
+            'PDHD-F000085': ['PDHD-F000085','PDHD-D000073','A','29','p29-ciencias-naturales-observacion-cultivo-visita','https://books.google.com/books?id=mHgQAAAAYAAJ&pg=PA29','fixed','metadata_only','frozen','Direct primary inspection fixes printed p. 29, subsection e) Ciencias Naturales only, from its heading through its final sentence on following the Inspector-suggested order; exclude preceding geometry and following manual-work item. Google Books PA29 is order 36 / physical PDF page 39.','2026-09-06'],
+            'PDHD-F000086': ['PDHD-F000086','PDHD-D000073','B','53','p53-federal-programs-teacher-designation-enforcement','https://books.google.com/books?id=mHgQAAAAYAAJ&pg=PA53','fixed','metadata_only','frozen','Direct primary inspection fixes printed p. 53 from the opening federal-program/teacher-designation continuation through SEP enforcement authority after Article 428 bis; stop before the paragraph on the Departamento de Enseñanza Rural. Google Books PA53 is order 60 / physical PDF page 63.','2026-09-06'],
+            'PDHD-F000087': ['PDHD-F000087','PDHD-D000073','C','58','p58-selection-supervision-cooperation-federalization','https://books.google.com/books?id=mHgQAAAAYAAJ&pg=PA58','fixed','metadata_only','frozen','Direct primary inspection fixes printed p. 58, instructions 3–8: teacher selection, federal appointment, school organization, reporting, inspector supervision, pedagogical cooperation meetings and federal employment protections; exclude the opening continuation and following Document 9. Google Books PA58 is order 65 / physical PDF page 68.','2026-09-06'],
+            'PDHD-F000088': ['PDHD-F000088','PDHD-D000073','D','PP7','pp7-1934-volume-ii-title-page-control','https://books.google.com/books?id=mHgQAAAAYAAJ&pg=PP7','fixed','metadata_only','frozen','Direct primary inspection replaces the secondary XVI pointer with a clean bibliographic control. Google Books PP7 is order 6 / physical PDF page 9 and identifies the 31 de agosto de 1934, Tomo II Documentos title page. The competing 6aYQAAAAYAAJ object was rejected because its primary title pages identify 1935.','2026-09-06'],
+          }
+          out=[]; seen=set()
+          for line in base:
+              fid=line.split(',',1)[0]
+              if fid in replacements:
+                  out.append(csv_line(replacements[fid])); seen.add(fid)
+              else: out.append(line)
+          if seen != set(replacements): raise SystemExit('Missing locator IDs')
+          Path(locpath).write_text('\n'.join(out)+'\n',encoding='utf-8')
+
+          frozenpath='data/samples/frozen_fragments_0_1.csv'
+          frozen=main_file(frozenpath).rstrip('\n')
+          new=[
+            ['PDHD-F000085','PDHD-D000073','A','29','p29-ciencias-naturales-observacion-cultivo-visita','https://books.google.com/books?id=mHgQAAAAYAAJ&pg=PA29','Printed p. 29: subsection e) Ciencias Naturales only, from its heading through the final sentence directing that the teaching follow the order suggested by the Inspector; exclude the preceding geometry paragraph and stop before item 8, Trabajos manuales.','not_transcribed','Google_Books_direct_primary_pdf_image_inspection','metadata_only','explicit_pedagogical_act','frozen','Identity-gated primary copy mHgQAAAAYAAJ explicitly identifies 31 de agosto de 1934 / Tomo II Documentos. PA29 is order 36 and physical PDF page 39. The fixed unit is an explicit natural-science teaching prescription. No source text or image is committed.','2026-09-06'],
+            ['PDHD-F000086','PDHD-D000073','B','53','p53-federal-programs-teacher-designation-enforcement','https://books.google.com/books?id=mHgQAAAAYAAJ&pg=PA53','Printed p. 53: from the opening continuation specifying federal programs and federal appointment of teachers through Article 334, Article 428 bis and the following explanation of SEP enforcement authority; stop before the paragraph beginning En lo que concierne al Departamento de Enseñanza Rural.','not_transcribed','Google_Books_direct_primary_pdf_image_inspection','metadata_only','institutional_relation','frozen','PA53 is order 60 and physical PDF page 63. Direct visual inspection fixes the relation among official curricula, federal teacher designation, monitoring and sanctioning authority. No source text or image is committed.','2026-09-06'],
+            ['PDHD-F000087','PDHD-D000073','C','58','p58-selection-supervision-cooperation-federalization','https://books.google.com/books?id=mHgQAAAAYAAJ&pg=PA58','Printed p. 58: instructions 3 through 8 in full, beginning with careful teacher selection and ending with inamovilidad/escalafón protections after transfer to federal control; exclude the preceding continuation of instruction 2 and the closing salutation plus Document 9.','not_transcribed','Google_Books_direct_primary_pdf_image_inspection','metadata_only','source_criticism_salient','frozen','PA58 is order 65 and physical PDF page 68. Direct visual inspection preserves selection, appointment, reporting, inspector supervision, pedagogical cooperation and employment status as a source-critical sequence of federalization. No source text or image is committed.','2026-09-06'],
+            ['PDHD-F000088','PDHD-D000073','D','PP7','pp7-1934-volume-ii-title-page-control','https://books.google.com/books?id=mHgQAAAAYAAJ&pg=PP7','Front-matter leaf PP7 / physical PDF page 9: textual bibliographic core identifying Secretaría de Educación Pública, the Memoria title, 31 de agosto de 1934, Tomo II Documentos, Talleres Gráficos de la Nación and México 1934; exclude library marks, emblem, blank margins and Google digitization watermark.','not_transcribed','Google_Books_direct_primary_pdf_image_inspection','metadata_only','control','frozen','PP7 is order 6 and physical PDF page 9. Direct visual inspection confirms the exact 1934 volume identity and supplies a deliberately non-analytical control. Competing object 6aYQAAAAYAAJ was rejected because its primary title pages identify 1935 despite misleading catalog metadata.','2026-09-06'],
+          ]
+          Path(frozenpath).write_text(frozen+'\n'+'\n'.join(csv_line(r) for r in new)+'\n',encoding='utf-8')
+      - name: Validate and commit clean diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_repository.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_status_counts.py
+          git config user.name 'PDHD source verification'
+          git config user.email 'actions@users.noreply.github.com'
+          git add data/samples/fragment_locator_progress_0_1.csv data/samples/frozen_fragments_0_1.csv
+          git commit -m 'Normalize Memoria SEP 1934 scientific diff'
+          git push origin HEAD:freeze-memoria-sep-1934
