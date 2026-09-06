@@ -1,0 +1,98 @@
+name: Retrieve Mexico Intelectual 1889 primary pages
+
+on:
+  push:
+    branches: [freeze-mexico-intelectual-1889]
+    paths:
+      - ".github/workflows/retrieve-mexico-intelectual-1889.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve HNDM viewer pages and download first-page window
+        shell: python
+        run: |
+          import html,json,pathlib,re,time,urllib.request,urllib.error
+          out=pathlib.Path('mexico-intelectual-primary'); out.mkdir()
+          serial='558075be7d1e63c9fea1a356'
+          base='https://hndm.iib.unam.mx'
+          headers={
+            'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
+            'Accept-Language':'es-MX,es;q=0.9,en;q=0.7',
+          }
+          mapping=[]
+          # Resolve a generous first 40 viewer pages; target printed pp. 2,5,6,26-27 must lie here if pagination is direct or has modest front-matter offset.
+          for n in range(1,41):
+              url=f'{base}/consulta/publicacion/visualizar/{serial}?anio=1889&mes=01&dia=01&intPagina={n}&tipo=publicacion&butIr=Ir'
+              item={'intPagina':n,'viewer_url':url}
+              try:
+                  req=urllib.request.Request(url,headers=headers)
+                  with urllib.request.urlopen(req,timeout=60) as r: body=r.read()
+                  text=html.unescape(body.decode('utf-8',errors='replace'))
+                  # Current-page PDF appears in /consulta/publicacion/pdf/<24hex>.pdf
+                  pdfids=re.findall(r'/consulta/publicacion/pdf/([0-9a-f]{24})\.pdf',text,re.I)
+                  pageids=re.findall(r'[?&]pagina=([0-9a-f]{24})',text,re.I)
+                  item.update(status=200,bytes=len(body),title_hit=('México Intelectual' in text or 'Mexico Intelectual' in text),pdf_ids=list(dict.fromkeys(pdfids)),nav_page_ids=list(dict.fromkeys(pageids)))
+                  # Capture visible issue/page metadata from form and title neighborhood.
+                  mt=re.search(r'Fecha:\s*</[^>]+>\s*([^<]{1,80})',text,re.I)
+                  if mt: item['visible_date']=re.sub(r'\s+',' ',mt.group(1)).strip()
+                  # Download first unique PDF id for each viewer index.
+                  if pdfids:
+                      pid=pdfids[0]
+                      pdfurl=f'{base}/consulta/publicacion/pdf/{pid}.pdf?coleccion=&palabras='
+                      preq=urllib.request.Request(pdfurl,headers=headers)
+                      with urllib.request.urlopen(preq,timeout=90) as pr: pdf=pr.read()
+                      if pdf.startswith(b'%PDF'):
+                          (out/f'int-{n:03d}-{pid}.pdf').write_bytes(pdf)
+                          item['pdf_id']=pid; item['pdf_url']=pdfurl; item['pdf_bytes']=len(pdf)
+                      else: item['pdf_prefix']=repr(pdf[:30])
+              except urllib.error.HTTPError as exc: item.update(status=exc.code,error='HTTPError')
+              except Exception as exc: item['error']=repr(exc)
+              mapping.append(item)
+              time.sleep(0.15)
+          (out/'viewer-map.json').write_text(json.dumps(mapping,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(mapping,ensure_ascii=False,indent=2))
+
+      - name: Extract text and render resolved HNDM pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          out=mexico-intelectual-primary
+          mkdir -p "$out/rendered" "$out/text"
+          for f in "$out"/int-*.pdf; do
+            [ -e "$f" ] || continue
+            stem=$(basename "$f" .pdf)
+            pdftotext -layout "$f" "$out/text/$stem.txt" || true
+            pdftoppm -f 1 -l 1 -singlefile -jpeg -r 200 "$f" "$out/rendered/$stem" >/dev/null 2>&1 || true
+          done
+          python - <<'PY'
+          import json,pathlib,re,unicodedata
+          out=pathlib.Path('mexico-intelectual-primary')
+          hits=[]
+          terms=['MEXICO INTELECTUAL','MÉXICO INTELECTUAL','METOD','PEDAGOG','PROFESOR','MAGISTER','CORRESPONDENCIA','PRECIO','ESCUELA NORMAL','JALAPA','XALAPA','PROSPECTO','REDACCION','REDACCIÓN']
+          for p in sorted((out/'text').glob('*.txt')):
+              text=p.read_text(encoding='utf-8',errors='replace')
+              n=unicodedata.normalize('NFD',text.upper()); n=''.join(c for c in n if unicodedata.category(c)!='Mn')
+              found=[]
+              for term in terms:
+                  t=unicodedata.normalize('NFD',term.upper()); t=''.join(c for c in t if unicodedata.category(c)!='Mn')
+                  if t in n: found.append(term)
+              # keep every page, but include compact searchable snippet and numeric labels visible in OCR
+              nums=re.findall(r'(?m)^\s*([0-9]{1,3})\s*$',text)
+              hits.append({'file':p.name,'terms':found,'numeric_lines':nums[:10],'snippet':re.sub(r'\s+',' ',text)[:3500]})
+          (out/'page-text-summary.json').write_text(json.dumps(hits,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(hits,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Upload primary review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-mexico-intelectual-1889-primary-review
+          path: mexico-intelectual-primary/
+          retention-days: 1
