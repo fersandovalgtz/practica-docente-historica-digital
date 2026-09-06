@@ -28,7 +28,7 @@ Corte de referencia: **5 de septiembre de 2026**.
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
 | Slots con localizador candidato/resuelto | **83 / 96** |
-| Fragmentos completamente congelados | **29 / 96** |
+| Fragmentos completamente congelados | **30 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -147,9 +147,11 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **83/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **29/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **83/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **30/96** fragmentos.
 
 La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, el tomo II, núm. 3 ya aporta dos regiones congeladas y los números 2 y 4 de 1921 aportan controles de portada directamente inspeccionados. Entre los targets analíticos pendientes figuran José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Rafael Ramos Pedrueza, *Historia de México*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Los punteros secundarios permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
+
+`PDHD-F000051` cruza ahora ese gate en *El Maestro*, tomo II, núm. 3. La recuperación corregida de Internet Archive permitió inspeccionar directamente la p. 294 (`n305`) de *Democracia Criolla* y fijar un bloque narrativo compacto sobre explicación de la función electoral, incomprensión rural y mediación política. En cambio, la inspección directa de *El Cardo* confirma `PDHD-F000049` en pp. 299–300 (`n310`–`n311`) pero no lo congela: el pasaje funciona como lectura escolar, aunque no contiene por sí mismo la acción o prescripción pedagógica explícita exigida por el slot A. Esta decisión negativa queda preservada como evidencia metodológica.
 
 Los reader targets de Internet Archive se mantienen como rutas de recuperación, no como sustitutos de inspección. Para `PDHD-F000044`, el target registrado `n103` condujo a una ventana que mostró el cierre del número anterior y la portada inequívoca del número II en `n104`; para `PDHD-F000048`, el target `n6` condujo a la portada inequívoca del número IV en `n4`. En ambos casos el span congelado es el cartucho bibliográfico visible en la imagen primaria, no el target genérico original.
 
@@ -199,7 +201,7 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **83/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **54 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **29/96** congelados demuestran el pipeline a través de HNDM, BVMC e Internet Archive y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
+La selección documental ya está lista. **83/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **53 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **30/96** congelados demuestran el pipeline a través de HNDM, BVMC e Internet Archive y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
 
 La cola dedicada de conversión directa quedó vacía después de `PDHD-F000060`; el siguiente frente es convertir punteros de página fuertes mediante inspección directa del objeto primario. Quedan **13 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **84/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles. `PDHD-F000060` ya fue inspeccionado en la página primaria `PR5`, congelado y retirado de cualquier cola pendiente.
 

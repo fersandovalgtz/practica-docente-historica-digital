@@ -14,10 +14,10 @@ Reference cut: **2026-09-05**
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
 | Fragment locator rows resolved/candidate | **83 / 96** | 86.5% of reliability slots localized |
-| Fully frozen fragments | **29 / 96** | page-resolved conversion phase active |
+| Fully frozen fragments | **30 / 96** | page-resolved conversion phase active |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **83 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Twenty-nine units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **83 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Thirty units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -35,6 +35,8 @@ Six selected documents now have complete four-slot batches. `PDHD-D000002`, *El 
 
 Internet Archive contributes four additional image-verified controls plus the institutional region of *El Maestro*. `PDHD-F000050` and `PDHD-F000052` are fixed from BookReader leaves `n237` and `n236` in tomo II, núm. 3. `PDHD-F000044` uses the issue-II cover cartouche at `n104`; `PDHD-F000048` uses the issue-IV cover cartouche at `n4`. These conversions preserve `reader_page_target != analytical_span`: the reader route supported retrieval, while the final boundary came only from visual inspection of the primary image.
 
+The corrected tomo II, núm. 3 recovery now adds `PDHD-F000051` from printed p. 294 / BookReader `n305` as a directly inspected source-critical span in *Democracia Criolla*. The same inspection maps *El Cardo* to pp. 299–300 / `n310`–`n311`, strengthening `PDHD-F000049` to a direct primary locator while deliberately leaving it unfrozen: the visible literary school-reading unit does not itself satisfy slot A’s explicit pedagogical-act requirement. This preserves a failed-fit decision rather than converting mere educational context into a positive pedagogical fragment.
+
 `PDHD-D000066`, *El esfuerzo educativo en México* (1928), contributes `PDHD-F000060` as a frozen title-page control. Google Books directly exposes `PR5`. A dedicated recovery workflow fetched the live PR5 HTML, resolved its public PDF link, downloaded a valid 29.9 MB primary PDF and rendered the relevant front matter. Direct inspection fixes only the bibliographic title-page core.
 
 All third-party image-derived frozen records remain conservative in public handling. Source images and full historical transcriptions are not committed merely because the object is viewable or downloadable.
@@ -51,7 +53,7 @@ The `PDHD-F000033` recovery established the post-sprint exact-pointer workflow: 
 
 ## Remaining localization work
 
-The union of all `fragment_locator_progress*.csv` shards contains **83/96** pilot slots. Twenty-nine are frozen. The remaining **54** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **13 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **83/96** pilot slots. Thirty are frozen. The remaining **53** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **13 slots remain without a locator.**
 
 The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. The active phase now converts strong page-resolved candidates through direct historical-object inspection and opportunistically fills missing deterministic slots when the same inspected page provides structurally distinct evidence.
 
@@ -89,7 +91,7 @@ Mandatory distinctions remain:
 
 Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.
 
-The current 29 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with an alternate primary scan. They do not justify coder labeling before the package is complete.
+The current 30 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with an alternate primary scan. They do not justify coder labeling before the package is complete.
 
 ## Rights constraint
 
@@ -99,4 +101,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The project is now at **83/96 localized** and **29/96 frozen**. The direct-primary sprint established the move from 15 to 22 frozen units; post-sprint primary recovery has added seven more frozen units while reducing the unlocalized complement from 16 to 13. The next quantitative localization checkpoint remains **84/96**, while the stronger scientific priority is converting high-quality existing page pointers and completing document batches without weakening the evidence hierarchy.
+The project is now at **83/96 localized** and **30/96 frozen**. The direct-primary sprint established the move from 15 to 22 frozen units; post-sprint primary recovery has added eight more frozen units while reducing the unlocalized complement from 16 to 13. The next quantitative localization checkpoint remains **84/96**, while the stronger scientific priority is converting high-quality existing page pointers and completing document batches without weakening the evidence hierarchy.
