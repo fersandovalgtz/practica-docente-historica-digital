@@ -28,7 +28,7 @@ Corte de referencia: **6 de septiembre de 2026**.
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
 | Slots con localizador candidato/resuelto | **83 / 96** |
-| Fragmentos completamente congelados | **57 / 96** |
+| Fragmentos completamente congelados | **61 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -65,6 +65,8 @@ La *Memoria relativa al estado que guarda el ramo de Educación Pública* de 193
 
 
 `PDHD-D000070`, *Proyecto para la organización de las misiones federales de educación* (1923), completa ahora A–D desde Google Books `glW6HEb46VoC`. HathiTrust Record 102280931 identifica el ejemplar de University of California `uc1.a0009571225`, OCLC 16016036, y registra a Google como fuente de digitalización; ese OCLC resuelve al mismo objeto Google Books, cuyo HTML público expone el PDF completo. La inspección directa fija `PDHD-F000073` en p. 24 para acciones sociales y escolares sobre pueblos vecinos; `PDHD-F000074` en p. 25 para la representación normativa del Maestro Misionero; `PDHD-F000075` en p. 23 como unidad de crítica de fuentes sobre el esquema oficial de clasificación y diagnóstico de las razas indígenas; y `PDHD-F000076` sustituye el antiguo roster de p. 22 por `PA1`, una portada bibliográfica limpia como control. El facsímil reproducido por UNAM queda confirmado como pista de recuperación, pero el freeze se sustenta en el objeto primario inspeccionado.
+
+`PDHD-D000063`, *México intelectual* (1889), completa ahora A–D desde el objeto HNDM enlazado por UNAM-RI `897145`. La recuperación estableció que `intPagina` no selecciona por sí solo hojas distintas en el viewer: el primer intento repitió el mismo PDF y fue descartado. El recorrido corregido siguió los identificadores persistentes de `Página siguiente` y recuperó 45 páginas primarias únicas. La inspección fija `PDHD-F000009` en p. 34 como acto docente explícito; `PDHD-F000010` en p. 2 como relación institucional entre uniformidad educativa, profesores y alumnos; `PDHD-F000011` en p. 27 como unidad de crítica de fuentes sobre alumnado, planta y currículo de la Escuela Normal de Jalapa; y `PDHD-F000012` en p. 32 como control administrativo bajo `CONDICIONES`. Este último corrige el antiguo puntero secundario a p. 6, donde la página primaria contiene discurso educativo sustantivo y no las condiciones de publicación.
 
 Como HNDM permanece `metadata_only` y la reutilización de objetos BVMC e Internet Archive se maneja conservadoramente, el repositorio conserva localizadores, límites y metadatos de preparación; no publica el texto histórico ni las imágenes de página.
 
@@ -164,7 +166,7 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **83/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **57/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **83/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **61/96** fragmentos.
 
 La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, el tomo II, núm. 3 ya aporta dos regiones congeladas y los números 2 y 4 de 1921 aportan controles de portada directamente inspeccionados. Entre los targets analíticos pendientes figuran José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Rafael Ramos Pedrueza, *Historia de México*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Los punteros secundarios permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
 
@@ -218,7 +220,7 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **83/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **26 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **57/96** congelados demuestran el pipeline a través de HNDM, BVMC, Internet Archive y Google Books y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
+La selección documental ya está lista. **83/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **22 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **57/96** congelados demuestran el pipeline a través de HNDM, BVMC, Internet Archive y Google Books y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
 
 La cola dedicada de conversión directa continúa vacía; después de `PDHD-F000060`, el lote `PDHD-F000077`–`PDHD-F000080` demuestra la siguiente ruta: recuperar el objeto primario completo, corregir los page labels de agregadores cuando sea necesario y fijar límites sólo después de inspección visual. Quedan **13 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **84/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles. `PDHD-F000060` ya fue inspeccionado en la página primaria `PR5`, congelado y retirado de cualquier cola pendiente.
 
