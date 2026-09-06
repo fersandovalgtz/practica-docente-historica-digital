@@ -1,0 +1,153 @@
+name: Finalize Misiones culturales 1932-1933 batch
+
+on:
+  push:
+    branches: [freeze-misiones-culturales-1932-1933]
+    paths:
+      - ".github/workflows/finalize-misiones-1932-1933.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: freeze-misiones-culturales-1932-1933
+          fetch-depth: 0
+
+      - name: Freeze four verified Misiones fragments
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          locator_path = root / 'data/samples/fragment_locator_progress_0_1.csv'
+          lines = locator_path.read_text(encoding='utf-8').splitlines()
+          replacements = {
+              'PDHD-F000077,': 'PDHD-F000077,PDHD-D000071,A,24,p24-jefes-mision-preparacion-profesional-demostracion,https://books.google.com/books?id=WzwXAAAAIAAJ&pg=PA26,fixed,metadata_only,frozen,"Direct primary inspection fixes printed p. 24, under 4. Bases de trabajo para cada Maestro Misionero > Jefes de Misión > 1º Las finalidades, item b) only: the professional-improvement instruction through its closing reference to demonstration classes; exclude adjacent items a) and c). Google Books PA26 is order 37 and maps to physical PDF page 38 / printed p. 24, correcting the earlier popular-passage label p. 22.",2026-09-06',
+              'PDHD-F000078,': 'PDHD-F000078,PDHD-D000071,B,23,p23-consejo-consultivo-jefe-mision-authority,https://books.google.com/books?id=WzwXAAAAIAAJ&pg=PA25,fixed,metadata_only,frozen,"Direct primary inspection fixes printed p. 23, section 2. De los miembros del Consejo Consultivo, subsection Jefe de Misión, items I-III in full, ending immediately before Inspector de la zona. Google Books PA25 is order 36 and maps to physical PDF page 37 / printed p. 23. The hierarchy block is a stronger authority/organizational unit for slot B than the earlier community-work snippet candidate.",2026-09-06',
+              'PDHD-F000079,': 'PDHD-F000079,PDHD-D000071,C,34,p34-limites-misiones-factor-economico,https://books.google.com/books?id=WzwXAAAAIAAJ&pg=PA36,fixed,metadata_only,frozen,"Direct primary inspection fixes printed p. 34: the paragraph beginning Es necesario declarar con franqueza, which explicitly limits what cultural missions can accomplish by themselves, through the paragraph ending that links educational transformation with the economic basis created by access to land. Exclude the preceding specialization paragraph. Google Books PA36 is order 47 and maps to physical PDF page 48 / printed p. 34, correcting the earlier popular-passage label p. 32.",2026-09-06',
+              'PDHD-F000080,': 'PDHD-F000080,PDHD-D000071,D,PP7,pp7-title-page-bibliographic-control,https://books.google.com/books?id=WzwXAAAAIAAJ&pg=PP7,fixed,metadata_only,frozen,"Google Books front-matter leaf PP7 / physical PDF page 7: bibliographic core from Secretaría de Educación Pública through the title Las Misiones Culturales 1932-1933 and México 1933; exclude the Stanford library stamp, handwritten call number, blank margins and Google digitization watermark. Selected as a deliberately non-analytical control.",2026-09-06',
+          }
+          seen = set()
+          out = []
+          for line in lines:
+              matched = False
+              for prefix, replacement in replacements.items():
+                  if line.startswith(prefix):
+                      out.append(replacement)
+                      seen.add(prefix)
+                      matched = True
+                      break
+              if not matched:
+                  out.append(line)
+          if seen != set(replacements):
+              raise SystemExit(f'Missing locator rows: {sorted(set(replacements)-seen)}')
+          locator_path.write_text('\n'.join(out) + '\n', encoding='utf-8')
+
+          frozen_path = root / 'data/samples/frozen_fragments_0_1.csv'
+          frozen = frozen_path.read_text(encoding='utf-8').rstrip('\n')
+          new_rows = [
+              'PDHD-F000077,PDHD-D000071,A,24,p24-jefes-mision-preparacion-profesional-demostracion,https://books.google.com/books?id=WzwXAAAAIAAJ&pg=PA26,"Printed p. 24: under 4. Bases de trabajo para cada Maestro Misionero > Jefes de Misión > 1º Las finalidades, item b) only, from the opening professional-improvement instruction through the sentence ending with the demonstration classes; exclude items a) and c).",not_transcribed,Google_Books_direct_primary_pdf_image_inspection,metadata_only,explicit_pedagogical_act,frozen,"The public Google Books page HTML exposed a live PDF of the complete 1933 volume. Its page index maps PA26 to order 37; the recovered PDF maps that order to physical page 38, whose printed folio is p. 24. Direct visual inspection corrects the earlier Google popular-passage label p. 22 and fixes a discrete teacher-improvement prescription. No source text or image is committed.",2026-09-06',
+              'PDHD-F000078,PDHD-D000071,B,23,p23-consejo-consultivo-jefe-mision-authority,https://books.google.com/books?id=WzwXAAAAIAAJ&pg=PA25,"Printed p. 23: section 2. De los miembros del Consejo Consultivo, subsection Jefe de Misión, items I-III in full; stop immediately before Inspector de la zona.",not_transcribed,Google_Books_direct_primary_pdf_image_inspection,metadata_only,institutional_relation,frozen,"Google Books PA25 maps to order 36 and physical PDF page 37, whose printed folio is p. 23. Direct visual inspection fixes the Jefe de Misión hierarchy block as the slot-B authority/organizational unit, replacing the weaker earlier snippet candidate. No source text or image is committed.",2026-09-06',
+              'PDHD-F000079,PDHD-D000071,C,34,p34-limites-misiones-factor-economico,https://books.google.com/books?id=WzwXAAAAIAAJ&pg=PA36,"Printed p. 34: the paragraph beginning Es necesario declarar con franqueza and continuing through its final sentence on the relation between educational transformation and the economic basis supplied by land; exclude the preceding paragraph on mission specialization.",not_transcribed,Google_Books_direct_primary_pdf_image_inspection,metadata_only,source_criticism_salient,frozen,"Google Books PA36 maps to order 47 and physical PDF page 48, whose printed folio is p. 34. Direct visual inspection corrects the earlier popular-passage label p. 32. The official volume openly limits the explanatory and transformative reach of educational action when economic conditions remain unchanged, making this a high-value source-critical span. No source text or image is committed.",2026-09-06',
+              'PDHD-F000080,PDHD-D000071,D,PP7,pp7-title-page-bibliographic-control,https://books.google.com/books?id=WzwXAAAAIAAJ&pg=PP7,"Front-matter leaf PP7 / physical PDF page 7: bibliographic core from the Secretaría de Educación Pública line through the main title, 1932-1933 date range and México 1933 imprint; exclude Stanford library stamp, handwritten call number, margins and Google digitization watermark.",not_transcribed,Google_Books_direct_primary_pdf_image_inspection,metadata_only,control,frozen,"The Google Books page index maps PP7 to order 6 and the recovered PDF to physical page 7. Visual inspection confirms the original bibliographic title-page core and distinguishes it from later library marks and digitization artifacts. The region is intentionally non-analytical and no source image is committed.",2026-09-06',
+          ]
+          for row in new_rows:
+              fid = row.split(',', 1)[0]
+              if not re.search(rf'(?m)^{re.escape(fid)},', frozen):
+                  frozen += '\n' + row
+          frozen_path.write_text(frozen + '\n', encoding='utf-8')
+
+      - name: Synchronize public status surfaces
+        shell: python
+        run: |
+          import csv
+          import re
+          from pathlib import Path
+
+          root = Path('.')
+          def union_ids(pattern):
+              ids = set()
+              for path in sorted((root/'data/samples').glob(pattern)):
+                  with path.open(encoding='utf-8', newline='') as fh:
+                      for row in csv.DictReader(fh):
+                          fid = row.get('fragment_id','').strip()
+                          if fid:
+                              ids.add(fid)
+              return ids
+
+          located = len(union_ids('fragment_locator_progress*.csv'))
+          frozen = len(union_ids('frozen_fragments*.csv'))
+          with (root/'data/samples/fragment_gap_queue_0_1.csv').open(encoding='utf-8', newline='') as fh:
+              gaps = len(list(csv.DictReader(fh)))
+          not_frozen = located - frozen
+          if (located, frozen, gaps) != (83, 37, 13):
+              raise SystemExit(f'Unexpected counts: located={located}, frozen={frozen}, gaps={gaps}')
+
+          readme_path = root/'README.md'
+          readme = readme_path.read_text(encoding='utf-8')
+          reps = [
+              (r'(\| Slots con localizador candidato/resuelto \| \*\*)\d+( / 96\*\* \|)', rf'\g<1>{located}\g<2>'),
+              (r'(\| Fragmentos completamente congelados \| \*\*)\d+( / 96\*\* \|)', rf'\g<1>{frozen}\g<2>'),
+              (r'(su unión contiene \*\*)\d+(/96\*\* slots)', rf'\g<1>{located}\g<2>'),
+              (r'(su unión contiene \*\*)\d+(/96\*\* fragmentos)', rf'\g<1>{frozen}\g<2>'),
+              (r'(\*\*)\d+(/96 slots tienen ya un localizador documentado\.\*\*)', rf'\g<1>{located}\g<2>'),
+              (r'(\*\*)\d+( localizadores todavía no congelados\*\*)', rf'\g<1>{not_frozen}\g<2>'),
+              (r'(Los \*\*)\d+(/96\*\* congelados demuestran)', rf'\g<1>{frozen}\g<2>'),
+              (r'(Quedan \*\*)\d+( slots sin localizador\*\*)', rf'\g<1>{gaps}\g<2>'),
+          ]
+          for pattern, repl in reps:
+              readme, n = re.subn(pattern, repl, readme, count=1)
+              if n != 1:
+                  raise SystemExit(f'README marker mismatch {pattern!r}: {n}')
+
+          anchor = 'El mismo PDF primario permite completar ahora los tres slots analíticos de `PDHD-D000066`. `PDHD-F000057` queda fijado en la p. 125 sobre formación práctica supervisada de futuros maestros; `PDHD-F000058`, en la p. 18, sobre la documentación de la visita del inspector; y `PDHD-F000059`, en la p. 104, como unidad de crítica de fuentes sobre la cuantificación oficial de escuelas, maestros y asistencia en pueblos categorizados como indígenas. Los tres registros conservan sólo metadatos de localización, límites y procedencia.'
+          addition = anchor + '\n\n`PDHD-D000071`, *Las misiones culturales, 1932-1933*, aporta ahora otro lote completo A–D después de recuperar e inspeccionar directamente el PDF primario de Google Books. La revisión corrige además el desfase de los números mostrados por los pasajes populares: `PDHD-F000077` se fija en la p. impresa 24 (Google `PA26`) para la preparación profesional y las clases de demostración; `PDHD-F000078` en la p. 23 (`PA25`) para la jerarquía del Jefe de Misión dentro del Consejo Consultivo; `PDHD-F000079` en la p. 34 (`PA36`) para la autolimitación oficial del alcance de la acción educativa frente a las condiciones económicas; y `PDHD-F000080` usa `PP7` como control bibliográfico. No se publica texto histórico ni imagen de fuente.'
+          if addition not in readme:
+              if anchor not in readme:
+                  raise SystemExit('README insertion anchor missing')
+              readme = readme.replace(anchor, addition, 1)
+          old = 'La cola dedicada de conversión directa quedó vacía después de `PDHD-F000060`; el siguiente frente es convertir punteros de página fuertes mediante inspección directa del objeto primario.'
+          new = 'La cola dedicada de conversión directa continúa vacía; después de `PDHD-F000060`, el lote `PDHD-F000077`–`PDHD-F000080` demuestra la siguiente ruta: recuperar el objeto primario completo, corregir los page labels de agregadores cuando sea necesario y fijar límites sólo después de inspección visual.'
+          if old in readme:
+              readme = readme.replace(old, new, 1)
+          readme_path.write_text(readme, encoding='utf-8')
+
+          cohort_path = root/'docs/PDHD_U1_COHORT_STATUS.md'
+          cohort = cohort_path.read_text(encoding='utf-8')
+          reps = [
+              (r'(\| Fragment locator rows resolved/candidate \| \*\*)\d+( / 96\*\* \|)', rf'\g<1>{located}\g<2>'),
+              (r'(\| Fully frozen fragments \| \*\*)\d+( / 96\*\* \|)', rf'\g<1>{frozen}\g<2>'),
+              (r'(now has \*\*)\d+( of the 96 deterministic reliability slots\*\*)', rf'\g<1>{located}\g<2>'),
+              (r'(contains \*\*)\d+(/96\*\* pilot slots)', rf'\g<1>{located}\g<2>'),
+              (r'(remaining \*\*)\d+(\*\* located rows)', rf'\g<1>{not_frozen}\g<2>'),
+              (r'(\*\*)\d+( slots remain without a locator\.\*\*)', rf'\g<1>{gaps}\g<2>'),
+              (r'(project is now at \*\*)\d+(/96 localized\*\*)', rf'\g<1>{located}\g<2>'),
+          ]
+          for pattern, repl in reps:
+              cohort, n = re.subn(pattern, repl, cohort, count=1)
+              if n != 1:
+                  raise SystemExit(f'Cohort marker mismatch {pattern!r}: {n}')
+          cohort_path.write_text(cohort, encoding='utf-8')
+
+      - name: Run validators
+        shell: bash
+        run: |
+          python scripts/validate_repository.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_status_counts.py
+
+      - name: Commit finalized batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "PDHD source verification"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/samples/fragment_locator_progress_0_1.csv data/samples/frozen_fragments_0_1.csv README.md docs/PDHD_U1_COHORT_STATUS.md
+          git commit -m "Freeze Misiones culturales 1932-1933 batch"
+          git push origin HEAD:freeze-misiones-culturales-1932-1933
