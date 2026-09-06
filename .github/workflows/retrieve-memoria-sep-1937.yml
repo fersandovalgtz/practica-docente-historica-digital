@@ -1,0 +1,110 @@
+name: Retrieve Memoria SEP 1937 primary pages
+
+on:
+  push:
+    branches: [freeze-memoria-sep-1937]
+    paths:
+      - ".github/workflows/retrieve-memoria-sep-1937.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve live Google Books PDF and page index
+        shell: python
+        run: |
+          import html,json,pathlib,re,urllib.request
+          out=pathlib.Path('memoria-sep-1937-primary'); out.mkdir()
+          bid='KRV2_jMW8-wC'
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          url=f'https://books.google.com/books?id={bid}&pg=PA41'
+          req=urllib.request.Request(url,headers=headers)
+          with urllib.request.urlopen(req,timeout=60) as r: body=r.read()
+          text=html.unescape(body.decode('utf-8',errors='replace'))
+          (out/'selected-page.html').write_text(text,encoding='utf-8')
+          urls=re.findall(r'https?://books\.google\.com/books/download/[^\"\s<>]+?\.pdf\?[^\"\s<>]+',text)
+          clean=[]
+          for u in urls:
+              u=u.replace('\\u0026','&')
+              if u not in clean: clean.append(u)
+          print({'pdf_candidates':len(clean),'html_bytes':len(body)})
+          if not clean: raise SystemExit('No public PDF link exposed')
+          (out/'pdf-url.txt').write_text(clean[0],encoding='utf-8')
+          req=urllib.request.Request(clean[0],headers=headers)
+          with urllib.request.urlopen(req,timeout=180) as r: pdf=r.read()
+          if not pdf.startswith(b'%PDF'): raise SystemExit(f'not PDF: {pdf[:30]!r}')
+          (out/'volume.pdf').write_bytes(pdf)
+          # Recover page-label/order pairs from embedded Google page index.
+          pairs=[]
+          for m in re.finditer(r'"pid":"([^"]+)".*?"pageNumber":"([^"]*)".*?"order":(\d+)',text):
+              pairs.append({'pid':m.group(1),'pageNumber':m.group(2),'order':int(m.group(3))})
+          (out/'page-index.json').write_text(json.dumps(pairs,ensure_ascii=False,indent=2),encoding='utf-8')
+          print({'pdf_bytes':len(pdf),'page_pairs':len(pairs),'targets':[p for p in pairs if p['pageNumber'] in {'40','41','371','444'} or p['pid'] in {'PA40','PA41','PA371','PA444','PP7','PR5'}]})
+
+      - name: Identity gate and render target windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          out=memoria-sep-1937-primary
+          pdfinfo "$out/volume.pdf" > "$out/pdfinfo.txt"
+          pdftotext -layout "$out/volume.pdf" "$out/volume.txt" || true
+          pages=$(pdfinfo "$out/volume.pdf" | awk '/^Pages:/ {print $2}')
+          echo "pages=$pages"
+          # Primary-object identity gate: front matter must identify 1937 and the SEP memory.
+          pdftotext -f 1 -l 30 -layout "$out/volume.pdf" "$out/front.txt" || true
+          grep -Eiq '1937|31 de agosto de 1937|1936.*1937' "$out/front.txt" || { echo '1937 identity not visible in first 30 pages'; cat "$out/front.txt"; exit 1; }
+          grep -Eiq 'MEMORIA|SECRETAR.I?A DE EDUCACI' "$out/front.txt" || { echo 'SEP memory identity missing'; exit 1; }
+          mkdir -p "$out/rendered"
+          python - <<'PY'
+          import json,pathlib,re,subprocess
+          out=pathlib.Path('memoria-sep-1937-primary')
+          total=int(re.search(r'^Pages:\s+(\d+)',(out/'pdfinfo.txt').read_text(),re.M).group(1))
+          pairs=json.loads((out/'page-index.json').read_text())
+          render=set(range(1,min(total,35)+1))
+          target_labels={'40','41','371','444'}
+          selected=[]
+          for p in pairs:
+              if p.get('pageNumber') in target_labels:
+                  # Google order is zero-based-ish relative to book; empirical PDF mapping may differ by +1/+2, so render +/-4 around order+1.
+                  approx=p['order']+1
+                  selected.append(p)
+                  render.update(range(max(1,approx-4),min(total,approx+4)+1))
+          # fallback broad offsets if page index extraction is incomplete
+          for printed in (40,41,371,444):
+              for off in range(0,45,5):
+                  q=printed+off
+                  if 1 <= q <= total: render.add(q)
+          for p in sorted(render):
+              prefix=out/'rendered'/f'physical-{p:04d}'
+              subprocess.run(['pdftoppm','-f',str(p),'-l',str(p),'-singlefile','-jpeg','-r','190',str(out/'volume.pdf'),str(prefix)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+          (out/'render-plan.json').write_text(json.dumps({'pdf_pages':total,'selected_index_pairs':selected,'rendered':sorted(render)},ensure_ascii=False,indent=2))
+          print({'pdf_pages':total,'selected_index_pairs':selected,'render_count':len(render)})
+          PY
+
+      - name: Extract searchable neighborhoods
+        shell: python
+        run: |
+          import json,pathlib,re,unicodedata
+          out=pathlib.Path('memoria-sep-1937-primary')
+          pages=(out/'volume.txt').read_text(encoding='utf-8',errors='replace').split('\f')
+          terms=['TRABAJO MANUAL','CONSEJO NACIONAL','EDUCACION SUPERIOR','INVESTIGACION','DISTRIBUCION DE BECAS','BECAS','BIBLIOTECAS','ASISTENCIA','LECTORES','USUARIOS']
+          hits=[]
+          for i,p in enumerate(pages,start=1):
+              n=unicodedata.normalize('NFD',p.upper()); n=''.join(c for c in n if unicodedata.category(c)!='Mn')
+              found=[t for t in terms if t in n]
+              if found:
+                  hits.append({'physical':i,'terms':found,'snippet':re.sub(r'\s+',' ',p)[:5000]})
+          (out/'text-hits.json').write_text(json.dumps(hits,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(hits[:80],ensure_ascii=False,indent=2))
+
+      - name: Upload primary review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-memoria-sep-1937-primary-review
+          path: memoria-sep-1937-primary/
+          retention-days: 1
