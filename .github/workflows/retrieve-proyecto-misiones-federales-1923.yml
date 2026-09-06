@@ -1,0 +1,64 @@
+name: Retrieve Proyecto Misiones Federales 1923 primary PDF
+
+on:
+  push:
+    branches: [freeze-proyecto-misiones-federales-1923]
+    paths:
+      - ".github/workflows/retrieve-proyecto-misiones-federales-1923.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve live Google Books PDF link and download
+        shell: python
+        run: |
+          import html,pathlib,re,urllib.request
+          out=pathlib.Path('proyecto-misiones-1923-primary'); out.mkdir()
+          bid='glW6HEb46VoC'
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          page=f'https://books.google.com/books?id={bid}&pg=PA24'
+          req=urllib.request.Request(page,headers=headers)
+          with urllib.request.urlopen(req,timeout=60) as r: body=r.read()
+          text=html.unescape(body.decode('utf-8',errors='replace'))
+          (out/'selected-page.html').write_text(text,encoding='utf-8')
+          urls=re.findall(r'https?://books\.google\.com/books/download/[^\"\s<>]+?\.pdf\?[^\"\s<>]+',text)
+          clean=[]
+          for u in urls:
+              u=u.replace('\\u0026','&')
+              if u not in clean: clean.append(u)
+          if not clean: raise SystemExit('No live PDF link found')
+          pdf_url=clean[0]
+          (out/'pdf-url.txt').write_text(pdf_url,encoding='utf-8')
+          req=urllib.request.Request(pdf_url,headers=headers)
+          with urllib.request.urlopen(req,timeout=120) as r: pdf=r.read()
+          if not pdf.startswith(b'%PDF'): raise SystemExit(f'Unexpected PDF prefix {pdf[:20]!r}')
+          (out/'volume.pdf').write_bytes(pdf)
+          print({'pdf_bytes':len(pdf),'pdf_url':pdf_url})
+
+      - name: Render complete short pamphlet and extract text
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          out=proyecto-misiones-1923-primary
+          pdfinfo "$out/volume.pdf" > "$out/pdfinfo.txt"
+          pdftotext -layout "$out/volume.pdf" "$out/volume.txt" || true
+          pages=$(pdfinfo "$out/volume.pdf" | awk '/^Pages:/ {print $2}')
+          mkdir -p "$out/rendered"
+          for p in $(seq 1 "$pages"); do
+            pdftoppm -f "$p" -l "$p" -singlefile -jpeg -r 200 "$out/volume.pdf" "$out/rendered/physical-$(printf '%03d' "$p")" >/dev/null 2>&1 || true
+          done
+          echo "pages=$pages"
+          grep -n -E 'PROGRAMA DE ACCION|Programa de acción|MAESTRO MISIONERO|Maestro Misionero|MISION|Misión|22|23|24|25' "$out/volume.txt" | head -200 > "$out/search-hits.txt" || true
+
+      - name: Upload primary review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-proyecto-misiones-1923-primary-review
+          path: proyecto-misiones-1923-primary/
+          retention-days: 1
