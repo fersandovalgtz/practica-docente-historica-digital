@@ -13,7 +13,7 @@ jobs:
   retrieve:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve Google Books PDF
+      - name: Resolve exact 1934 Google Books PDF
         shell: python
         run: |
           import html
@@ -26,7 +26,8 @@ jobs:
           out = pathlib.Path('memoria-sep-1934-primary-review')
           out.mkdir()
           report = {}
-          page_url = 'https://books.google.com/books?id=6aYQAAAAYAAJ&pg=PA29'
+          book_id = '_nkQAAAAYAAJ'
+          page_url = f'https://books.google.com/books?id={book_id}&pg=PA29'
           headers = {
               'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
               'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
@@ -39,6 +40,7 @@ jobs:
           text = raw.decode('utf-8', errors='replace')
           (out / 'selected-page.html').write_text(text, encoding='utf-8')
           decoded = html.unescape(text)
+          report['catalog_claim_1934'] = '1934' in decoded
           candidates = re.findall(
               r"https?://books\.google\.com/books/download/[^\"\s<>]+?\.pdf\?[^\"\s<>]+",
               decoded,
@@ -54,7 +56,8 @@ jobs:
           report['pdf_candidate_count'] = len(candidates)
           pdf_url = next((u for u in candidates if 'output=pdf' in u), candidates[0] if candidates else None)
           if not pdf_url:
-              raise SystemExit('No public PDF candidate exposed by Google Books')
+              (out / 'retrieval-report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
+              raise SystemExit('No public PDF candidate exposed by exact 1934 object')
           req = urllib.request.Request(pdf_url, headers=headers)
           with urllib.request.urlopen(req, timeout=180) as response:
               body = response.read()
@@ -62,13 +65,14 @@ jobs:
               report['pdf_content_type'] = response.headers.get('Content-Type', '')
           report['pdf_bytes'] = len(body)
           if len(body) < 100000 or not body.startswith(b'%PDF'):
+              (out / 'retrieval-report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
               raise SystemExit('Google Books response was not a usable PDF')
           (out / 'volume.pdf').write_bytes(body)
           report['pdf_saved'] = True
           (out / 'retrieval-report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
           print(json.dumps(report, ensure_ascii=False, indent=2))
 
-      - name: Locate and render candidate pages
+      - name: Verify primary title year and locate candidates
         shell: bash
         run: |
           set -euo pipefail
@@ -90,11 +94,18 @@ jobs:
               text = unicodedata.normalize('NFD', text.upper())
               text = ''.join(ch for ch in text if unicodedata.category(ch) != 'Mn')
               return re.sub(r'\s+', ' ', re.sub(r'[^A-Z0-9 ]+', ' ', text))
+
+          front = norm('\n'.join(pages[:60]))
+          expected = '31 DE AGOSTO DE 1934'
+          if expected not in front:
+              (out / 'identity-check.txt').write_text(front[:12000], encoding='utf-8')
+              raise SystemExit('Primary front matter does not identify 31 DE AGOSTO DE 1934')
+
           targets = {
               'rural_school_admin': [
                   ['ESCUELAS', 'RURALES', 'FEDERALES'],
                   ['ESCUELA', 'RURAL', 'FEDERAL'],
-                  ['ADMINISTRACION', 'ESCUELAS', 'RURALES'],
+                  ['DEPARTAMENTO', 'ENSENANZA', 'RURAL'],
               ],
               'inspection_expansion': [
                   ['INSPECTOR', 'ESCUELAS', 'FEDERALES'],
@@ -114,19 +125,17 @@ jobs:
                   p = norm(page)
                   if any(all(term in p for term in terms) for terms in alternatives):
                       found.append(idx)
-              matches[key] = found[:60]
-          render_pages = set()
+              matches[key] = found[:70]
+
+          render_pages = set(range(1, min(len(pages), 90)+1))
           for vals in matches.values():
               for p in vals:
                   render_pages.update(range(max(1, p-2), min(len(pages), p+2)+1))
-          # Conservative windows around secondary printed-page pointers.
           for printed in (29, 53, 58):
-              for offset in range(0, 181, 10):
+              for offset in range(0, 201, 10):
                   p = printed + offset
                   if 1 <= p <= len(pages):
                       render_pages.add(p)
-          # Preliminary roman numeral XVI likely occurs near front matter.
-          render_pages.update(range(1, min(len(pages), 90)+1))
           render_pages = sorted(render_pages)
           render_dir = out / 'rendered'
           render_dir.mkdir(exist_ok=True)
@@ -137,16 +146,16 @@ jobs:
                   check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
               )
           (out / 'candidate-page-map.json').write_text(
-              json.dumps({'pages_total': len(pages), 'text_matches': matches, 'rendered_physical_pages': render_pages}, ensure_ascii=False, indent=2),
+              json.dumps({'identity_verified': expected, 'pages_total': len(pages), 'text_matches': matches, 'rendered_physical_pages': render_pages}, ensure_ascii=False, indent=2),
               encoding='utf-8',
           )
-          print(json.dumps({'pages_total': len(pages), 'matches': matches, 'render_count': len(render_pages)}, ensure_ascii=False))
+          print(json.dumps({'identity_verified': expected, 'pages_total': len(pages), 'matches': matches, 'render_count': len(render_pages)}, ensure_ascii=False))
           PY
 
       - name: Upload one-day primary-review artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pdhd-memoria-sep-1934-primary-review
+          name: pdhd-memoria-sep-1934-primary-review-exact
           path: memoria-sep-1934-primary-review/
           retention-days: 1
           if-no-files-found: error
