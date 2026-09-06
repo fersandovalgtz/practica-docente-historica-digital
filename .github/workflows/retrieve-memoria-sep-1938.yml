@@ -1,0 +1,170 @@
+name: Retrieve Memoria SEP 1938 primary pages
+
+on:
+  push:
+    branches: [freeze-memoria-sep-1938]
+    paths:
+      - ".github/workflows/retrieve-memoria-sep-1938.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve Google Books PDF
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import urllib.parse
+          import urllib.request
+
+          out = pathlib.Path('memoria-sep-1938-primary-review')
+          out.mkdir()
+          report = {}
+          page_url = 'https://books.google.com/books?id=X3oQAAAAYAAJ&pg=PA5'
+          headers = {
+              'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
+              'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
+          }
+
+          try:
+              req = urllib.request.Request(page_url, headers=headers)
+              with urllib.request.urlopen(req, timeout=45) as response:
+                  raw = response.read()
+                  report['page_status'] = response.status
+                  report['page_content_type'] = response.headers.get('Content-Type', '')
+              text = raw.decode('utf-8', errors='replace')
+              (out / 'selected-page.html').write_text(text, encoding='utf-8')
+              decoded = html.unescape(text)
+              candidates = re.findall(
+                  r"https?://books\.google\.com/books/download/[^\"\s<>]+?\.pdf\?[^\"\s<>]+",
+                  decoded,
+              )
+              if not candidates:
+                  candidates = [
+                      urllib.parse.urljoin('https://books.google.com', m)
+                      for m in re.findall(
+                          r"href=[\"']([^\"']*?/books/download/[^\"']+?\.pdf\?[^\"']+)[\"']",
+                          decoded,
+                      )
+                  ]
+              report['pdf_candidate_count'] = len(candidates)
+              pdf_url = next((u for u in candidates if 'output=pdf' in u), candidates[0] if candidates else None)
+              report['selected_pdf_url'] = pdf_url
+              if pdf_url:
+                  req = urllib.request.Request(pdf_url, headers=headers)
+                  with urllib.request.urlopen(req, timeout=180) as response:
+                      body = response.read()
+                      report['pdf_status'] = response.status
+                      report['pdf_content_type'] = response.headers.get('Content-Type', '')
+                  report['pdf_bytes'] = len(body)
+                  if len(body) > 100000 and body.startswith(b'%PDF'):
+                      (out / 'volume.pdf').write_bytes(body)
+                      report['pdf_saved'] = True
+                  else:
+                      (out / 'pdf-response.bin').write_bytes(body)
+                      report['pdf_saved'] = False
+              else:
+                  report['pdf_saved'] = False
+          except Exception as exc:
+              report['error'] = f'{type(exc).__name__}: {exc}'
+              report['pdf_saved'] = False
+
+          (out / 'retrieval-report.json').write_text(
+              json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8'
+          )
+          print(json.dumps({k: v for k, v in report.items() if k != 'selected_pdf_url'}, ensure_ascii=False, indent=2))
+          if not report.get('pdf_saved'):
+              raise SystemExit('Primary Google Books PDF was not recovered')
+
+      - name: Locate and render candidate pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          out='memoria-sep-1938-primary-review'
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          pdfinfo "$out/volume.pdf" > "$out/pdfinfo.txt"
+          pdftotext -layout "$out/volume.pdf" "$out/volume.txt" || true
+          python - <<'PY'
+          import json
+          import pathlib
+          import re
+          import subprocess
+          import unicodedata
+
+          out = pathlib.Path('memoria-sep-1938-primary-review')
+          pages = (out / 'volume.txt').read_text(encoding='utf-8', errors='replace').split('\f')
+
+          def norm(text):
+              text = unicodedata.normalize('NFD', text.upper())
+              text = ''.join(ch for ch in text if unicodedata.category(ch) != 'Mn')
+              return re.sub(r'\s+', ' ', re.sub(r'[^A-Z0-9 ]+', ' ', text))
+
+          targets = {
+              'agricola_normal_rural': [
+                  ['DEPARTAMENTO', 'ENSENANZA', 'AGRICOLA', 'NORMAL', 'RURAL'],
+                  ['ENSENANZA', 'AGRICOLA', 'NORMAL', 'RURAL'],
+              ],
+              'supervision': [
+                  ['DEPARTAMENTO', 'SUPERVISION'],
+              ],
+              'educacion_urbana_rural_estados': [
+                  ['DIRECCION', 'GENERAL', 'EDUCACION', 'URBANA', 'RURAL', 'ESTADOS'],
+                  ['EDUCACION', 'URBANA', 'RURAL', 'ESTADOS'],
+              ],
+              'juridica_revalidacion': [
+                  ['OFICINA', 'JURIDICA', 'REVALIDACION'],
+                  ['JURIDICA', 'REVALIDACION', 'ESTUDIOS'],
+              ],
+          }
+          matches = {}
+          for key, alternatives in targets.items():
+              found = []
+              for idx, page in enumerate(pages, start=1):
+                  p = norm(page)
+                  if any(all(term in p for term in terms) for terms in alternatives):
+                      found.append(idx)
+              matches[key] = found[:30]
+
+          render_pages = set()
+          for vals in matches.values():
+              for p in vals:
+                  render_pages.update(range(max(1, p-2), min(len(pages), p+2)+1))
+
+          # Include conservative neighborhoods around the four printed page pointers.
+          # This is a fallback only; exact promotion still requires visual confirmation.
+          for printed in (5, 59, 269, 335):
+              for offset in range(0, 121, 10):
+                  p = printed + offset
+                  if 1 <= p <= len(pages):
+                      render_pages.add(p)
+
+          render_pages = sorted(render_pages)
+          render_dir = out / 'rendered'
+          render_dir.mkdir(exist_ok=True)
+          for p in render_pages:
+              prefix = render_dir / f'physical-{p:04d}'
+              subprocess.run(
+                  ['pdftoppm', '-f', str(p), '-l', str(p), '-singlefile', '-jpeg', '-r', '170', str(out / 'volume.pdf'), str(prefix)],
+                  check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+              )
+          (out / 'candidate-page-map.json').write_text(
+              json.dumps({'pages_total': len(pages), 'text_matches': matches, 'rendered_physical_pages': render_pages}, ensure_ascii=False, indent=2),
+              encoding='utf-8',
+          )
+          print(json.dumps({'pages_total': len(pages), 'matches': matches, 'render_count': len(render_pages)}, ensure_ascii=False))
+          PY
+
+      - name: Upload one-day primary-review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-memoria-sep-1938-primary-review
+          path: memoria-sep-1938-primary-review/
+          retention-days: 1
+          if-no-files-found: error
