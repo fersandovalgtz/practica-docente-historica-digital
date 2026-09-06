@@ -1,4 +1,4 @@
-name: Retrieve Memoria SEP 1932 primary pages
+name: Probe Memoria SEP 1932 public page routes
 
 on:
   push:
@@ -10,175 +10,125 @@ permissions:
   contents: read
 
 jobs:
-  retrieve:
+  probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve Google Books PDF and page index
+      - name: Probe public Google Books interfaces
         shell: python
         run: |
-          import html
           import json
           import pathlib
-          import re
           import urllib.parse
           import urllib.request
 
           out = pathlib.Path('memoria-sep-1932-primary-review')
           out.mkdir()
-          report = {}
-          page_url = 'https://books.google.com/books?id=ypWS82YskN4C&pg=PA111'
+          book_id = 'ypWS82YskN4C'
           headers = {
               'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
               'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
           }
+          report = []
 
-          try:
-              req = urllib.request.Request(page_url, headers=headers)
-              with urllib.request.urlopen(req, timeout=45) as response:
-                  raw = response.read()
-                  report['page_status'] = response.status
-                  report['page_content_type'] = response.headers.get('Content-Type', '')
-              text = raw.decode('utf-8', errors='replace')
-              (out / 'selected-page.html').write_text(text, encoding='utf-8')
-              decoded = html.unescape(text)
-
-              candidates = re.findall(
-                  r"https?://books\.google\.com/books/download/[^\"\s<>]+?\.pdf\?[^\"\s<>]+",
-                  decoded,
-              )
-              if not candidates:
-                  candidates = [
-                      urllib.parse.urljoin('https://books.google.com', m)
-                      for m in re.findall(
-                          r"href=[\"']([^\"']*?/books/download/[^\"']+?\.pdf\?[^\"']+)[\"']",
-                          decoded,
-                      )
-                  ]
-              report['pdf_candidate_count'] = len(candidates)
-              pdf_url = next((u for u in candidates if 'output=pdf' in u), candidates[0] if candidates else None)
-              report['selected_pdf_url'] = pdf_url
-
-              # Preserve page-index evidence exposed in HTML. Google Books may
-              # repeat printed folios across volumes/blocks, so record all IDs.
-              page_ids = []
-              for m in re.finditer(r'"pid"\s*:\s*"([^"]+)"[^\{\}]{0,300}?"order"\s*:\s*(\d+)', decoded):
-                  page_ids.append({'pid': m.group(1), 'order': int(m.group(2))})
-              if not page_ids:
-                  for m in re.finditer(r'pageImage\["([^"]+)"\][^\n]{0,400}?order[^0-9]{0,10}(\d+)', decoded):
-                      page_ids.append({'pid': m.group(1), 'order': int(m.group(2))})
-              report['page_index_sample_count'] = len(page_ids)
-              (out / 'page-index.json').write_text(json.dumps(page_ids, ensure_ascii=False, indent=2), encoding='utf-8')
-
-              if pdf_url:
-                  req = urllib.request.Request(pdf_url, headers=headers)
-                  with urllib.request.urlopen(req, timeout=180) as response:
+          def fetch(label, url, accept=None):
+              row = {'label': label, 'url': url}
+              try:
+                  h = dict(headers)
+                  if accept:
+                      h['Accept'] = accept
+                  req = urllib.request.Request(url, headers=h)
+                  with urllib.request.urlopen(req, timeout=60) as response:
                       body = response.read()
-                      report['pdf_status'] = response.status
-                      report['pdf_content_type'] = response.headers.get('Content-Type', '')
-                  report['pdf_bytes'] = len(body)
-                  if len(body) > 100000 and body.startswith(b'%PDF'):
-                      (out / 'volume.pdf').write_bytes(body)
-                      report['pdf_saved'] = True
-                  else:
-                      (out / 'pdf-response.bin').write_bytes(body)
-                      report['pdf_saved'] = False
-              else:
-                  report['pdf_saved'] = False
-          except Exception as exc:
-              report['error'] = f'{type(exc).__name__}: {exc}'
-              report['pdf_saved'] = False
+                      row['status'] = response.status
+                      row['content_type'] = response.headers.get('Content-Type', '')
+                      row['bytes'] = len(body)
+                      row['final_url'] = response.geturl()
+                  suffix = '.json' if ('json' in row['content_type'].lower() or body.lstrip().startswith((b'{', b'['))) else '.html'
+                  path = out / f'{label}{suffix}'
+                  path.write_bytes(body)
+                  row['saved'] = path.name
+                  if suffix == '.json':
+                      try:
+                          parsed = json.loads(body.decode('utf-8', errors='replace'))
+                          if isinstance(parsed, dict):
+                              row['top_keys'] = list(parsed)[:30]
+                              row['number_of_results'] = parsed.get('number_of_results')
+                      except Exception as exc:
+                          row['json_parse_error'] = f'{type(exc).__name__}: {exc}'
+              except Exception as exc:
+                  row['error'] = f'{type(exc).__name__}: {exc}'
+              report.append(row)
 
-          (out / 'retrieval-report.json').write_text(
+          fetch('selected_PA111', f'https://books.google.com/books?id={book_id}&pg=PA111')
+          fetch('selected_PA307', f'https://books.google.com/books?id={book_id}&pg=PA307')
+          fetch('selected_PA465', f'https://books.google.com/books?id={book_id}&pg=PA465')
+          fetch('selected_PA487', f'https://books.google.com/books?id={book_id}&pg=PA487')
+          fetch('volume_api', f'https://www.googleapis.com/books/v1/volumes/{book_id}', 'application/json')
+
+          queries = {
+              'misiones': 'misiones culturales escuelas normales',
+              'psicopedagogia': 'psicopedagogía higiene',
+              'revalidacion': 'revalidación estudios',
+              'costos': 'enseñanza técnica primaria rural costo',
+          }
+          for key, query in queries.items():
+              q = urllib.parse.quote_plus(query)
+              fetch(
+                  f'search_books_{key}',
+                  f'https://books.google.com/books?id={book_id}&jscmd=SearchWithinVolume2&q={q}',
+                  'application/json',
+              )
+              fetch(
+                  f'search_google_{key}',
+                  f'https://www.google.com/books?id={book_id}&jscmd=SearchWithinVolume2&q={q}',
+                  'application/json',
+              )
+
+          (out / 'probe-report.json').write_text(
               json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8'
           )
-          print(json.dumps({k: v for k, v in report.items() if k != 'selected_pdf_url'}, ensure_ascii=False, indent=2))
-          if not report.get('pdf_saved'):
-              raise SystemExit('Primary Google Books PDF was not recovered')
+          print(json.dumps(report, ensure_ascii=False, indent=2))
 
-      - name: Locate and render candidate pages
-        shell: bash
+      - name: Summarize page identifiers found in public responses
+        shell: python
         run: |
-          set -euo pipefail
-          out='memoria-sep-1932-primary-review'
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq poppler-utils
-          pdfinfo "$out/volume.pdf" > "$out/pdfinfo.txt"
-          pdftotext -layout "$out/volume.pdf" "$out/volume.txt" || true
-          python - <<'PY'
           import json
           import pathlib
           import re
-          import subprocess
-          import unicodedata
 
           out = pathlib.Path('memoria-sep-1932-primary-review')
-          pages = (out / 'volume.txt').read_text(encoding='utf-8', errors='replace').split('\f')
-
-          def norm(text):
-              text = unicodedata.normalize('NFD', text.upper())
-              text = ''.join(ch for ch in text if unicodedata.category(ch) != 'Mn')
-              return re.sub(r'\s+', ' ', re.sub(r'[^A-Z0-9 ]+', ' ', text))
-
-          targets = {
-              'misiones_normales': [
-                  ['DIRECCION', 'MISIONES', 'CULTURALES', 'ESCUELAS', 'NORMALES'],
-                  ['MISIONES', 'CULTURALES', 'ESCUELAS', 'NORMALES'],
-              ],
-              'psicopedagogia_higiene': [
-                  ['DEPARTAMENTO', 'PSICOPEDAGOGIA', 'HIGIENE'],
-                  ['PSICOPEDAGOGIA', 'HIGIENE'],
-              ],
-              'consultiva_revalidacion': [
-                  ['OFICINA', 'CONSULTIVA', 'REVALIDACION'],
-                  ['CONSULTIVA', 'REVALIDACION', 'ESTUDIOS'],
-              ],
-              'technical_costs': [
-                  ['EDUCACION', 'TECNICA', 'PRIMARIA', 'RURAL'],
-                  ['ENSENANZA', 'TECNICA', 'PRIMARIA', 'RURAL'],
-                  ['COSTO', 'TECNICA', 'PRIMARIA'],
-              ],
-          }
-          matches = {}
-          for key, alternatives in targets.items():
-              found = []
-              for idx, page in enumerate(pages, start=1):
-                  p = norm(page)
-                  if any(all(term in p for term in terms) for terms in alternatives):
-                      found.append(idx)
-              matches[key] = found[:50]
-
-          render_pages = set()
-          for vals in matches.values():
-              for p in vals:
-                  render_pages.update(range(max(1, p-2), min(len(pages), p+2)+1))
-
-          # Conservative fallback windows; visual confirmation is still required.
-          for printed in (111, 307, 465, 487):
-              for offset in range(0, 151, 10):
-                  p = printed + offset
-                  if 1 <= p <= len(pages):
-                      render_pages.add(p)
-
-          render_pages = sorted(render_pages)
-          render_dir = out / 'rendered'
-          render_dir.mkdir(exist_ok=True)
-          for p in render_pages:
-              prefix = render_dir / f'physical-{p:04d}'
-              subprocess.run(
-                  ['pdftoppm', '-f', str(p), '-l', str(p), '-singlefile', '-jpeg', '-r', '170', str(out / 'volume.pdf'), str(prefix)],
-                  check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-              )
-          (out / 'candidate-page-map.json').write_text(
-              json.dumps({'pages_total': len(pages), 'text_matches': matches, 'rendered_physical_pages': render_pages}, ensure_ascii=False, indent=2),
-              encoding='utf-8',
+          summary = {}
+          patterns = [
+              r'"page_id"\s*:\s*"([^"]+)"',
+              r'"pageId"\s*:\s*"([^"]+)"',
+              r'"pid"\s*:\s*"([^"]+)"',
+              r'[?&]pg=([A-Z0-9_-]+)',
+          ]
+          for path in sorted(out.iterdir()):
+              if not path.is_file() or path.name in {'probe-report.json', 'page-id-summary.json'}:
+                  continue
+              text = path.read_text(encoding='utf-8', errors='replace')
+              ids = []
+              for pattern in patterns:
+                  ids.extend(re.findall(pattern, text))
+              # Keep order while deduplicating.
+              seen = set()
+              uniq = []
+              for item in ids:
+                  if item not in seen:
+                      seen.add(item)
+                      uniq.append(item)
+              summary[path.name] = uniq[:100]
+          (out / 'page-id-summary.json').write_text(
+              json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8'
           )
-          print(json.dumps({'pages_total': len(pages), 'matches': matches, 'render_count': len(render_pages)}, ensure_ascii=False))
-          PY
+          print(json.dumps(summary, ensure_ascii=False, indent=2))
 
-      - name: Upload one-day primary-review artifact
+      - name: Upload one-day probe artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pdhd-memoria-sep-1932-primary-review
+          name: pdhd-memoria-sep-1932-primary-probe
           path: memoria-sep-1932-primary-review/
           retention-days: 1
           if-no-files-found: error
