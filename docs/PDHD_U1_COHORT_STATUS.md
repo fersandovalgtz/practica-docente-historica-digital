@@ -14,10 +14,10 @@ Reference cut: **2026-09-05**
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
 | Fragment locator rows resolved/candidate | **83 / 96** | 86.5% of reliability slots localized |
-| Fully frozen fragments | **41 / 96** | page-resolved conversion phase active |
+| Fully frozen fragments | **45 / 96** | page-resolved conversion phase active |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **83 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Thirty units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **83 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Forty-five units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -25,7 +25,7 @@ The first reliability corpus remains frozen in `data/samples/pilot_document_sele
 
 ## Frozen-fragment evidence
 
-Six selected documents now have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
+Ten selected documents now have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
 
 `PDHD-D000003`, *La Enseñanza Primaria*, tomo I, núm. 11, 1 December 1901, contributes a complete four-slot batch from a directly retrieved Google Books primary PDF whose issue identity is independently matched by the UNAM/HNDM record. `PDHD-F000025` fixes the explicit-method prescription on printed p. 168. `PDHD-F000026` fixes the discrete masthead role identifying Gregorio Torres Quintero as Jefe de Redacción on p. 161. `PDHD-F000027` fixes the complete source-critical conclusion of *Los ejercicios físicos en la escuela* on p. 163. `PDHD-F000028` fixes the separate tomo/date/number cartouche on p. 161 as a deliberately non-analytical control. The primary PDF maps those printed pages to physical PDF pages 182, 175, 177 and 175 respectively.
 
@@ -38,6 +38,8 @@ Internet Archive contributes four additional image-verified controls plus the in
 The corrected tomo II, núm. 3 recovery now adds `PDHD-F000051` from printed p. 294 / BookReader `n305` as a directly inspected source-critical span in *Democracia Criolla*. The same inspection maps *El Cardo* to pp. 299–300 / `n310`–`n311`, strengthening `PDHD-F000049` to a direct primary locator while deliberately leaving it unfrozen: the visible literary school-reading unit does not itself satisfy slot A’s explicit pedagogical-act requirement. This preserves a failed-fit decision rather than converting mere educational context into a positive pedagogical fragment.
 
 `PDHD-D000066`, *El esfuerzo educativo en México* (1928), contributes `PDHD-F000060` as a frozen title-page control. Google Books directly exposes `PR5`. A dedicated recovery workflow fetched the live PR5 HTML, resolved its public PDF link, downloaded a valid 29.9 MB primary PDF and rendered the relevant front matter. Direct inspection fixes only the bibliographic title-page core.
+
+`PDHD-D000073`, the 1934 SEP memory, now contributes a complete four-slot batch from the primary Google Books copy `mHgQAAAAYAAJ`. Direct inspection maps printed pp. 29, 53 and 58 to physical PDF pages 39, 63 and 68, while `PP7` maps to physical page 9 and supplies the bibliographic control. A competing Google Books full-view object was rejected after its primary title pages identified 1935, preserving primary-page identity over catalog metadata.
 
 All third-party image-derived frozen records remain conservative in public handling. Source images and full historical transcriptions are not committed merely because the object is viewable or downloadable.
 
@@ -53,7 +55,7 @@ The `PDHD-F000033` recovery established the post-sprint exact-pointer workflow: 
 
 ## Remaining localization work
 
-The union of all `fragment_locator_progress*.csv` shards contains **83/96** pilot slots. Thirty are frozen. The remaining **42** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **13 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **83/96** pilot slots. Forty-five are frozen. The remaining **38** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **13 slots remain without a locator.**
 
 The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. The active phase now converts strong page-resolved candidates through direct historical-object inspection and opportunistically fills missing deterministic slots when the same inspected page provides structurally distinct evidence.
 
