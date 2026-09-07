@@ -1,0 +1,74 @@
+name: Probe D072 BookPage routes
+
+on:
+  push:
+    branches:
+      - work/d072-primary-recovery-20260907
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe public BookPage and content-image routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d072_bookpage
+          python3 - <<'PY'
+          import urllib.request, urllib.parse, json, re, html, pathlib, hashlib
+          UA='Mozilla/5.0 PDHD-research/0.1'
+          vid='JFRLAAAAYAAJ'
+          pages=['PA41','PA48','PA53','PA59','PA104','PA108','PR14','PP1']
+          def get(u):
+              try:
+                  req=urllib.request.Request(u,headers={'User-Agent':UA,'Accept-Language':'es-MX,es;q=0.9,en;q=0.7','Referer':f'https://books.google.com/books?id={vid}'})
+                  with urllib.request.urlopen(req,timeout=45) as r:
+                      b=r.read(); return {'status':r.status,'ctype':r.headers.get('content-type',''),'final':r.geturl(),'body':b,'headers':dict(r.headers)}
+              except Exception as e:
+                  return {'status':None,'ctype':'','final':'','body':b'','error':repr(e),'headers':{}}
+          variants=[]
+          for p in pages:
+              variants += [
+                ('bookpage_vid_pg',p,'https://books.google.com/books?'+urllib.parse.urlencode({'jscmd':'BookPage','vid':vid,'pg':p,'hl':'es'})),
+                ('bookpage_vid_p',p,'https://books.google.com/books?'+urllib.parse.urlencode({'jscmd':'BookPage','vid':vid,'p':p,'hl':'es'})),
+                ('bookpage_id_pg',p,'https://books.google.com/books?'+urllib.parse.urlencode({'jscmd':'BookPage','id':vid,'pg':p,'hl':'es'})),
+                ('bookpage_id_j',p,'https://books.google.com/books?'+urllib.parse.urlencode({'jscmd':'BookPage','id':vid,'j':p,'hl':'es'})),
+                ('content_pg_z1',p,'https://books.google.com/books/content?'+urllib.parse.urlencode({'id':vid,'pg':p,'img':'1','zoom':'1','hl':'es'})),
+                ('content_pg_z2',p,'https://books.google.com/books/content?'+urllib.parse.urlencode({'id':vid,'pg':p,'img':'1','zoom':'2','hl':'es'})),
+              ]
+          report=[]
+          seen_imgs={}
+          for kind,p,u in variants:
+              r=get(u); b=r['body']; ct=r.get('ctype','')
+              row={k:r.get(k) for k in ['status','ctype','final','error'] if k in r}
+              row.update({'kind':kind,'page':p,'url':u,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest() if b else None})
+              if 'image' in ct.lower() and len(b)>500:
+                  ext='.png' if 'png' in ct.lower() else '.jpg'
+                  fp=pathlib.Path('d072_bookpage')/f'{kind}_{p}{ext}'; fp.write_bytes(b)
+                  row['saved']=str(fp)
+              else:
+                  txt=b.decode('utf-8','replace') if b else ''
+                  row['sample']=txt[:1200]
+                  urls=[]
+                  for pat in [r'https?[^\"\'<> ]*books/content[^\"\'<> ]+',r'https?[^\"\'<> ]*googleusercontent[^\"\'<> ]+',r'"page(?:Image|Url)"\s*:\s*"([^"]+)"']:
+                      for x in re.findall(pat,txt):
+                          if isinstance(x,tuple): x=x[0]
+                          urls.append(html.unescape(x.replace('\\u0026','&').replace('\\x26','&')))
+                  row['urls']=list(dict.fromkeys(urls))[:20]
+              report.append(row)
+              print(json.dumps({k:row.get(k) for k in ['kind','page','status','ctype','bytes','sha256','saved','error','urls'] if row.get(k) is not None},ensure_ascii=False))
+          pathlib.Path('d072_bookpage/report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          PY
+      - name: Identify recovered images
+        shell: bash
+        run: |
+          find d072_bookpage -type f \( -name '*.jpg' -o -name '*.png' \) -print -exec file {} \; || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: d072-bookpage-probe
+          path: d072_bookpage
+          retention-days: 1
