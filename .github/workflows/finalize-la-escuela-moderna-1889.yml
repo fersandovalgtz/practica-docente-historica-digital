@@ -1,0 +1,246 @@
+name: Finalize La Escuela Moderna 1889 primary batch
+
+on:
+  push:
+    branches: [freeze-la-escuela-moderna-1889]
+    paths:
+      - ".github/workflows/finalize-la-escuela-moderna-1889.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Promote F21-F24 from exact HNDM primary inspection
+        shell: python
+        run: |
+          import csv,pathlib,re
+          root=pathlib.Path('.')
+          samples=root/'data/samples'
+          checked='2026-09-06'
+          doc='PDHD-D000058'
+          basepdf='https://hndm.iib.unam.mx/consulta/publicacion/pdf/'
+
+          locator_fields=['fragment_id','document_id','slot','page','source_locator','locator_evidence_url','boundary_status','public_text_status','freeze_status','preparation_note','checked_at']
+          frozen_fields=['fragment_id','document_id','slot','page','source_locator','locator_evidence_url','boundary_definition','transcription_status','access_basis','public_text_status','selection_role','freeze_status','preparation_note','checked_at']
+
+          rows={
+            'PDHD-F000021': {
+              'fragment_id':'PDHD-F000021','document_id':doc,'slot':'A','page':'18',
+              'source_locator':'p18-rebsamen-desarrollo-armonico-facultades-educando',
+              'locator_evidence_url':basepdf+'558a33387d1ed64f16922985.pdf?coleccion=&palabras=',
+              'boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen',
+              'preparation_note':"Direct inspection of the exact HNDM primary page fixes an explicit pedagogical prescription in Enrique C. Rebsamen's La Pedagogia Moderna. The bounded unit directs the educator to develop the learner's physical, intellectual, ethical and aesthetic faculties harmoniously and then frames the educator's guidance by criterion and conscience. The following paragraph on physiological and psychological laws is excluded. No source text or image is committed.",
+              'checked_at':checked,
+            },
+            'PDHD-F000022': {
+              'fragment_id':'PDHD-F000022','document_id':doc,'slot':'B','page':'17',
+              'source_locator':'p17-redaccion-congreso-instruccion-reglamento-secretaria',
+              'locator_evidence_url':basepdf+'558a33387d1ed64f16922984.pdf?coleccion=&palabras=',
+              'boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen',
+              'preparation_note':"Direct primary inspection fixes the two editorial paragraphs between Circular numero 53 and the DE FONDO heading. The journal's redaction endorses the requested statistical information for the Congreso de Instruccion and announces the forthcoming Reglamento under study by the Secretario de Justicia e Instruccion Publica. This is retained as an institutional/professional relation, distinct from the official circular above and Rebsamen's article below.",
+              'checked_at':checked,
+            },
+            'PDHD-F000023': {
+              'fragment_id':'PDHD-F000023','document_id':doc,'slot':'C','page':'17',
+              'source_locator':'p17-rebsamen-educacion-urbanidad-instruccion-distincion',
+              'locator_evidence_url':basepdf+'558a33387d1ed64f16922984.pdf?coleccion=&palabras=',
+              'boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen',
+              'preparation_note':"The earlier scholarly pp. 17-18 pointer is superseded by direct inspection of printed p. 17 in the exact 31 October 1889 HNDM issue. The fixed opening of La Pedagogia Moderna defines the pedagogical problem and records contemporary uses that equate educacion with urbanidad or instruccion. The unit is retained for source criticism because these semantic distinctions constrain historical interpretation; it stops before the article moves into the conditions required for educational action.",
+              'checked_at':checked,
+            },
+            'PDHD-F000024': {
+              'fragment_id':'PDHD-F000024','document_id':doc,'slot':'D','page':'32',
+              'source_locator':'p32-notas-advertencias-suplemento-precio-publicacion',
+              'locator_evidence_url':basepdf+'558a33387d1ed64f16922993.pdf?coleccion=&palabras=',
+              'boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen',
+              'preparation_note':"Direct inspection of printed p. 32 fixes a deliberately low-pedagogical publication-control unit within NOTAS Y ADVERTENCIAS. The two paragraphs state the ordinary issue extent, the four-page supplement and that its extraordinary cost would not increase the issue price. The following paragraph on binding/title conventions is excluded, as are the later delay and errata notices.",
+              'checked_at':checked,
+            },
+          }
+
+          boundaries={
+            'PDHD-F000021':"Printed p. 18, left column, within LA PEDAGOGIA MODERNA: fix the two contiguous paragraphs beginning with the prescription that each educator develop harmoniously all physical, intellectual, ethical and aesthetic faculties of the learners and continuing through the paragraph directing each educator to guide activity by criterion and conscience and to cultivate the faculties rationally. Stop before the following paragraph beginning the discussion of physiological and psychological laws.",
+            'PDHD-F000022':"Printed p. 17, left column, after the closing signature/date line of official Circular numero 53 and before DE FONDO: fix the two editorial paragraphs beginning with La Redaccion de La Escuela Moderna and ending with the notice that the Reglamento for the Congreso, then under study by the Secretario de Justicia e Instruccion Publica, would be issued within days. Exclude the official circular above and the pedagogical article below.",
+            'PDHD-F000023':"Printed p. 17, opening of LA PEDAGOGIA MODERNA across the lower left and upper right columns: fix the heading/subheading and the conceptual opening from the definition of Pedagogy as science and art of education through the contiguous examples showing education treated as synonymous with urbanity and with instruction. Stop before the later paragraph beginning the conditions required for educational action.",
+            'PDHD-F000024':"Printed p. 32, right column, within the continuing NOTAS Y ADVERTENCIAS section after the first Congress-related note: fix the two contiguous publication-administration paragraphs beginning with the ordinary eight-sheet extent plus the Tratado de Higiene Escolar and the four-page supplement, and ending with the statement that the extraordinary supplement cost does not increase the present issue price. Stop before the paragraph on publication title/binding conventions.",
+          }
+          roles={'PDHD-F000021':'explicit_pedagogical_act','PDHD-F000022':'institutional_relation','PDHD-F000023':'source_criticism_salient','PDHD-F000024':'control'}
+
+          # Update F23 in its historical locator shard; do not move the row.
+          secondary=samples/'fragment_locator_progress_secondary_w4.csv'
+          with secondary.open(encoding='utf-8',newline='') as f:
+              rr=list(csv.DictReader(f)); fields=rr[0].keys() if rr else locator_fields
+          seen=0
+          for r in rr:
+              if r.get('fragment_id')=='PDHD-F000023':
+                  r.update(rows['PDHD-F000023']); seen+=1
+          if seen!=1: raise SystemExit(f'expected exactly one existing F23 locator row, got {seen}')
+          with secondary.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=list(fields)); w.writeheader(); w.writerows(rr)
+
+          # Former gaps enter a new locator shard without moving any established rows.
+          newloc=samples/'fragment_locator_progress_hndm_escuela_moderna1889_w24.csv'
+          if newloc.exists(): raise SystemExit(f'unexpected pre-existing shard {newloc}')
+          with newloc.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=locator_fields); w.writeheader()
+              for fid in ['PDHD-F000021','PDHD-F000022','PDHD-F000024']: w.writerow(rows[fid])
+
+          # Freeze all four final units in one batch registry.
+          newfrozen=samples/'frozen_fragments_hndm_escuela_moderna1889_w24.csv'
+          if newfrozen.exists(): raise SystemExit(f'unexpected pre-existing frozen shard {newfrozen}')
+          with newfrozen.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=frozen_fields); w.writeheader()
+              for fid in ['PDHD-F000021','PDHD-F000022','PDHD-F000023','PDHD-F000024']:
+                  r=rows[fid]
+                  w.writerow({
+                    'fragment_id':fid,'document_id':doc,'slot':r['slot'],'page':r['page'],
+                    'source_locator':r['source_locator'],'locator_evidence_url':r['locator_evidence_url'],
+                    'boundary_definition':boundaries[fid],'transcription_status':'not_transcribed',
+                    'access_basis':'HNDM_public_interface_manual_inspection','public_text_status':'metadata_only',
+                    'selection_role':roles[fid],'freeze_status':'frozen','preparation_note':r['preparation_note'],'checked_at':checked,
+                  })
+
+          # Remove exactly the three former D58 gaps.
+          gap=samples/'fragment_gap_queue_0_1.csv'
+          with gap.open(encoding='utf-8',newline='') as f:
+              gr=list(csv.DictReader(f)); gf=list(gr[0].keys()) if gr else ['fragment_id','document_id','slot','priority','retrieval_route','current_blocker','target_evidence']
+          remove={'PDHD-F000021','PDHD-F000022','PDHD-F000024'}
+          present={r['fragment_id'] for r in gr}
+          if not remove <= present: raise SystemExit(f'expected D58 gaps absent before promotion: {sorted(remove-present)}')
+          kept=[r for r in gr if r['fragment_id'] not in remove]
+          if len(gr)-len(kept)!=3: raise SystemExit('gap-removal gate failed')
+          with gap.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=gf); w.writeheader(); w.writerows(kept)
+
+          # Retrieval provenance: preserve failed routes and exact form-selector recovery.
+          ra=samples/'retrieval_attempts.csv'
+          with ra.open(encoding='utf-8',newline='') as f:
+              ar=list(csv.DictReader(f)); af=list(ar[0].keys())
+          if any(r.get('attempt_id')=='PDHD-RA000017' for r in ar): raise SystemExit('RA17 already exists')
+          ar.append({
+            'attempt_id':'PDHD-RA000017','document_id':doc,
+            'fragment_ids':'PDHD-F000021;PDHD-F000022;PDHD-F000023;PDHD-F000024','source_id':'HNDM',
+            'object_url':'https://hndm.iib.unam.mx/consulta/publicacion/visualizar/558075be7d1e63c9fea1a259?coleccion=&pagina=1&anio=1889&mes=10&dia=31&butIr=Ir',
+            'target':'all_four_issue_slots','result_status':'superseded_by_locator',
+            'blocker':"The cataloged UNAM-RI 924534 route for the 31 October 1889 object no longer exposed a usable structured record. The adjacent live UNAM record 924533 identified HNDM serial 558075be7d1e63c9fea1a259 and explicitly preserved the serial chronology including tomo I numero 2 on 31 October 1889. A numeric ObjectId-neighborhood probe was rejected because nearby IDs resolved to unrelated publications/dates. Inspecting the live HNDM viewer form showed that anioPS1/mesPS1/diaPS1 are HTML element IDs while the submitted field names are anio/mes/dia. Submitting pagina=1, anio=1889, mes=10, dia=31 resolved a 20-page issue whose first persistent page/PDF ID is 558a33387d1ed64f16922984. Following explicit siguienteLink identifiers recovered all 20 pages under a strict date/count/PDF identity gate. Direct image inspection fixes F000021 on p. 18, F000022 and F000023 as distinct p. 17 units, and F000024 on p. 32.",
+            'next_route':'frozen_registry_gap_queue_and_status_sync_completed','checked_at':checked,
+          })
+          with ra.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=af); w.writeheader(); w.writerows(ar)
+
+          # README counts + new batch note.
+          readme=(root/'README.md')
+          txt=readme.read_text(encoding='utf-8')
+          txt=txt.replace('| Slots con localizador candidato/resuelto | **89 / 96** |','| Slots con localizador candidato/resuelto | **92 / 96** |')
+          txt=txt.replace('| Fragmentos completamente congelados | **69 / 96** |','| Fragmentos completamente congelados | **73 / 96** |')
+          note="`PDHD-D000058`, *La Escuela Moderna* del 31 de octubre de 1889, completa A–D desde 20 páginas primarias HNDM identificadas mediante el selector real del visor. El registro UNAM-RI `924534` dejó de exponer una ficha utilizable; la ficha vecina `924533` permitió resolver el serial `558075be7d1e63c9fea1a259` y su cronología. Un intento de inferir el número por vecindad de ObjectIds fue descartado al devolver fechas ajenas. La solicitud correcta usa los campos enviados por el formulario (`anio=1889`, `mes=10`, `dia=31`) y resuelve `558a33387d1ed64f16922984` como primera página de un número de 20 hojas. `PDHD-F000021` fija en p. 18 una prescripción explícita de Rébsamen sobre el desarrollo armónico de las facultades del educando; `PDHD-F000022` fija en p. 17 la relación editorial con el Congreso de Instrucción y la Secretaría; `PDHD-F000023` sustituye el puntero secundario por una unidad primaria p. 17 sobre las distinciones entre educación, urbanidad e instrucción; y `PDHD-F000024` usa en p. 32 las notas administrativas sobre extensión, suplemento y precio como control. No se publica facsímil ni transcripción histórica."
+          if 'PDHD-D000058`, *La Escuela Moderna* del 31 de octubre de 1889' not in txt:
+              m=re.search(r'(`PDHD-D000064`, \*El Instructor\*.*?\n\n)',txt,re.S)
+              if not m: raise SystemExit('README D64 insertion anchor not found')
+              txt=txt[:m.end()]+note+'\n\n'+txt[m.end():]
+          readme.write_text(txt,encoding='utf-8')
+
+          # Cohort status: synchronize all public narrative counts and add batch note.
+          cohort=root/'docs/PDHD_U1_COHORT_STATUS.md'
+          c=cohort.read_text(encoding='utf-8')
+          replacements={
+            '| Fragment locator rows resolved/candidate | **89 / 96** | 86.5% of reliability slots localized |':'| Fragment locator rows resolved/candidate | **92 / 96** | 95.8% of reliability slots localized |',
+            '| Fully frozen fragments | **69 / 96** | page-resolved conversion phase active |':'| Fully frozen fragments | **73 / 96** | page-resolved conversion phase active |',
+            'PDHD-U1 now has **89 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Sixty-nine units have crossed the stronger frozen-fragment gate.':'PDHD-U1 now has **92 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Seventy-three units have crossed the stronger frozen-fragment gate.',
+            'Sixteen selected documents now have complete four-slot batches.':'Seventeen selected documents now have complete four-slot batches.',
+            'contains **89/96** pilot slots. Sixty-one are frozen. The remaining **20** located rows':'contains **92/96** pilot slots. Seventy-three are frozen. The remaining **19** located rows',
+            '**7 slots remain without a locator.**':'**4 slots remain without a locator.**',
+            'The current 69 frozen units demonstrate':'The current 73 frozen units demonstrate',
+            'The project is now at **89/96 localized** and **69/96 frozen**. Recent primary-object recovery has expanded the frozen package while preserving the unlocalized complement at 7. The next quantitative localization checkpoint is **92/96**, while the stronger scientific priority is converting high-quality existing page pointers and completing document batches without weakening the evidence hierarchy.':'The project is now at **92/96 localized** and **73/96 frozen**. Recent primary-object recovery has expanded the frozen package while preserving the unlocalized complement at 4. The next quantitative localization checkpoint is **95/96**, while the stronger scientific priority remains completing document batches without weakening the evidence hierarchy.',
+          }
+          for old,new in replacements.items():
+              if old not in c: raise SystemExit(f'cohort replacement anchor missing: {old[:90]!r}')
+              c=c.replace(old,new,1)
+          cnote="`PDHD-D000058`, *La Escuela Moderna* of 31 October 1889, now contributes a complete A–D batch from 20 exact HNDM primary pages. The cataloged UNAM-RI `924534` route was no longer usable, so the recovery used adjacent live record `924533` only to resolve the same HNDM serial and its explicit serial chronology. A preliminary ObjectId-neighborhood strategy was rejected after the viewer returned unrelated historical dates. Inspection of the actual issue-selector form established that `anioPS1`/`mesPS1`/`diaPS1` are element IDs, while the submitted names are `anio`/`mes`/`dia`; the correct selector request resolved first page `558a33387d1ed64f16922984` and a 20-page issue. Following only explicit `siguienteLink` identifiers then recovered the complete number under a strict `1889-10-31` identity gate. Direct image inspection fixes F000021 on p. 18 as an explicit educational prescription, F000022 on p. 17 as an editorial/institutional relation, converts F000023 from a secondary pp. 17–18 pointer to a distinct primary p. 17 source-critical unit, and fixes F000024 on p. 32 as a publication-administration control."
+          if 'PDHD-D000058`, *La Escuela Moderna* of 31 October 1889' not in c:
+              m=re.search(r'(`PDHD-D000064`, \*El Instructor\*.*?\n\n)',c,re.S)
+              if not m: raise SystemExit('cohort D64 insertion anchor not found')
+              c=c[:m.end()]+cnote+'\n\n'+c[m.end():]
+          cohort.write_text(c,encoding='utf-8')
+
+          # Scientific source-of-truth sanity counts before validators.
+          locator={}
+          for p in sorted(samples.glob('fragment_locator_progress*.csv')):
+              with p.open(encoding='utf-8',newline='') as f:
+                  for r in csv.DictReader(f):
+                      fid=r['fragment_id']
+                      if fid in locator: raise SystemExit(f'duplicate locator after promotion: {fid}')
+                      locator[fid]=r
+          frozen={}
+          for p in sorted(samples.glob('frozen_fragments*.csv')):
+              with p.open(encoding='utf-8',newline='') as f:
+                  for r in csv.DictReader(f):
+                      fid=r['fragment_id']
+                      if fid in frozen: raise SystemExit(f'duplicate frozen after promotion: {fid}')
+                      frozen[fid]=r
+          with gap.open(encoding='utf-8',newline='') as f: gaps=list(csv.DictReader(f))
+          print('locator_count',len(locator),'frozen_count',len(frozen),'gap_count',len(gaps),'localized_not_frozen',len(locator)-len(frozen))
+          if (len(locator),len(frozen),len(gaps),len(locator)-len(frozen))!=(92,73,4,19):
+              raise SystemExit('scientific count gate failed')
+          for fid in rows:
+              if locator[fid]['freeze_status']!='frozen' or fid not in frozen: raise SystemExit(f'promotion incomplete: {fid}')
+      - name: Remove temporary research workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/probe-la-escuela-moderna-1889.yml
+          rm -f .github/workflows/retrieve-la-escuela-moderna-1889.yml
+          rm -f .github/workflows/finalize-la-escuela-moderna-1889.yml
+      - name: Run canonical validation suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_repository.py
+          python scripts/validate_object_aliases.py
+          python scripts/validate_content_leads.py
+          python scripts/validate_retrieval_attempts.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_freeze_conversion_queue.py
+          python scripts/prepare_freeze_review.py --check
+          python scripts/validate_status_counts.py
+          python scripts/annotation_agreement.py --self-test
+          python scripts/build_fragment_manifest.py --check
+      - name: Gate persistent diff against main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          mapfile -t changed < <(git diff --name-only origin/main...HEAD; git diff --name-only)
+          printf '%s\n' "${changed[@]}" | sed '/^$/d' | sort -u > /tmp/changed.txt
+          cat /tmp/changed.txt
+          cat > /tmp/allowed.txt <<'EOF'
+          README.md
+          data/samples/fragment_gap_queue_0_1.csv
+          data/samples/fragment_locator_progress_secondary_w4.csv
+          data/samples/fragment_locator_progress_hndm_escuela_moderna1889_w24.csv
+          data/samples/frozen_fragments_hndm_escuela_moderna1889_w24.csv
+          data/samples/retrieval_attempts.csv
+          docs/PDHD_U1_COHORT_STATUS.md
+          EOF
+          sort -u /tmp/allowed.txt -o /tmp/allowed.txt
+          bad=$(comm -23 /tmp/changed.txt /tmp/allowed.txt || true)
+          if [ -n "$bad" ]; then echo "Unexpected persistent paths:"; echo "$bad"; exit 1; fi
+          missing=$(comm -13 /tmp/changed.txt /tmp/allowed.txt || true)
+          if [ -n "$missing" ]; then echo "Expected persistent paths missing:"; echo "$missing"; exit 1; fi
+          if grep -q '^\.github/workflows/' /tmp/changed.txt; then echo 'Temporary workflow leaked into final diff'; exit 1; fi
+      - name: Commit and push scientific batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Fernando Sandoval"
+          git config user.email "fernando.sandoval@uacj.mx"
+          git add -A
+          git status --short
+          git commit -m "Freeze La Escuela Moderna 31 Oct 1889 primary batch"
+          git push origin HEAD:freeze-la-escuela-moderna-1889
