@@ -2,7 +2,7 @@
 
 **Infraestructura abierta de investigación para estudiar históricamente la práctica docente en México mediante prensa pedagógica, manuales, revistas profesionales, publicaciones oficiales y otros impresos educativos.**
 
-> Estado: `v0.1.0-dev` · `PDHD-U1` en congelamiento activo del primer piloto de validación humana.
+> Estado: `v0.1.0-dev` · `PDHD-U1` con el primer piloto **96/96 congelado**; calibración humana pendiente.
 
 ## Qué es PDHD
 
@@ -21,17 +21,17 @@ Corte de referencia: **7 de septiembre de 2026**.
 | Capa | Estado |
 |---|---:|
 | Candidatos documentales registrados | **25** |
-| Objetos documentales con identidad y localizador | **77** |
+| Objetos documentales con identidad y localizador | **78** |
 | Fuentes con política de derechos explícita | **13 / 13** |
 | Leads hemerográficos activos sin resolver | **19** |
 | Conflictos cronológicos preservados | **5** |
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
 | Slots con localizador candidato/resuelto | **96 / 96** |
-| Fragmentos completamente congelados | **92 / 96** |
+| Fragmentos completamente congelados | **96 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
-Los 77 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
+Los 78 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
 
 ## Avance metodológico clave
 
@@ -55,6 +55,8 @@ El número inaugural de *La Enseñanza Normal*, 15 de septiembre de 1904, aporta
 `PDHD-F000060`, control de *El esfuerzo educativo en México* (1928), cruza ahora el mismo gate de imagen primaria. Google Books expone `PR5`; un workflow de recuperación resolvió el PDF público vigente desde el HTML de la página seleccionada y renderizó las primeras hojas. La correspondencia `PR5` → orden 6 del libro → imagen PDF 009 se verificó antes de fijar el núcleo bibliográfico de la portada como control. La cola de conversión directa queda vacía; esto no equivale a completar el paquete de 96 fragmentos.
 
 `PDHD-D000076`, *Cómo dar a todo México un idioma* (1928), completa A–D como reemplazo de la posición 16. Internet Archive expone el PDF primario completo de *Biblioteca del Maestro Rural Mexicano*, vol. IV. La inspección directa fija `PDHD-F000061` en p. 15 como secuencia instruccional explícita; `PDHD-F000062` en p. 13 como unidad sobre condiciones y formación profesional del maestro rural; `PDHD-F000063` en p. 47 como pasaje de crítica de fuentes sobre la política de castellanización e incorporación indígena; y `PDHD-F000064` en la portada física 9 como control bibliográfico. El objeto saliente `PDHD-D000067` permanece catalogado, pero sus antiguos punteros secundarios no se promovieron a evidencia primaria.
+
+`PDHD-D000078`, *Memoria que indica el estado que guarda el ramo de educación pública el 31 de agosto de 1926*, sustituye de manera versionada la posición 21 después de que el tomo I de 1932 permaneciera localizable pero sin imagen primaria auditable. El PDF completo de Google Books `yvMEAQAAIAAJ` fue inspeccionado directamente. `PDHD-F000081` fija la p. 223 como unidad de preparación del personal de Misiones Culturales; `PDHD-F000082` fija la p. 222 sobre Escuelas Regionales para Maestros Rurales; `PDHD-F000083` fija la p. 225 como unidad de crítica de fuentes sobre el marco oficial de incorporación de estudiantes indígenas; y `PDHD-F000084` usa la portada física 6 como control bibliográfico. La sustitución conserva E3, México, informe oficial y función misiones-normalismo.
 
 `PDHD-D000077`, *Memoria de la Secretaría de Educación Pública* (1939), sustituye de manera versionada la posición 23 después de que el tomo II de 1937 permaneciera localizable pero sin imagen primaria auditable en el entorno de recuperación. El PDF completo de Google Books `08ygAAAAMAAJ` fue inspeccionado directamente: la portada física 6 fija el control bibliográfico; la p. 21 fija un acto didáctico de enseñanza práctica mediante actividad, observación y experimentación del alumno; la p. 11 fija la organización rural-normal y la formación docente; y la p. 27 fija una unidad de crítica de fuentes sobre investigación regional y clasificación oficial de población indígena. La sustitución conserva E4, México, informe oficial y función rural-normal.
 
@@ -182,9 +184,9 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **96/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **92/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **96/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **96/96** fragmentos.
 
-La fase reciente ha reforzado especialmente la revista *El Maestro*. Los cuatro objetos de la revista incluidos en el piloto tienen ya lotes A–D completos. El antiguo número de diciembre (`PDHD-D000053`) fue retirado de la posición 13 sólo después de una búsqueda exhaustiva: *El Cardo* y los demás candidatos inspeccionados no satisfacen el requisito de acto pedagógico explícito. El reemplazo `PDHD-D000056`, octubre de 1921, sí ofrece en p. 83 / `n86` una secuencia instruccional inequívoca y conserva sin cambios la estratificación. La posición 16 sustituye ahora `PDHD-D000067` por `PDHD-D000076`, *Cómo dar a todo México un idioma* (1928), después de comprobar que HathiTrust limita el folleto de 1925 a búsqueda y de inspeccionar directamente el facsímil completo del reemplazo. `PDHD-F000061`–`PDHD-F000064` quedan congelados y el piloto alcanza 96/96 localizadores. Los candidatos no congelados se concentran ahora exclusivamente en `PDHD-D000072`, siempre sujetos al mismo gate primario. La posición 23 sustituyó `PDHD-D000074` por `PDHD-D000077` mediante `PDHD-PS000003`, sin confundir las ediciones de 1937 y 1939.
+La fase reciente ha reforzado especialmente la revista *El Maestro*. Los cuatro objetos de la revista incluidos en el piloto tienen ya lotes A–D completos. El antiguo número de diciembre (`PDHD-D000053`) fue retirado de la posición 13 sólo después de una búsqueda exhaustiva: *El Cardo* y los demás candidatos inspeccionados no satisfacen el requisito de acto pedagógico explícito. El reemplazo `PDHD-D000056`, octubre de 1921, sí ofrece en p. 83 / `n86` una secuencia instruccional inequívoca y conserva sin cambios la estratificación. La posición 16 sustituye ahora `PDHD-D000067` por `PDHD-D000076`, *Cómo dar a todo México un idioma* (1928), después de comprobar que HathiTrust limita el folleto de 1925 a búsqueda y de inspeccionar directamente el facsímil completo del reemplazo. `PDHD-F000061`–`PDHD-F000064` quedan congelados y el piloto alcanza 96/96 localizadores. La posición 21 sustituye `PDHD-D000072` por `PDHD-D000078` mediante `PDHD-PS000004`; `PDHD-F000081`–`PDHD-F000084` cruzan el gate primario y el paquete de confiabilidad queda completamente congelado. La posición 23 sustituyó `PDHD-D000074` por `PDHD-D000077` mediante `PDHD-PS000003`, sin confundir las ediciones de 1937 y 1939.
 
 La decisión negativa sobre diciembre no se borra: los content leads y la evidencia de recuperación permanecen como provenance histórico, pero ya no apuntan a IDs activos del piloto. Esta separación evita convertir un contexto educativo débil en evidencia pedagógica positiva y mantiene `fragment_freezing != annotation`.
 
@@ -238,11 +240,11 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **96/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **4 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **92/96** congelados demuestran el pipeline a través de HNDM, BVMC, Internet Archive y Google Books y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
+La selección documental ya está lista. **96/96 slots tienen ya un localizador documentado.** El freeze gate está completo: quedan **0 localizadores todavía no congelados** y las 96 unidades tienen página primaria inspeccionada y límites fijos. Los **96/96** congelados demuestran el pipeline a través de HNDM, BVMC, Internet Archive y Google Books y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
 
 La cola dedicada de conversión directa continúa vacía; después de `PDHD-F000060`, el lote `PDHD-F000077`–`PDHD-F000080` demuestra la siguiente ruta: recuperar el objeto primario completo, corregir los page labels de agregadores cuando sea necesario y fijar límites sólo después de inspección visual. Quedan **0 slots sin localizador**. El gate cuantitativo de localización está completo en **96/96**; el indicador científicamente más importante es ahora aumentar los fragmentos `frozen`, no maximizar ni conservar referencias débiles. `PDHD-F000060` ya fue inspeccionado en la página primaria `PR5`, congelado y retirado de cualquier cola pendiente.
 
-Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
+Con el paquete 96/96 completo, el siguiente gate es preparar el set de calibración, congelar la versión del codebook y comenzar después la codificación humana independiente.
 
 ## Autoría y citación
 
