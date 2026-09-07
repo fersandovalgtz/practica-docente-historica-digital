@@ -1,0 +1,64 @@
+name: Retrieve D056 substitution review pages
+
+on:
+  push:
+    branches:
+      - "work/d053-explicit-pedagogical-act"
+    paths:
+      - ".github/workflows/retrieve-d056-substitution-review.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Retrieve exact October 1921 primary pages
+        shell: python
+        run: |
+          import json
+          import pathlib
+          import urllib.request
+
+          item = "n1n3elmaestrorev02mexi"
+          leaves = [4, 5, 60, 61, 82, 83, 84, 85, 86, 117, 119]
+          out = pathlib.Path("d056-substitution-review")
+          out.mkdir(exist_ok=True)
+          headers = {"User-Agent": "PDHD-U1-source-verification/0.1 (+https://github.com/fersandovalgtz/practica-docente-historica-digital)"}
+
+          def fetch(url):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=90) as r:
+                  return r.status, r.headers.get("Content-Type", ""), r.geturl(), r.read()
+
+          report = []
+          for n in leaves:
+              url = f"https://archive.org/download/{item}/page/n{n}"
+              try:
+                  status, ctype, final, body = fetch(url)
+                  row = {"bookreader_n": n, "url": url, "status": status, "content_type": ctype, "bytes": len(body), "final_url": final}
+                  if status == 200 and (body.startswith(b"\xff\xd8\xff") or "image/jpeg" in ctype):
+                      dest = out / f"n{n}.jpg"
+                      dest.write_bytes(body)
+                      row["saved"] = dest.name
+                  else:
+                      row["saved"] = None
+                  report.append(row)
+              except Exception as exc:
+                  report.append({"bookreader_n": n, "url": url, "error": f"{type(exc).__name__}: {exc}"})
+
+          (out / "retrieval-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+          missing = [r["bookreader_n"] for r in report if not r.get("saved")]
+          if missing:
+              raise SystemExit(f"Missing primary images for leaves: {missing}")
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+
+      - name: Upload one-day primary review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d056-substitution-review
+          path: d056-substitution-review/
+          retention-days: 1
+          if-no-files-found: error
