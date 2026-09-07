@@ -1,0 +1,175 @@
+name: Discover D053 explicit pedagogical act
+
+on:
+  push:
+    branches:
+      - "work/d053-explicit-pedagogical-act"
+    paths:
+      - ".github/workflows/discover-d053-explicit-act.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Retrieve IA OCR structures and rank December pages
+        shell: python
+        run: |
+          import json
+          import pathlib
+          import re
+          import unicodedata
+          import urllib.request
+          import xml.etree.ElementTree as ET
+
+          item = "n1n3elmaestrorev02mexi"
+          out = pathlib.Path("d053-explicit-act-discovery")
+          out.mkdir(exist_ok=True)
+          headers = {"User-Agent": "PDHD-U1-source-verification/0.1 (+https://github.com/fersandovalgtz/practica-docente-historica-digital)"}
+
+          def fetch(url, timeout=120):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=timeout) as r:
+                  return r.status, r.headers.get("Content-Type", ""), r.geturl(), r.read()
+
+          status, ctype, final, raw = fetch(f"https://archive.org/metadata/{item}")
+          meta = json.loads(raw.decode("utf-8"))
+          names = [f.get("name") for f in meta.get("files", []) if f.get("name")]
+          def pick(suffixes):
+              for suffix in suffixes:
+                  for name in names:
+                      if name.endswith(suffix):
+                          return name
+              return None
+
+          djvu_xml_name = pick(["_djvu.xml"])
+          scandata_name = pick(["_scandata.xml"])
+          djvu_txt_name = pick(["_djvu.txt"])
+          report = {
+              "item": item,
+              "metadata_status": status,
+              "djvu_xml": djvu_xml_name,
+              "scandata": scandata_name,
+              "djvu_txt": djvu_txt_name,
+          }
+          if not djvu_xml_name:
+              raise SystemExit("Internet Archive item exposes no DjVu XML OCR")
+
+          _, _, _, djvu_raw = fetch(f"https://archive.org/download/{item}/{djvu_xml_name}")
+          (out / "source-djvu.xml").write_bytes(djvu_raw)
+          if scandata_name:
+              _, _, _, scan_raw = fetch(f"https://archive.org/download/{item}/{scandata_name}")
+              (out / "source-scandata.xml").write_bytes(scan_raw)
+          else:
+              scan_raw = b""
+
+          root = ET.fromstring(djvu_raw)
+          objects = root.findall(".//OBJECT")
+
+          def norm(s):
+              s = unicodedata.normalize("NFD", s.lower())
+              s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+              s = re.sub(r"\s+", " ", s)
+              return s.strip()
+
+          pages = []
+          for idx, obj in enumerate(objects):
+              words = [w.text or "" for w in obj.findall(".//WORD")]
+              text = " ".join(words)
+              pages.append({"xml_index": idx, "text": text, "norm": norm(text)})
+
+          # Find December issue opening from explicit primary OCR markers rather
+          # than assuming a fixed bound-volume offset.
+          dec_markers = []
+          for p in pages:
+              n = p["norm"]
+              if "diciembre" in n and "1921" in n:
+                  dec_markers.append({"xml_index": p["xml_index"], "preview": p["text"][:800]})
+          report["december_markers"] = dec_markers[:20]
+          if not dec_markers:
+              raise SystemExit("Could not identify December 1921 opening in primary OCR")
+
+          # The earliest OCR page carrying the December issue date is the lower
+          # bound for candidate analysis. Ignore front matter from prior issues.
+          start = min(m["xml_index"] for m in dec_markers)
+
+          actor_terms = ["maestro", "profesor", "alumno", "nino", "nina", "escolar", "escuela", "educando"]
+          pedagogic_terms = ["ensenar", "ensenanza", "educar", "educacion", "instruccion", "leccion", "metodo", "ejercicio", "aprendizaje", "estudio", "clase"]
+          prescription_terms = ["debe", "deben", "debera", "conviene", "procure", "procurar", "es necesario", "es preciso", "se hara", "se debe", "habra de", "procedimiento", "practica", "realice", "realizar"]
+
+          def occurrences(text, terms):
+              return sum(text.count(t) for t in terms)
+
+          candidates = []
+          for p in pages[start:]:
+              n = p["norm"]
+              actor = occurrences(n, actor_terms)
+              pedagogic = occurrences(n, pedagogic_terms)
+              prescription = occurrences(n, prescription_terms)
+              # Strongly favor co-occurrence. Mere mention of school/education
+              # without a prescription should not outrank an explicit act.
+              score = actor * 2 + pedagogic * 3 + prescription * 4
+              if actor and pedagogic and prescription:
+                  score += 12
+              elif pedagogic and prescription:
+                  score += 6
+              if score < 10:
+                  continue
+
+              # Extract compact OCR contexts around prescriptive terms.
+              contexts = []
+              for term in prescription_terms:
+                  pos = n.find(term)
+                  if pos >= 0:
+                      contexts.append(n[max(0, pos-260):pos+520])
+              candidates.append({
+                  "xml_index": p["xml_index"],
+                  "score": score,
+                  "actor_hits": actor,
+                  "pedagogic_hits": pedagogic,
+                  "prescription_hits": prescription,
+                  "text_preview": p["text"][:1600],
+                  "contexts": contexts[:5],
+              })
+
+          candidates.sort(key=lambda x: (-x["score"], x["xml_index"]))
+          report["december_start_xml_index"] = start
+          report["candidate_count"] = len(candidates)
+          report["top_candidates"] = candidates[:30]
+
+          # Extract scandata page-number mapping as a diagnostic only. BookReader
+          # /page/n calibration must still be confirmed visually because this bound
+          # object has non-content leaves whose numbering is not globally stable.
+          scan_map = []
+          if scan_raw:
+              sroot = ET.fromstring(scan_raw)
+              for page in sroot.findall(".//page"):
+                  leaf = page.attrib.get("leafNum")
+                  pnum = page.findtext("pageNumber")
+                  ptype = page.findtext("pageType")
+                  if pnum or ptype:
+                      scan_map.append({"leafNum": leaf, "pageNumber": pnum, "pageType": ptype})
+          report["scandata_rows_near_december"] = scan_map[max(0,start-8):start+130]
+
+          (out / "discovery-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+          print("DECEMBER_MARKERS")
+          for m in report["december_markers"]:
+              print(m["xml_index"], "::", re.sub(r"\s+", " ", m["preview"])[:500])
+          print("TOP_CANDIDATES")
+          for c in report["top_candidates"]:
+              print("INDEX", c["xml_index"], "SCORE", c["score"], "A/P/R", c["actor_hits"], c["pedagogic_hits"], c["prescription_hits"])
+              for ctx in c["contexts"][:3]:
+                  print(" CTX", ctx[:900])
+
+      - name: Upload one-day OCR discovery artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d053-explicit-act-discovery
+          path: d053-explicit-act-discovery/
+          retention-days: 1
+          if-no-files-found: error
