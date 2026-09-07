@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Resolve scan map and retrieve exact primary page images
+      - name: Locate target articles in exact issue PDF and render primary pages
         shell: python
         run: |
-          import json, pathlib, urllib.parse, urllib.request, xml.etree.ElementTree as ET, re, time
+          import json, pathlib, urllib.parse, urllib.request, subprocess, re, unicodedata, xml.etree.ElementTree as ET
           out=pathlib.Path('el-maestro-may-1921-primary'); out.mkdir()
           ident='el-maestro.-revista-de-cultura-nacional-n-2-1921'
           headers={'User-Agent':'Mozilla/5.0 PDHD-source-verification/0.1'}
@@ -21,75 +21,95 @@ jobs:
               req=urllib.request.Request(url,headers=headers)
               with urllib.request.urlopen(req,timeout=120) as r:
                   return r.read(), r.headers.get('content-type',''), r.status, r.geturl()
+          def norm(s):
+              s=unicodedata.normalize('NFKD',s).encode('ascii','ignore').decode().upper()
+              return re.sub(r'\s+',' ',s)
 
-          # Exact item metadata and identity gate.
-          b,ct,status,final=get(f'https://archive.org/metadata/{urllib.parse.quote(ident)}')
-          meta=json.loads(b.decode())
-          md=meta.get('metadata',{})
+          b,_,_,_=get(f'https://archive.org/metadata/{urllib.parse.quote(ident)}')
+          meta=json.loads(b.decode()); md=meta.get('metadata',{})
           identity={k:md.get(k) for k in ['identifier','title','creator','date','description','mediatype','collection']}
           print('IDENTITY',json.dumps(identity,ensure_ascii=False,indent=2))
-          hay=' '.join(str(identity.get(k,'') or '') for k in identity).lower()
-          if 'maestro' not in hay or '1921' not in hay or ('n° 2' not in hay and 'nº 2' not in hay and 'n 2' not in hay and 'n° 2' not in str(md.get('title','')).lower()):
+          hay=norm(' '.join(str(v or '') for v in identity.values()))
+          if 'EL MAESTRO' not in hay or '1921' not in hay or 'N 2' not in hay:
               raise SystemExit('exact issue identity gate failed')
 
           files=meta.get('files',[])
-          scandata=next((f['name'] for f in files if f.get('name','').endswith('_scandata.xml')),None)
           textpdf=next((f['name'] for f in files if f.get('name','').endswith('_text.pdf')),None)
-          djvuxml=next((f['name'] for f in files if f.get('name','').endswith('_djvu.xml')),None)
-          if not scandata: raise SystemExit('no scandata')
-          for name,label in [(scandata,'scandata.xml'),(djvuxml,'djvu.xml')]:
-              if name:
-                  bb,_,_,_=get('https://archive.org/download/'+ident+'/'+urllib.parse.quote(name))
-                  (out/label).write_bytes(bb)
-          if textpdf:
-              bb,cct,_,_=get('https://archive.org/download/'+ident+'/'+urllib.parse.quote(textpdf))
-              (out/'issue_text.pdf').write_bytes(bb)
-              print('TEXT_PDF_BYTES',len(bb),cct)
+          scandata=next((f['name'] for f in files if f.get('name','').endswith('_scandata.xml')),None)
+          if not textpdf: raise SystemExit('no text PDF')
+          bb,cct,_,_=get('https://archive.org/download/'+ident+'/'+urllib.parse.quote(textpdf))
+          pdf=out/'issue_text.pdf'; pdf.write_bytes(bb)
+          print('TEXT_PDF_BYTES',len(bb),cct)
+          if len(bb)<500000 or not bb.startswith(b'%PDF'):
+              raise SystemExit('invalid PDF payload')
 
-          root=ET.fromstring((out/'scandata.xml').read_bytes())
-          mapping={}
-          leaves=[]
-          for pd in root.findall('.//pageData/page'):
-              leaf=pd.findtext('leafNum')
-              pnum=pd.findtext('./pageNumber')
-              ptype=pd.findtext('./pageType')
-              add=pd.findtext('./addToAccessFormats')
-              rec={'leaf':int(leaf) if leaf and leaf.isdigit() else leaf,'pageNumber':pnum,'pageType':ptype,'addToAccessFormats':add}
-              leaves.append(rec)
-              if pnum: mapping.setdefault(pnum,[]).append(rec)
-          targets=['133','134','135','145','146','147','173','174','175','176']
-          target_map={p:mapping.get(p,[]) for p in targets}
-          print('TARGET_MAP',json.dumps(target_map,ensure_ascii=False,indent=2))
-          if any(not target_map[p] for p in targets):
-              raise SystemExit('missing one or more printed target pages in scandata')
+          if scandata:
+              sb,_,_,_=get('https://archive.org/download/'+ident+'/'+urllib.parse.quote(scandata))
+              (out/'scandata.xml').write_bytes(sb)
 
-          # Download exact page images through IA public page derivative endpoint; include cover and windows.
-          target_leaves=sorted({rec['leaf'] for p in targets for rec in target_map[p] if isinstance(rec['leaf'],int)})
-          # Add one leaf before/after each article window to check boundaries.
-          wanted=set(target_leaves)
-          for x in list(target_leaves):
-              wanted.update([max(0,x-1),x+1])
-          report={'identity':identity,'target_map':target_map,'images':{}}
-          for leaf in sorted(wanted):
-              candidates=[
-                  f'https://archive.org/download/{ident}/page/n{leaf}.jpg',
-                  f'https://archive.org/download/{ident}/page/n{leaf}_w1600.jpg',
-              ]
-              item={'candidates':candidates}
-              for url in candidates:
-                  try:
-                      bb,cct,st,fin=get(url)
-                      item.update(url=url,status=st,final_url=fin,content_type=cct,bytes=len(bb))
-                      if st==200 and cct.lower().startswith('image/') and len(bb)>20000:
-                          ext='.jpg' if 'jpeg' in cct.lower() or 'jpg' in cct.lower() else '.png'
-                          fn=f'n{leaf}{ext}'; (out/fn).write_bytes(bb); item['saved_as']=fn; break
-                  except Exception as exc: item.setdefault('errors',[]).append(repr(exc))
-              report['images'][str(leaf)]=item
-              time.sleep(0.15)
-          saved=[k for k,v in report['images'].items() if v.get('saved_as')]
-          print('SAVED_LEAVES',saved)
-          if len(saved)<len(target_leaves):
-              raise SystemExit('insufficient target page images')
+          info=subprocess.run(['pdfinfo',str(pdf)],capture_output=True,text=True,check=True).stdout
+          print('PDFINFO\n'+info)
+          m=re.search(r'^Pages:\s+(\d+)',info,re.M); page_count=int(m.group(1)) if m else 0
+          subprocess.run(['pdftotext','-layout',str(pdf),str(out/'issue.txt')],check=True)
+          pages=(out/'issue.txt').read_text(encoding='utf-8',errors='replace').split('\f')
+          if pages and not pages[-1].strip(): pages=pages[:-1]
+          print('OCR_PAGE_COUNT',len(pages),'PDF_PAGE_COUNT',page_count)
+          if page_count and len(pages)!=page_count:
+              raise SystemExit('PDF/OCR page count mismatch')
+
+          targets={
+            'F41': ['ORIENTACION OBRERA','ORIENTACION','OBRERA'],
+            'F42': ['INTERNACIONAL DE LOS INTELECTUALES','INTELECTUALES','CLARIDAD'],
+            'F43': ['TRIBUS INDIGENAS MEXICANAS','TRIBUS INDIGENAS','ESCOBAR'],
+          }
+          hits={}
+          for fid,terms in targets.items():
+              cand=[]
+              for i,text in enumerate(pages,1):
+                  n=norm(text)
+                  score=sum(1 for t in terms if norm(t) in n)
+                  if score:
+                      # Keep a compact OCR window around the first matching term for audit only.
+                      pos=min([n.find(norm(t)) for t in terms if norm(t) in n] or [0])
+                      cand.append({'pdf_page':i,'score':score,'snippet':n[max(0,pos-180):pos+700]})
+              cand=sorted(cand,key=lambda x:(-x['score'],x['pdf_page']))[:12]
+              hits[fid]=cand
+          print('TARGET_HITS',json.dumps(hits,ensure_ascii=False,indent=2))
+          if any(not hits[fid] for fid in targets):
+              raise SystemExit('one or more target articles absent from OCR')
+
+          # Resolve best contiguous article ranges around highest-confidence title hits.
+          anchors={fid:hits[fid][0]['pdf_page'] for fid in hits}
+          print('ANCHORS',anchors)
+          wanted=set()
+          for p in anchors.values():
+              wanted.update(range(max(1,p-2),min(page_count,p+6)+1))
+          # Render primary facsimile pages. Each PDF page is inspected visually later; OCR is discovery only.
+          render_dir=out/'rendered'; render_dir.mkdir()
+          for p in sorted(wanted):
+              prefix=render_dir/f'pdf-{p:03d}'
+              subprocess.run(['pdftoppm','-f',str(p),'-l',str(p),'-jpeg','-r','160',str(pdf),str(prefix)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+          rendered=sorted(x.name for x in render_dir.glob('*.jpg'))
+          print('RENDERED',rendered)
+          if len(rendered)<len(anchors)*3:
+              raise SystemExit('insufficient rendered review pages')
+
+          # Only expose a leaf mapping if scandata proves a one-to-one sequence with the PDF.
+          leaf_map=None
+          if scandata:
+              root=ET.fromstring((out/'scandata.xml').read_bytes())
+              leaves=[]
+              for page in root.findall('.//pageData/page'):
+                  x=page.findtext('leafNum')
+                  if x and x.isdigit(): leaves.append(int(x))
+              print('SCANDATA_LEAVES',len(leaves),leaves[:8],leaves[-8:] if leaves else [])
+              if len(leaves)==page_count and leaves==list(range(page_count)):
+                  leaf_map={str(i+1):i for i in range(page_count)}
+                  print('PROVED_PDF_TO_LEAF_OFFSET','leaf = pdf_page - 1')
+              else:
+                  print('NO_PROVED_PDF_TO_LEAF_MAPPING')
+
+          report={'identity':identity,'pdf_page_count':page_count,'target_hits':hits,'anchors':anchors,'rendered':rendered,'proved_pdf_to_leaf_map':leaf_map}
           (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
       - name: Upload primary-review artifact
         uses: actions/upload-artifact@v4
