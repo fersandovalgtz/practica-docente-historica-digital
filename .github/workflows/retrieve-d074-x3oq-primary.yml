@@ -1,0 +1,197 @@
+name: Retrieve and map D074 X3oQ primary volume
+
+on:
+  push:
+    branches:
+      - "work/d074-primary-freeze"
+    paths:
+      - ".github/workflows/retrieve-d074-x3oq-primary.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve-map:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Retrieve fresh signed X3oQ primary PDF
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import urllib.request
+
+          volume_id = "X3oQAAAAYAAJ"
+          out = pathlib.Path("d074-x3oq-primary")
+          out.mkdir(exist_ok=True)
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+          }
+
+          def fetch(url, timeout=180):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=timeout) as response:
+                  return response.status, response.headers.get("Content-Type", ""), response.geturl(), response.read()
+
+          selected = f"https://books.google.com/books?cad=1&id={volume_id}&pg=PA40&source=gbs_selected_pages"
+          status, ctype, final_url, raw = fetch(selected, 60)
+          decoded = html.unescape(raw.decode("utf-8", errors="replace")).replace("\\/", "/").replace("\\u0026", "&")
+          pdfs = re.findall(
+              r'https?://books\.google\.[^/]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',
+              decoded,
+          )
+          if not pdfs:
+              raise SystemExit("No current signed PDF candidate exposed by Google Books")
+
+          pdf_url = pdfs[0]
+          status, ctype, final_url, body = fetch(pdf_url, 240)
+          report = {
+              "volume_id": volume_id,
+              "selected_page_status": status,
+              "signed_pdf_url": pdf_url,
+              "download_status": status,
+              "download_content_type": ctype,
+              "download_final_url": final_url,
+              "download_bytes": len(body),
+          }
+          if not (status == 200 and ctype.startswith("application/pdf") and body.startswith(b"%PDF") and len(body) > 1000000):
+              report["classification"] = "primary_pdf_not_recovered"
+              (out / "retrieval-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+              print(json.dumps(report, ensure_ascii=False, indent=2))
+              raise SystemExit("X3oQ primary PDF did not resolve on this attempt")
+
+          pdf = out / "volume.pdf"
+          pdf.write_bytes(body)
+          report["classification"] = "primary_pdf_recovered"
+          report["saved"] = pdf.name
+          (out / "retrieval-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+
+      - name: Extract primary text and map D074 evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v pdftotext >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq poppler-utils
+          fi
+          out="d074-x3oq-primary"
+          pdf="$out/volume.pdf"
+          pdfinfo "$pdf" | tee "$out/pdfinfo.txt"
+          pdftotext -layout "$pdf" "$out/volume-text.txt"
+
+          python - <<'PY'
+          import json
+          import pathlib
+          import re
+          import unicodedata
+
+          out = pathlib.Path("d074-x3oq-primary")
+          full = (out / "volume-text.txt").read_text(encoding="utf-8", errors="replace")
+          pages = full.split("\f")
+          if pages and not pages[-1].strip():
+              pages.pop()
+
+          def norm(s):
+              s = unicodedata.normalize("NFD", s.lower())
+              s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+              s = s.replace("—", "-").replace("–", "-")
+              return re.sub(r"\s+", " ", s).strip()
+
+          patterns = {
+              "identity_1936_1937": [
+                  "septiembre de 1936 agosto de 1937",
+                  "septiembre de 1936 - agosto de 1937",
+                  "septiembre de 1936 a agosto de 1937",
+              ],
+              "identity_tomo_ii": ["tomo ii"],
+              "slot_D_becas": ["distribucion de becas en la republica"],
+              "slot_B_consejo": [
+                  "consejo nacional de la educacion superior y de la investigacion",
+                  "consejo nacional de educacion superior y de la investigacion",
+              ],
+              "slot_A_trabajo_manual": ["trabajo manual"],
+              "slot_A_aplicacion": ["aplicacion de los conocimientos", "aplicacion de conocimientos"],
+              "slot_A_geometria": ["geometria"],
+              "slot_C_bibliotecas": ["bibliotecas"],
+          }
+          pats = {k: [norm(v) for v in vals] for k, vals in patterns.items()}
+
+          hits = []
+          for physical, text in enumerate(pages, start=1):
+              nt = norm(text)
+              matched = [key for key, vals in pats.items() if any(v in nt for v in vals)]
+              if not matched:
+                  continue
+              lines = [re.sub(r"\s+", " ", line).strip() for line in text.splitlines() if line.strip()]
+              numeric_lines = [line for line in lines if re.fullmatch(r"\d{1,4}", line)]
+              hits.append({
+                  "physical_pdf_page": physical,
+                  "matched_patterns": matched,
+                  "first_nonblank_lines": lines[:12],
+                  "last_nonblank_lines": lines[-8:],
+                  "isolated_numeric_lines": numeric_lines[:8],
+              })
+
+          # Focus report: pages most likely to be the registered D074 locators.
+          # Printed page numbers may appear as isolated lines at either margin.
+          targets = {40, 41, 371, 444}
+          focus = []
+          for hit in hits:
+              nums = {int(x) for x in hit.get("isolated_numeric_lines", []) if x.isdigit()}
+              slot_signal = any(k.startswith("slot_") for k in hit["matched_patterns"])
+              if slot_signal and (nums & targets or any(k in hit["matched_patterns"] for k in ["slot_D_becas", "slot_B_consejo"])):
+                  focus.append(hit)
+
+          report = {
+              "physical_page_count": len(pages),
+              "hit_count": len(hits),
+              "focus_hits": focus,
+              "identity_hits": [h for h in hits if any(k.startswith("identity_") for k in h["matched_patterns"])],
+              "exact_slot_hits": [h for h in hits if any(k in h["matched_patterns"] for k in ["slot_D_becas", "slot_B_consejo", "slot_A_aplicacion"])],
+          }
+          (out / "d074-map-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+          # Full hits stay in the ephemeral artifact for audit, not in git.
+          (out / "all-pattern-hits.json").write_text(json.dumps(hits, ensure_ascii=False, indent=2), encoding="utf-8")
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Render focused primary pages and neighbors
+        shell: python
+        run: |
+          import json
+          import pathlib
+          import subprocess
+
+          out = pathlib.Path("d074-x3oq-primary")
+          pdf = out / "volume.pdf"
+          report = json.loads((out / "d074-map-report.json").read_text(encoding="utf-8"))
+          pages = set()
+          for group in [report.get("focus_hits", []), report.get("identity_hits", []), report.get("exact_slot_hits", [])]:
+              for hit in group:
+                  p = int(hit["physical_pdf_page"])
+                  for q in (p-1, p, p+1):
+                      if q >= 1:
+                          pages.add(q)
+          rendered = out / "rendered-review"
+          rendered.mkdir(exist_ok=True)
+          for p in sorted(pages):
+              prefix = rendered / f"physical-{p:04d}"
+              subprocess.run(
+                  ["pdftoppm", "-f", str(p), "-l", str(p), "-singlefile", "-jpeg", "-r", "180", str(pdf), str(prefix)],
+                  check=True,
+              )
+          print("Rendered physical pages:", sorted(pages))
+
+      - name: Upload one-day primary review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-x3oq-primary-review
+          path: d074-x3oq-primary/
+          retention-days: 1
+          if-no-files-found: error
