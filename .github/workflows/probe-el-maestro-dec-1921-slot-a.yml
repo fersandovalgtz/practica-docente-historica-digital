@@ -1,0 +1,105 @@
+name: Probe El Maestro Dec 1921 explicit pedagogical act
+
+on:
+  push:
+    branches: [freeze-el-maestro-dec-1921-slot-a]
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rank primary OCR pages for explicit controlled acts
+        shell: python
+        run: |
+          import json, pathlib, re, unicodedata, urllib.parse, urllib.request, xml.etree.ElementTree as ET
+          out=pathlib.Path('el-maestro-dec1921-slot-a'); out.mkdir()
+          ident='n1n3elmaestrorev02mexi'
+          headers={'User-Agent':'Mozilla/5.0 PDHD-source-verification/0.1'}
+          def get(url):
+              req=urllib.request.Request(url,headers=headers)
+              with urllib.request.urlopen(req,timeout=180) as r:
+                  return r.read(),r.headers.get('content-type',''),r.status,r.geturl()
+          def norm(s):
+              return re.sub(r'\s+',' ',unicodedata.normalize('NFKD',s).encode('ascii','ignore').decode().upper())
+
+          meta=json.loads(get(f'https://archive.org/metadata/{ident}')[0].decode())
+          md=meta.get('metadata',{})
+          identity={k:md.get(k) for k in ['identifier','title','creator','date','description','volume']}
+          print('IDENTITY',json.dumps(identity,ensure_ascii=False))
+          files=meta.get('files',[])
+          djvu=next((f.get('name') for f in files if f.get('name','').endswith('_djvu.xml')),None)
+          if not djvu: raise SystemExit('no djvu XML')
+          xb,_,_,_=get('https://archive.org/download/'+ident+'/'+urllib.parse.quote(djvu))
+          (out/'source_djvu.xml').write_bytes(xb)
+          root=ET.fromstring(xb); objects=root.findall('.//OBJECT')
+          if len(objects)<300: raise SystemExit(f'unexpected object count {len(objects)}')
+
+          act_terms={
+            'guide':['GUIAR','GUIE','GUIANDO','ORIENTAR','ORIENTE'],
+            'observe':['OBSERVAR','OBSERVE','OBSERVACION'],
+            'practice':['PRACTICAR','PRACTICA','EJERCITAR','EJERCICIO'],
+            'read':['LEER','LECTURA','LEAN'],
+            'demonstrate':['DEMOSTRAR','DEMOSTRACION','MOSTRAR','MUESTRE'],
+            'organize':['ORGANIZAR','ORGANICE','AGRUPAR','DISTRIBUIR'],
+            'classify':['CLASIFICAR','CLASIFICACION'],
+            'repeat':['REPETIR','REPITA','REPETICION'],
+            'memorize':['MEMORIZAR','MEMORIA'],
+            'examine':['EXAMINAR','EXAMEN','PRUEBA'],
+            'correct':['CORREGIR','CORRIJA','CORRECCION'],
+            'ask':['PREGUNTAR','PREGUNTE','PREGUNTAS'],
+            'dictate':['DICTAR','DICTADO','DICTE'],
+            'explain':['EXPLICAR','EXPLIQUE','EXPLICACION'],
+          }
+          actor_terms=['MAESTRO','PROFESOR','DISCIPULO','ALUMNO','NINO','NINOS','ESCUELA','ENSENAR','ENSENANZA','APRENDER','APRENDIZAJE']
+          candidates=[]
+          for idx,obj in enumerate(objects):
+              if idx < 238: continue
+              text=norm(' '.join((w.text or '') for w in obj.findall('.//WORD')))
+              acts=[]
+              for code,terms in act_terms.items():
+                  if any(t in text for t in terms): acts.append(code)
+              actor_score=sum(1 for t in actor_terms if t in text)
+              if not acts or actor_score==0: continue
+              score=5*len(acts)+actor_score
+              # Prefer explicit deontic/prescriptive wording.
+              if any(t in text for t in ['DEBE ','DEBEN ','DEBERA ','HAY QUE ','ES NECESARIO','CONVIENE ','PROCURE ','PROCURAR']): score += 8
+              # Preserve compact snippets around first act hit for discovery only.
+              positions=[]
+              for code,terms in act_terms.items():
+                  for term in terms:
+                      p=text.find(term)
+                      if p>=0: positions.append((p,code,term))
+              positions.sort()
+              snippets=[]
+              for p,code,term in positions[:4]:
+                  snippets.append({'act':code,'term':term,'text':text[max(0,p-280):p+700]})
+              candidates.append({'leaf_hypothesis':idx,'printed_page_hypothesis':idx-11,'score':score,'acts':acts,'actor_score':actor_score,'head':text[:800],'snippets':snippets})
+          candidates.sort(key=lambda x:(-x['score'],x['leaf_hypothesis']))
+          print('TOP_CANDIDATES',json.dumps(candidates[:35],ensure_ascii=False,indent=2))
+          (out/'candidates.json').write_text(json.dumps(candidates,ensure_ascii=False,indent=2),encoding='utf-8')
+          if not candidates: raise SystemExit('no candidates')
+
+          # Retrieve primary images for top-ranked distinct leaves and neighbors.
+          leaves=set()
+          for c in candidates[:18]:
+              leaf=c['leaf_hypothesis']
+              for q in range(max(238,leaf-1),min(len(objects)-1,leaf+1)+1): leaves.add(q)
+          retrieved=[]
+          for leaf in sorted(leaves):
+              url=f'https://archive.org/download/{ident}/page/n{leaf}.jpg'
+              item={'leaf':leaf,'url':url}
+              try:
+                  b,ct,st,fin=get(url); item.update(status=st,content_type=ct,bytes=len(b),final_url=fin)
+                  if st==200 and ct.lower().startswith('image/') and len(b)>15000:
+                      p=out/f'n{leaf:03d}.jpg'; p.write_bytes(b); item['saved']=p.name
+              except Exception as exc: item['error']=repr(exc)
+              retrieved.append(item)
+          (out/'retrieved.json').write_text(json.dumps(retrieved,ensure_ascii=False,indent=2),encoding='utf-8')
+          print('SAVED_IMAGES',sum(1 for x in retrieved if x.get('saved')))
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-el-maestro-dec1921-slot-a
+          path: el-maestro-dec1921-slot-a/
+          retention-days: 1
