@@ -16,7 +16,7 @@ The previous blocking condition was the absence of primary-localized rural-teach
 - `PDHD-D000068` — *El sistema de escuelas rurales en México* (SEP, 1927), full-view HathiTrust object;
 - `PDHD-D000069` — *Las misiones culturales en 1927: Las escuelas normales rurales* (SEP, 1928), full-view HathiTrust object;
 - `PDHD-D000071` — *Las misiones culturales, 1932-1933* (SEP, 1933), stable Google Books object with searchable internal passages;
-- `PDHD-D000072` and `PDHD-D000073` — SEP institutional memories with direct sections on missions, rural schools, normal education and inspection;
+- `PDHD-D000078` and `PDHD-D000073` — directly inspected SEP institutional memories with sections on missions, rural schools, normal education and inspection; `PDHD-D000078` replaces the inaccessible-for-primary-review `PDHD-D000072` through `PDHD-PS000004`;
 - `PDHD-D000077` and `PDHD-D000075` — Cardenista SEP memories with rural, regional-normal and supervision material; `PDHD-D000077` replaces the inaccessible-for-primary-review `PDHD-D000074` through the versioned decision `PDHD-PS000003`.
 
 These are primary documentary objects with stable digital identities. They do not depend on treating later historiography as if it were the historical source itself.
@@ -84,7 +84,7 @@ The four fragments must be stored with page/localizer, transcription status, acc
 
 ## Pilot start condition
 
-The **document-selection gate is passed**. Human coding begins only after all 96 fixed fragments are frozen and checked for source location, readability and rights-compatible handling.
+The **document-selection gate and 96-fragment freeze gate are passed**. Human coding has not started; the next controlled step is calibration-set preparation, codebook freeze and independent coder onboarding.
 
 `document_selection_ready != annotation_started`
 
