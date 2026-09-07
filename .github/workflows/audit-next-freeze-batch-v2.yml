@@ -1,0 +1,36 @@
+name: Audit next freeze batch v2
+
+on:
+  push:
+    branches: [audit-next-freeze-batch-v2]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute localized but unfrozen slots by document
+        shell: python
+        run: |
+          import csv, glob, json
+          from collections import defaultdict
+          def rows(pattern):
+              out=[]
+              for path in sorted(glob.glob(pattern)):
+                  with open(path,encoding='utf-8-sig',newline='') as f:
+                      for r in csv.DictReader(f):
+                          r=dict(r); r['_path']=path; out.append(r)
+              return out
+          loc=rows('data/samples/fragment_locator_progress*.csv')
+          fro=rows('data/samples/frozen_fragments*.csv')
+          frozen={r['fragment_id'] for r in fro}
+          pending=[r for r in loc if r.get('fragment_id') and r['fragment_id'] not in frozen]
+          by=defaultdict(list)
+          for r in pending: by[r['document_id']].append(r)
+          print('PENDING_COUNT',len(pending))
+          for doc in sorted(by):
+              print('\nDOCUMENT',doc,'COUNT',len(by[doc]))
+              for r in sorted(by[doc],key=lambda x:x.get('slot','')):
+                  fields={k:r.get(k,'') for k in ['fragment_id','slot','page','source_locator','locator_evidence_url','boundary_status','public_text_status','freeze_status','preparation_note']}
+                  fields['_path']=r['_path']
+                  print(json.dumps(fields,ensure_ascii=False))
