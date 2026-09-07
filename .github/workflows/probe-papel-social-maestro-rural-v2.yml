@@ -1,0 +1,153 @@
+name: Probe El papel social del maestro rural public crosswalk
+
+on:
+  push:
+    branches: [recover-papel-social-maestro-rural-v2]
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe public catalog and facsimile routes
+        shell: python
+        run: |
+          import json, pathlib, re, urllib.parse, urllib.request, urllib.error
+          out=pathlib.Path('d067-primary-crosswalk'); out.mkdir()
+          headers={'User-Agent':'Mozilla/5.0 PDHD-source-verification/0.1'}
+          title='El papel social del maestro rural'
+          oclc='4798509'
+          hathi='txu.059173025410517'
+
+          def get(url, timeout=90):
+              req=urllib.request.Request(url,headers=headers)
+              try:
+                  with urllib.request.urlopen(req,timeout=timeout) as r:
+                      b=r.read(); return {'ok':True,'status':r.status,'url':url,'final_url':r.geturl(),'content_type':r.headers.get('content-type',''),'bytes':len(b),'body':b}
+              except Exception as e:
+                  return {'ok':False,'url':url,'error':repr(e),'body':b''}
+          def save(label,res):
+              p=out/label
+              p.write_bytes(res.get('body',b''))
+              return str(p)
+          report={'title':title,'oclc':oclc,'hathi_item':hathi,'queries':[], 'candidates':[]}
+
+          # Internet Archive advanced search: exact title and OCLC.
+          ia_queries=[f'title:"{title}"', f'identifier:{oclc}', f'identifier:{hathi}', f'("{title}" AND year:1925)']
+          ia_ids=[]
+          for i,q in enumerate(ia_queries):
+              u='https://archive.org/advancedsearch.php?'+urllib.parse.urlencode({'q':q,'fl[]':['identifier','title','creator','date','year','description','identifier-access'],'rows':50,'page':1,'output':'json'},doseq=True)
+              r=get(u); item={'system':'IA','query':q,'status':r.get('status'),'ok':r['ok'],'final_url':r.get('final_url'),'bytes':r.get('bytes'),'error':r.get('error')}
+              if r['ok']:
+                  save(f'ia_search_{i}.json',r)
+                  try:
+                      j=json.loads(r['body']); docs=j.get('response',{}).get('docs',[]); item['docs']=docs
+                      for d in docs:
+                          ident=d.get('identifier')
+                          if ident and ident not in ia_ids: ia_ids.append(ident)
+                  except Exception as e: item['parse_error']=repr(e)
+              report['queries'].append(item)
+
+          # Probe IA candidate metadata and download only an exact-title small PDF if publicly exposed.
+          for ident in ia_ids[:30]:
+              r=get('https://archive.org/metadata/'+urllib.parse.quote(ident))
+              cand={'system':'IA','identifier':ident,'metadata_ok':r['ok'],'status':r.get('status'),'error':r.get('error')}
+              if r['ok']:
+                  try:
+                      j=json.loads(r['body']); md=j.get('metadata',{}); files=j.get('files',[])
+                      cand['metadata']={k:md.get(k) for k in ['title','creator','date','year','description','identifier']}
+                      cand['pdfs']=[{'name':f.get('name'),'size':f.get('size'),'source':f.get('source')} for f in files if str(f.get('name','')).lower().endswith('.pdf')]
+                      norm=lambda s: re.sub(r'\W+',' ',str(s or '').lower()).strip()
+                      if norm(title) in norm(md.get('title')) or norm(md.get('title')) in norm(title):
+                          for f in files:
+                              name=str(f.get('name',''))
+                              if name.lower().endswith('.pdf'):
+                                  try: size=int(f.get('size') or 0)
+                                  except: size=0
+                                  if 0 < size < 50_000_000:
+                                      pr=get('https://archive.org/download/'+urllib.parse.quote(ident)+'/'+urllib.parse.quote(name),timeout=180)
+                                      if pr['ok'] and pr.get('content_type','').lower().startswith('application/pdf') and pr.get('bytes',0)>10000:
+                                          (out/'candidate_ia.pdf').write_bytes(pr['body']); cand['downloaded_pdf']={'name':name,'bytes':pr['bytes'],'url':pr['final_url']}; break
+                  except Exception as e: cand['parse_error']=repr(e)
+              report['candidates'].append(cand)
+
+          # Google Books volume API with OCLC/title/SEP queries.
+          gb_queries=[f'oclc:{oclc}', f'intitle:"{title}"', f'"{title}"', f'intitle:"{title}" inpublisher:"Secretaria de Educacion Publica"']
+          gb_ids=[]
+          for i,q in enumerate(gb_queries):
+              u='https://www.googleapis.com/books/v1/volumes?'+urllib.parse.urlencode({'q':q,'maxResults':40,'printType':'books'})
+              r=get(u); item={'system':'GoogleBooksAPI','query':q,'status':r.get('status'),'ok':r['ok'],'bytes':r.get('bytes'),'error':r.get('error')}
+              if r['ok']:
+                  save(f'gb_api_{i}.json',r)
+                  try:
+                      j=json.loads(r['body']); items=j.get('items',[]) or []
+                      item['items']=[{'id':x.get('id'),'volumeInfo':x.get('volumeInfo'),'accessInfo':x.get('accessInfo')} for x in items]
+                      for x in items:
+                          ident=x.get('id')
+                          if ident and ident not in gb_ids: gb_ids.append(ident)
+                  except Exception as e: item['parse_error']=repr(e)
+              report['queries'].append(item)
+
+          # Google Books HTML search can expose IDs even when API throttles.
+          for host in ['books.google.com','www.google.com']:
+              u='https://'+host+'/books?'+urllib.parse.urlencode({'q':'"'+title+'" 1925','jscmd':'SearchWithinVolume2'})
+              r=get(u); report['queries'].append({'system':'GoogleBooksHTMLSearch','host':host,'ok':r['ok'],'status':r.get('status'),'final_url':r.get('final_url'),'bytes':r.get('bytes'),'error':r.get('error')})
+              if r['ok']:
+                  save('gb_search_'+host.replace('.','_')+'.html',r)
+                  txt=r['body'].decode('utf-8','ignore')
+                  for m in re.findall(r'[?&]id=([A-Za-z0-9_-]{8,20})',txt):
+                      if m not in gb_ids: gb_ids.append(m)
+
+          # Probe each Google candidate's selected p5 HTML and public PDF link, if any.
+          for ident in gb_ids[:40]:
+              u='https://books.google.com/books?'+urllib.parse.urlencode({'id':ident,'pg':'PA5','jscmd':'SearchWithinVolume2'})
+              r=get(u); cand={'system':'GoogleBooks','identifier':ident,'ok':r['ok'],'status':r.get('status'),'bytes':r.get('bytes'),'final_url':r.get('final_url'),'error':r.get('error')}
+              if r['ok']:
+                  txt=r['body'].decode('utf-8','ignore'); cand['title_match']=title.lower() in re.sub(r'\s+',' ',txt.lower())
+                  cand['flags']={k:(re.search(r'"?'+k+r'"?\s*[:=]\s*(true|false)',txt,re.I).group(1).lower() if re.search(r'"?'+k+r'"?\s*[:=]\s*(true|false)',txt,re.I) else None) for k in ['is_ebook','can_download_pdf','is_browsable','is_public_domain','has_scanned_text']}
+                  pdfs=[]
+                  for pat in [r'href="([^"]*?jscmd=SearchWithinVolume2[^"]*)"',r'href="([^"]*?output=download_pdf[^"]*)"',r'"pdfUrl"\s*:\s*"([^"]+)"']:
+                      pdfs += re.findall(pat,txt,re.I)
+                  cand['pdf_candidates']=list(dict.fromkeys([x.replace('&amp;','&') for x in pdfs]))[:10]
+                  if cand['title_match']:
+                      save('gb_candidate_'+ident+'.html',r)
+                  for purl in cand['pdf_candidates']:
+                      purl=purl.replace('\\u0026','&').replace('\\/','/')
+                      if purl.startswith('/'): purl='https://books.google.com'+purl
+                      if purl.startswith('http'):
+                          pr=get(purl,timeout=180)
+                          if pr['ok'] and 'pdf' in pr.get('content_type','').lower() and pr.get('bytes',0)>10000 and pr.get('bytes',0)<50_000_000:
+                              (out/'candidate_google.pdf').write_bytes(pr['body']); cand['downloaded_pdf']={'bytes':pr['bytes'],'url':pr['final_url']}; break
+              report['candidates'].append(cand)
+
+          # Open Library can crosswalk OCLC/title to IA identifiers.
+          ol_urls=[
+            'https://openlibrary.org/search.json?'+urllib.parse.urlencode({'q':title,'limit':50}),
+            'https://openlibrary.org/api/books?'+urllib.parse.urlencode({'bibkeys':'OCLC:'+oclc,'format':'json','jscmd':'data'}),
+          ]
+          for i,u in enumerate(ol_urls):
+              r=get(u); item={'system':'OpenLibrary','ok':r['ok'],'status':r.get('status'),'bytes':r.get('bytes'),'error':r.get('error')}
+              if r['ok']:
+                  save(f'openlibrary_{i}.json',r)
+                  try: item['json']=json.loads(r['body'])
+                  except Exception as e: item['parse_error']=repr(e)
+              report['queries'].append(item)
+
+          # Public Hathi record/item pages only; capture identity/access metadata, not page images.
+          for label,u in [
+              ('hathi_catalog','https://catalog.hathitrust.org/Record/102004487'),
+              ('hathi_item','https://babel.hathitrust.org/cgi/pt?id='+urllib.parse.quote(hathi)+'&view=1up&seq=1')]:
+              r=get(u); report['queries'].append({'system':label,'ok':r['ok'],'status':r.get('status'),'final_url':r.get('final_url'),'bytes':r.get('bytes'),'error':r.get('error')})
+              if r['ok']: save(label+'.html',r)
+
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2)[:60000])
+          print('IA_IDS',ia_ids)
+          print('GB_IDS',gb_ids)
+          print('FILES',[p.name for p in out.iterdir()])
+      - name: Upload D067 crosswalk review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d067-primary-crosswalk-v2
+          path: d067-primary-crosswalk/
+          retention-days: 1
