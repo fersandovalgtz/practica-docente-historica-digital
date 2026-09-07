@@ -1,0 +1,83 @@
+name: Inspect 8FNL identity and primary-page access for D072
+
+on:
+  push:
+    branches: [work/d072-primary-surrogate-20260907]
+    paths: [.github/workflows/inspect-d072-8fnl-identity-access.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe exact identity and public page-image routes
+        shell: python
+        run: |
+          import html, json, pathlib, re, urllib.parse, urllib.request, urllib.error
+          vid='8FNLAAAAYAAJ'
+          queries={
+            'title':'Memoria relativa al estado que guarda el ramo de educación pública',
+            'date':'31 de agosto de 1932',
+            'bassols':'Narciso Bassols',
+            'tomo':'Tomo I Exposición',
+            'mexico':'México 1932',
+            'A':'mejorar la preparación académica de los maestros rurales en servicio',
+            'B':'Los trabajos realizados en el Departamento de Psicopedagogía e Higiene',
+            'D':'Esta oficina tiene a su cargo el desarrollo de funciones consultivas',
+          }
+          pages=['PP7','PR7','PA113','PA303','PA465','PA467','PA487']
+          out=pathlib.Path('d072-8fnl'); out.mkdir(exist_ok=True)
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          def fetch(url,timeout=90):
+            req=urllib.request.Request(url,headers=headers)
+            try:
+              with urllib.request.urlopen(req,timeout=timeout) as r: return {'status':r.status,'ctype':r.headers.get('Content-Type',''),'final':r.geturl(),'body':r.read()}
+            except urllib.error.HTTPError as e: return {'status':e.code,'ctype':e.headers.get('Content-Type',''),'final':e.geturl(),'body':e.read(),'error':str(e)}
+            except Exception as e: return {'status':None,'ctype':'','final':url,'body':b'','error':f'{type(e).__name__}: {e}'}
+          report={'id':vid,'search':{},'pages':{}}
+          for label,q in queries.items():
+            url='https://books.google.com/books?'+urllib.parse.urlencode({'id':vid,'jscmd':'SearchWithinVolume2','q':q})
+            r=fetch(url); rec={'status':r['status'],'bytes':len(r['body']),'results':[]}
+            try:
+              d=json.loads(r['body'].decode('utf-8')); rec['number_of_results']=d.get('number_of_results'); rec['searchable']=d.get('searchable')
+              for x in (d.get('search_results') or [])[:10]:
+                if isinstance(x,dict): rec['results'].append({k:x.get(k) for k in ['page_id','page_number','snippet_text']})
+            except Exception as e: rec['error']=f'{type(e).__name__}: {e}'
+            report['search'][label]=rec; print('\nSEARCH',label,json.dumps(rec,ensure_ascii=False,indent=2))
+          # Examine selected-page HTML and any page-specific content URLs.
+          for pg in pages:
+            url=f'https://books.google.com/books?id={vid}&pg={pg}&source=gbs_selected_pages&cad=1'
+            r=fetch(url); text=html.unescape(r['body'].decode('utf-8',errors='replace')).replace('\\/','/').replace('\\u0026','&')
+            urls=[]
+            for pat in [r'https?://[^"\'<> ]*?/books/content\?[^"\'<> ]+',r'https?://books\.googleusercontent\.com/[^"\'<> ]+']:
+              urls += re.findall(pat,text)
+            urls=list(dict.fromkeys(u.replace('&amp;','&') for u in urls))
+            rec={'status':r['status'],'bytes':len(r['body']),'page_id_count':text.count(pg),'content_urls':urls[:30],'attempts':[]}
+            candidates=[]
+            for u in urls:
+              # Only attempt URLs that actually identify this volume or page.
+              if vid in u or pg in u: candidates.append(u)
+            for zoom in [1,2,3]:
+              candidates.append('https://books.google.com/books/content?'+urllib.parse.urlencode({'id':vid,'pg':pg,'img':'1','zoom':str(zoom),'hl':'es'}))
+            seen=[]
+            for u in candidates:
+              if u in seen: continue
+              seen.append(u); rr=fetch(u,120); body=rr['body']; ct=rr['ctype']
+              is_img=ct.startswith('image/') or body.startswith(b'\xff\xd8\xff') or body.startswith(b'\x89PNG')
+              a={'url':u,'status':rr['status'],'ctype':ct,'bytes':len(body),'is_image':is_img,'final':rr['final']}
+              if is_img and len(body)>20000:
+                ext='.jpg' if ('jpeg' in ct or body.startswith(b'\xff\xd8\xff')) else '.png'; dest=out/f'{pg}-{len(rec["attempts"]):02d}{ext}'; dest.write_bytes(body); a['saved']=dest.name
+              rec['attempts'].append(a)
+            report['pages'][pg]=rec
+            print('\nPAGE',pg,json.dumps({'status':rec['status'],'bytes':rec['bytes'],'page_id_count':rec['page_id_count'],'attempts':rec['attempts']},ensure_ascii=False,indent=2))
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+      - name: Upload one-day identity/access review
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d072-8fnl-review
+          path: d072-8fnl/
+          retention-days: 1
+          if-no-files-found: error
