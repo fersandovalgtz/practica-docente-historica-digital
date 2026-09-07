@@ -15,7 +15,7 @@ Reference cut: **2026-09-07**
 | Target fixed fragments | 96 | freeze gate complete |
 | Fragment locator rows resolved/candidate | **96 / 96** | 100% of reliability slots localized
 | Fully frozen fragments | **96 / 96** | freeze gate complete |
-| Human-validated pedagogical fragments | 0 | not started |
+| Human-validated pedagogical fragments | 0 | calibration package prepared; coding not started |
 
 The 78-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **96 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. **96 units** have crossed the stronger frozen-fragment gate.
 
@@ -84,7 +84,7 @@ The `PDHD-F000033` recovery established the post-sprint exact-pointer workflow: 
 
 The union of all `fragment_locator_progress*.csv` shards contains **96/96** pilot slots. All ninety-six are frozen. The remaining **0** located rows mean that no localized pilot candidate remains outside the frozen registry. **0 slots remain without a locator.**
 
-The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. The active phase now converts strong page-resolved candidates through direct historical-object inspection and opportunistically fills missing deterministic slots when the same inspected page provides structurally distinct evidence.
+The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. Fragment conversion is complete for the current pilot: no page-resolved candidate remains outside the frozen registry, so the active methodological phase has moved from source recovery to human calibration.
 
 The localization and freeze gates are now both complete. The final position-21 substitution is versioned as `PDHD-PS000004`; the outgoing 1932 object remains provenance, while the active pilot uses the directly inspected 1926 SEP memory. The next high-value work is calibration and independent human reliability testing rather than further fragment conversion.
 
@@ -118,9 +118,9 @@ Mandatory distinctions remain:
 
 ## What remains before human coding
 
-Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.
+Human annotation has **not** started. The same 96 frozen fragments are now partitioned methodologically into a 12-fragment calibration set and an 84-fragment first independent reliability batch. Calibration items are excluded from the formal reliability calculation; no additional historical fragments are created by this partition. Every fragment retains an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.
 
-The current 92 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with an alternate primary scan. They do not justify coder labeling before the package is complete.
+The current 96 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with alternate primary scans. The freeze package is complete; coder labeling remains intentionally at zero until two real human coders begin the prepared calibration round.
 
 ## Rights constraint
 
@@ -130,4 +130,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 has completed **pilot freezing**. Issue #1 stays open through the first independent human reliability round.
 
-The project is now at **96/96 localized** and **96/96 frozen**. The final substitution closes the package while preserving the unlocalized complement at 0. Both the localization and freeze gates are complete; the stronger scientific priority is now calibration, codebook freeze and independent human reliability testing without exposing proposed labels to coders.
+The project is now at **96/96 localized** and **96/96 frozen**. The final substitution closes the package while preserving the unlocalized complement at 0. The deterministic 12-item calibration package is prepared under `PDHD-CAL-0.1-20260907`, with `PDHD-CB-0.2-calibration` pinned as the pre-calibration baseline. Human coding remains at 0; the next gate requires two real independent first-pass calibration sheets before any codebook revision, formal 84-item reliability round or gold-label adjudication.
