@@ -1,0 +1,86 @@
+name: Inspect D072 institutional records and alternates
+
+on:
+  push:
+    branches:
+      - work/d072-primary-recovery-20260907
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect records and candidate editions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,re,urllib.parse,urllib.request,html
+          UA='Mozilla/5.0 PDHD-research/0.1'
+          def get(url):
+              req=urllib.request.Request(url,headers={'User-Agent':UA,'Accept-Language':'es-MX,es;q=0.9,en;q=0.7'})
+              try:
+                  with urllib.request.urlopen(req,timeout=45) as r:
+                      b=r.read(); return r.status,r.headers.get('content-type',''),r.geturl(),b
+              except Exception as e:
+                  return None,'','',repr(e).encode()
+          def textify(b):
+              s=b.decode('utf-8','replace')
+              s=re.sub(r'<script.*?</script>|<style.*?</style>',' ',s,flags=re.I|re.S)
+              s=re.sub(r'<[^>]+>',' ',s)
+              s=html.unescape(s)
+              s=re.sub(r'\s+',' ',s)
+              return s.strip()
+
+          print('=== ITESO exact 1932 records ===')
+          for rid in ['000126917','000505635']:
+              base=f'https://opac.biblio.iteso.mx/vufind/Record/{rid}'
+              for suffix in ['', '/Description','/Details','/Holdings','/RDF']:
+                  st,ct,final,b=get(base+suffix)
+                  t=textify(b)
+                  print('\n',rid,suffix or '/','HTTP',st,ct,'bytes',len(b),'final',final)
+                  print(t[:5000])
+              cover=f'https://opac.biblio.iteso.mx/vufind/Cover/Show?recordid={rid}&source=Solr&size=large'
+              st,ct,final,b=get(cover)
+              print('COVER',rid,'HTTP',st,ct,'bytes',len(b),'final',final,'magic',b[:20])
+
+          print('\n=== ITESO exact-title search 1933/1934 ===')
+          for year in ['1933','1934']:
+              q=f'Memoria relativa al estado que guarda el ramo de educación pública el 31 de agosto de {year}'
+              u='https://opac.biblio.iteso.mx/vufind/Search/Results?'+urllib.parse.urlencode({'lookfor':q,'type':'AllFields'})
+              st,ct,final,b=get(u); s=b.decode('utf-8','replace')
+              recs=sorted(set(re.findall(r'/vufind/Record/(\d+)',s)))
+              print(year,'HTTP',st,'records',recs[:30])
+
+          print('\n=== Google Books search API ===')
+          queries=[
+            'intitle:"Memoria relativa al estado que guarda el ramo de educación pública" inauthor:"Secretaría de Educación Pública"',
+            '"Memoria relativa al estado que guarda el ramo de educación pública"',
+          ]
+          seen={}
+          for q in queries:
+              u='https://www.googleapis.com/books/v1/volumes?'+urllib.parse.urlencode({'q':q,'maxResults':40,'printType':'books'})
+              st,ct,final,b=get(u)
+              print('API query HTTP',st,ct,'bytes',len(b))
+              try: obj=json.loads(b)
+              except Exception:
+                  print(b[:1000]); continue
+              for it in obj.get('items',[]):
+                  vid=it.get('id'); vi=it.get('volumeInfo',{}); ai=it.get('accessInfo',{})
+                  if not vid: continue
+                  seen[vid]=1
+                  print(json.dumps({'id':vid,'title':vi.get('title'),'publishedDate':vi.get('publishedDate'),'publisher':vi.get('publisher'),'pageCount':vi.get('pageCount'),'identifiers':vi.get('industryIdentifiers'),'viewability':ai.get('viewability'),'publicDomain':ai.get('publicDomain'),'pdf':ai.get('pdf'),'webReaderLink':ai.get('webReaderLink')},ensure_ascii=False))
+
+          print('\n=== Direct known Google objects ===')
+          for vid in ['ypWS82YskN4C','_nkQAAAAYAAJ','mHgQAAAAYAAJ','6aYQAAAAYAAJ','8FNLAAAAYAAJ']:
+              u=f'https://www.googleapis.com/books/v1/volumes/{vid}'
+              st,ct,final,b=get(u)
+              print('ID',vid,'HTTP',st,ct,'bytes',len(b))
+              try:
+                  obj=json.loads(b); vi=obj.get('volumeInfo',{}); ai=obj.get('accessInfo',{})
+                  print(json.dumps({'title':vi.get('title'),'publishedDate':vi.get('publishedDate'),'publisher':vi.get('publisher'),'pageCount':vi.get('pageCount'),'identifiers':vi.get('industryIdentifiers'),'viewability':ai.get('viewability'),'publicDomain':ai.get('publicDomain'),'pdf':ai.get('pdf'),'webReaderLink':ai.get('webReaderLink')},ensure_ascii=False,indent=2))
+              except Exception: print(b[:1000])
+          PY
