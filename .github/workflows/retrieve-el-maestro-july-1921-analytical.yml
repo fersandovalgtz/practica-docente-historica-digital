@@ -9,14 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install PDF and image utilities
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq poppler-utils imagemagick
-      - name: Locate target articles and prove BookReader mapping
+      - name: Locate targets in IA page-index OCR and retrieve primary images
         shell: python
         run: |
-          import json, pathlib, re, subprocess, unicodedata, urllib.parse, urllib.request
+          import json, pathlib, re, unicodedata, urllib.parse, urllib.request, xml.etree.ElementTree as ET
           out=pathlib.Path('el-maestro-july-1921-primary'); out.mkdir()
           ident='elmaestrorevista146mexi'
           headers={'User-Agent':'Mozilla/5.0 PDHD-source-verification/0.1'}
@@ -34,75 +30,62 @@ jobs:
           if 'MAESTRO' not in hay:
               raise SystemExit(f'identity gate failed: {identity}')
           files=meta.get('files',[])
-          candidates=[f.get('name') for f in files if f.get('name','').endswith('_text.pdf')]
-          if not candidates:
-              candidates=[f.get('name') for f in files if f.get('name','').lower().endswith('.pdf') and 'text' in f.get('name','').lower()]
-          if not candidates: raise SystemExit('no text PDF candidate')
-          pdfname=candidates[0]
-          b,ct,st,fin=get('https://archive.org/download/'+ident+'/'+urllib.parse.quote(pdfname))
-          if not b.startswith(b'%PDF') or len(b)<500000:
-              raise SystemExit(f'invalid PDF {len(b)} {ct} {st} {fin}')
-          pdf=out/'source.pdf'; pdf.write_bytes(b)
-          info=subprocess.run(['pdfinfo',str(pdf)],capture_output=True,text=True,check=True).stdout
-          m=re.search(r'^Pages:\s+(\d+)',info,re.M); count=int(m.group(1)) if m else 0
-          subprocess.run(['pdftotext','-layout',str(pdf),str(out/'source.txt')],check=True)
-          pages=(out/'source.txt').read_text(encoding='utf-8',errors='replace').split('\f')
-          if pages and not pages[-1].strip(): pages=pages[:-1]
+          relevant=[f.get('name') for f in files if f.get('name') and any(x in f.get('name','').lower() for x in ['djvu','scandata','.pdf'])]
+          print('IDENTITY',json.dumps(identity,ensure_ascii=False))
+          print('RELEVANT_FILES',json.dumps(relevant,ensure_ascii=False,indent=2))
+
+          djvu=next((f.get('name') for f in files if f.get('name','').endswith('_djvu.xml')),None)
+          if not djvu: raise SystemExit('no IA djvu XML page index')
+          xb,_,_,_=get('https://archive.org/download/'+ident+'/'+urllib.parse.quote(djvu))
+          (out/'source_djvu.xml').write_bytes(xb)
+          root=ET.fromstring(xb)
+          objects=root.findall('.//OBJECT')
+          if not objects: raise SystemExit('no page OBJECT elements in djvu XML')
+          page_texts=[]
+          for i,obj in enumerate(objects):
+              text=' '.join((w.text or '') for w in obj.findall('.//WORD'))
+              page_texts.append(norm(text))
+
           targets={
-            'F45': ['ILUSTRACION DE LAS MASAS','DIONISIO MONTELONGO'],
+            'F45': ['ILUSTRACION DE LAS MASAS','MONTELONGO'],
             'F46': ['MEJORES MAESTROS','ABEL AYALA'],
             'F47': ['HISTORIA DE MEXICO','RAMOS PEDRUEZA'],
           }
           matches={}
           for label,needles in targets.items():
               hit=[]
-              for i,p in enumerate(pages,1):
-                  n=norm(p)
-                  score=sum(1 for x in needles if x in n)
+              for idx,text in enumerate(page_texts):
+                  score=sum(1 for x in needles if x in text)
                   if score:
-                      hit.append({'pdf_page':i,'score':score,'head':n[:1400]})
+                      hit.append({'object_index':idx,'leaf_hypothesis':idx,'score':score,'head':text[:1600]})
               matches[label]=hit
-          print('IDENTITY',json.dumps(identity,ensure_ascii=False))
-          print('PDF',pdfname,'BYTES',len(b),'PAGES',count,'OCR_PAGES',len(pages))
+          print('OBJECT_COUNT',len(objects))
           print('MATCHES',json.dumps(matches,ensure_ascii=False,indent=2))
           if not all(matches[k] for k in targets):
-              raise SystemExit('one or more article targets absent from primary OCR')
+              raise SystemExit('one or more target articles absent from IA OCR page index')
 
-          # Render windows around all OCR matches likely to be article starts.
-          render=out/'rendered'; render.mkdir()
-          wanted=set()
+          # OCR is discovery only. Retrieve primary BookReader images around every match.
+          retrieved=[]
+          leaves=set([4])  # already-known issue-cover control anchor
           for hitlist in matches.values():
               for h in hitlist:
-                  p=h['pdf_page']
-                  for q in range(max(1,p-2),min(count,p+4)+1): wanted.add(q)
-          for p in sorted(wanted):
-              subprocess.run(['pdftoppm','-f',str(p),'-l',str(p),'-jpeg','-r','180',str(pdf),str(render/f'pdf-{p:03d}')],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-
-          # For highest-scoring match of each target, compare against nearby public IA leaves.
-          report={'identity':identity,'pdf_name':pdfname,'pdf_bytes':len(b),'pdf_pages':count,'matches':matches,'leaf_tests':{}}
-          for label,hitlist in matches.items():
-              h=sorted(hitlist,key=lambda x:(-x['score'],x['pdf_page']))[0]
-              p=h['pdf_page']; expected=p-1
-              ref=next(render.glob(f'pdf-{p:03d}-*.jpg'))
-              refnorm=out/f'{label}-pdfnorm.png'
-              subprocess.run(['convert',str(ref),'-colorspace','Gray','-resize','600x800!','-normalize',str(refnorm)],check=True)
-              tests=[]
-              for leaf in range(max(0,expected-3),expected+4):
-                  url=f'https://archive.org/download/{ident}/page/n{leaf}.jpg'
-                  item={'leaf':leaf,'url':url}
-                  try:
-                      ib,ict,ist,ifin=get(url); item.update(status=ist,content_type=ict,bytes=len(ib),final_url=ifin)
-                      if ist==200 and ict.lower().startswith('image/') and len(ib)>15000:
-                          raw=out/f'{label}-n{leaf}.jpg'; raw.write_bytes(ib)
-                          nn=out/f'{label}-n{leaf}-norm.png'
-                          subprocess.run(['convert',str(raw),'-colorspace','Gray','-resize','600x800!','-normalize',str(nn)],check=True)
-                          cp=subprocess.run(['compare','-metric','RMSE',str(refnorm),str(nn),'null:'],capture_output=True,text=True)
-                          item['rmse']=(cp.stderr or '').strip()
-                  except Exception as exc: item['error']=repr(exc)
-                  tests.append(item)
-              report['leaf_tests'][label]={'chosen_pdf_page':p,'expected_leaf_if_zero_based':expected,'tests':tests}
+                  idx=h['object_index']
+                  for leaf in range(max(0,idx-2),min(len(objects)-1,idx+5)+1): leaves.add(leaf)
+          for leaf in sorted(leaves):
+              url=f'https://archive.org/download/{ident}/page/n{leaf}.jpg'
+              item={'leaf':leaf,'url':url}
+              try:
+                  b,ct,st,fin=get(url); item.update(status=st,content_type=ct,bytes=len(b),final_url=fin)
+                  if st==200 and ct.lower().startswith('image/') and len(b)>15000:
+                      p=out/f'n{leaf:03d}.jpg'; p.write_bytes(b); item['saved']=p.name
+              except Exception as exc:
+                  item['error']=repr(exc)
+              retrieved.append(item)
+          saved=[x for x in retrieved if x.get('saved')]
+          if len(saved)<4: raise SystemExit('insufficient primary images retrieved')
+          report={'identity':identity,'djvu_file':djvu,'object_count':len(objects),'matches':matches,'retrieved':retrieved,'warning':'DjVu OCR/object indexes are discovery aids only. Printed pagination, title/author identity, leaf mapping and coder boundaries require visual inspection of saved primary images.'}
           (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
-          print('LEAF_TESTS',json.dumps(report['leaf_tests'],ensure_ascii=False,indent=2))
+          print('RETRIEVED',json.dumps(retrieved,ensure_ascii=False,indent=2))
       - name: Upload primary review artifact
         uses: actions/upload-artifact@v4
         with:
