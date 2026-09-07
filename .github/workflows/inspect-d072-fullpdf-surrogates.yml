@@ -1,0 +1,150 @@
+name: Inspect D072 full-PDF surrogate candidates
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/d072-primary-surrogate-20260907
+    paths:
+      - .github/workflows/inspect-d072-fullpdf-surrogates.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Retrieve candidate PDFs and inspect primary identity/signatures
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d072-surrogates/rendered
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils >/dev/null
+          python3 - <<'PY'
+          import html, json, pathlib, re, subprocess, urllib.parse, urllib.request, urllib.error
+
+          out=pathlib.Path('d072-surrogates')
+          vids=['6aYQAAAAYAAJ','mHgQAAAAYAAJ']
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          patterns={
+            'identity_exact':['31 DE AGOSTO DE 1932','TOMO I','EXPOSICION'],
+            'A':['mejorar la preparación académica de los maestros rurales en servicio'],
+            'B':['Los trabajos realizados en el Departamento de Psicopedagogía e Higiene'],
+            'C':['escuela técnica','escuela primaria','escuela rural'],
+            'D':['Esta oficina tiene a su cargo el desarrollo de funciones consultivas'],
+          }
+
+          def fetch(url,timeout=120):
+            req=urllib.request.Request(url,headers=headers)
+            try:
+              with urllib.request.urlopen(req,timeout=timeout) as r:
+                return r.status,r.geturl(),r.headers.get('Content-Type',''),r.read()
+            except urllib.error.HTTPError as e:
+              return e.code,e.geturl(),e.headers.get('Content-Type',''),e.read()
+
+          def norm(s):
+            return re.sub(r'\s+',' ',s.replace('\u00ad','').replace('-\n','')).strip().lower()
+
+          report={}
+          for vid in vids:
+            rec={'front':{},'pdf_candidates':[],'pdf':{},'hits':{}}
+            front=f'https://books.google.com/books?id={vid}&printsec=frontcover'
+            st,final,ct,body=fetch(front)
+            text=html.unescape(body.decode('utf-8',errors='replace')).replace('\\/','/').replace('\\u0026','&')
+            pdfs=[]
+            for pat in [
+              r'https?://books\.google\.[^/]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',
+              r'https?://books\.googleusercontent\.com/[^"\'<> ]+?\.pdf[^"\'<> ]*'
+            ]:
+              pdfs += re.findall(pat,text)
+            pdfs=list(dict.fromkeys(u.replace('&amp;','&') for u in pdfs))
+            rec['front']={'status':st,'bytes':len(body),'pdf_links':len(pdfs)}
+            print('\nVOLUME',vid,'front',rec['front'])
+            chosen=None
+            for i,u in enumerate(pdfs[:8]):
+              st2,f2,ct2,b2=fetch(u,180)
+              row={'status':st2,'final':f2,'ctype':ct2,'bytes':len(b2),'is_pdf':b2.startswith(b'%PDF')}
+              rec['pdf_candidates'].append(row)
+              print(' PDF_CANDIDATE',i,json.dumps(row,ensure_ascii=False))
+              if chosen is None and row['is_pdf'] and len(b2)>100000:
+                chosen=(u,b2)
+            if chosen is None:
+              report[vid]=rec
+              continue
+            pdf=out/f'{vid}.pdf'; pdf.write_bytes(chosen[1])
+            info=subprocess.run(['pdfinfo',str(pdf)],capture_output=True,text=True).stdout
+            rec['pdf']['bytes']=pdf.stat().st_size
+            rec['pdf']['pdfinfo']=info[:5000]
+            txt=out/f'{vid}.txt'
+            subprocess.run(['pdftotext','-layout',str(pdf),str(txt)],check=True)
+            raw=txt.read_text(errors='replace')
+            pages=raw.split('\f')
+            rec['pdf']['physical_pages']=len(pages)
+            print(' PDFINFO',info.replace('\n',' | ')[:1200])
+            print(' TEXT_PAGES',len(pages))
+
+            # page-level pattern hits
+            for label,needles in patterns.items():
+              hits=[]
+              for idx,p in enumerate(pages, start=1):
+                np=norm(p)
+                if label=='identity_exact':
+                  ok=all(norm(n) in np for n in needles)
+                elif label=='C':
+                  ok=sum(norm(n) in np for n in needles)>=2
+                else:
+                  ok=any(norm(n) in np for n in needles)
+                if ok:
+                  excerpt=re.sub(r'\s+',' ',p).strip()[:800]
+                  hits.append({'physical_page':idx,'excerpt':excerpt})
+              rec['hits'][label]=hits[:30]
+              print(' HITS',label,[h['physical_page'] for h in hits[:30]])
+
+            # Also locate isolated key tokens for debugging C/p487 and printed numbers.
+            for label,phrase in {
+              'p487_marker':'487',
+              'tecnica':'enseñanza técnica',
+              'revalidacion':'revalidación de estudios',
+              'misiones':'misiones culturales',
+            }.items():
+              hits=[]
+              for idx,p in enumerate(pages, start=1):
+                if norm(phrase) in norm(p):
+                  hits.append(idx)
+              rec['hits'][label]=hits[:60]
+              print(' HITS',label,hits[:60])
+
+            # Render identity/A/B/D hit pages and +/-1, plus pages containing printed 487 near technical-education context.
+            render=set()
+            for label in ['identity_exact','A','B','D']:
+              for h in rec['hits'].get(label,[])[:8]:
+                pp=h['physical_page']
+                for q in (pp-1,pp,pp+1):
+                  if q>=1: render.add(q)
+            # Add up to 12 technical pages that literally contain 487 or cost-related vocabulary.
+            for idx,p in enumerate(pages, start=1):
+              np=norm(p)
+              if ('487' in p and ('técnic' in np or 'tecnic' in np or 'escuela' in np)) or ('costo' in np and 'rural' in np and ('técnic' in np or 'tecnic' in np)):
+                render.add(idx)
+                if len([x for x in render if x==idx])>12: break
+            for pp in sorted(render)[:80]:
+              prefix=out/'rendered'/f'{vid}-phys-{pp:04d}'
+              subprocess.run(['pdftoppm','-f',str(pp),'-singlefile','-jpeg','-r','130',str(pdf),str(prefix)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            rec['rendered_pages']=sorted(render)[:80]
+            report[vid]=rec
+
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          PY
+
+      - name: Upload one-day primary surrogate review
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d072-fullpdf-surrogate-review
+          path: |
+            d072-surrogates/report.json
+            d072-surrogates/rendered/
+          retention-days: 1
+          if-no-files-found: error
