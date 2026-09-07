@@ -1,5 +1,2 @@
 fragment_id,document_id,slot,priority,retrieval_route,current_blocker,target_evidence
-PDHD-F000001,PDHD-D000065,A,high,HNDM_or_UNAM_issue_page_recovery,El Periquito no. 4 is object-resolved but no issue-page passage has been inspected,direct_primary_pedagogical_passage
-PDHD-F000002,PDHD-D000065,B,medium,HNDM_or_UNAM_issue_page_recovery,Publication identity is known but no page-level professional/editorial region is resolved for no. 4,direct_primary_professional_region
-PDHD-F000004,PDHD-D000065,D,medium,HNDM_or_UNAM_issue_page_recovery,No page-level administrative or deliberately non-analytical control region has been inspected,direct_primary_control_region
 PDHD-F000064,PDHD-D000067,D,high,HathiTrust_txu.059173025410517_manual_inspection,"HathiTrust confirms an 8-page full-view University of Texas copy (item txu.059173025410517); A/B/C already point to p. 5 through scholarship, so a different low-pedagogical-content page still requires direct page inspection",direct_primary_control_region

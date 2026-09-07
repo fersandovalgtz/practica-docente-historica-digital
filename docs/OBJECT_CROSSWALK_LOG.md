@@ -50,6 +50,12 @@ The lead is consequently stored in `data/samples/pilot_content_leads.csv` with:
 
 It must not be inserted into `fragment_locator_progress*.csv` until an original page or stable page-level locator is established.
 
+## 2026-09-06 — El Periquito no. 4, UNAM-RI to HNDM
+
+UNAM-RI record `921573` resolves the exact selected issue of *El Periquito* dated 6 November 1870 and exposes `item_pages=4`, HNDM `item_publication_id=558075be7d1e63c9fea1a3df` and persistent `item_first_page_id=558a32a77d1ed64f1688827b`. The corresponding HNDM full-text target is registered as `PDHD-A000007`.
+
+Unlike the earlier descriptor-only state, the persistent first-page identifier was directly usable. Traversal by HNDM's explicit `siguienteLink` identifiers recovered four unique page PDFs and every page preserved the expected title, issue date and four-page count. The crosswalk remains object-level provenance; the direct page locators and fixed coder boundaries are recorded separately in the fragment shards.
+
 ## Integrity decision
 
 `scripts/validate_object_aliases.py` validates document-to-alias crosswalks. `scripts/validate_content_leads.py` enforces the rule that a page-unresolved content lead cannot become eligible for fragment-locator promotion.
