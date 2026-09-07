@@ -13,11 +13,11 @@ Reference cut: **2026-09-06**
 | Registered chronology conflicts | 5 | preserved; one resolved by primary-image evidence |
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
-| Fragment locator rows resolved/candidate | **83 / 96** | 86.5% of reliability slots localized |
-| Fully frozen fragments | **61 / 96** | page-resolved conversion phase active |
+| Fragment locator rows resolved/candidate | **86 / 96** | 86.5% of reliability slots localized |
+| Fully frozen fragments | **65 / 96** | page-resolved conversion phase active |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **83 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Sixty-one units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **86 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Sixty-five units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -25,7 +25,9 @@ The first reliability corpus remains frozen in `data/samples/pilot_document_sele
 
 ## Frozen-fragment evidence
 
-Fourteen selected documents now have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
+Fifteen selected documents now have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
+
+`PDHD-D000006`, *Revista de la Instrucción Pública Mexicana* of 15 March 1896, now contributes a complete A–D batch after traversing the exact HNDM issue through 37 unique persistent page IDs. The primary sequence establishes five preliminary cover/index leaves, printed p. 1 at sequence 6 and printed p. 32 at sequence 37. Direct visual inspection fills the three former A/C/D gaps: F000029 fixes a language-teaching prescription in the Escuela de Sordo-Mudos on p. 12; F000031 fixes a separate non-overlapping p. 12 source-critical clause differentiating vocational formation by gender and aptitude; F000032 uses the p. 1 masthead as a non-analytical control. F000030 is independently confirmed on p. 31 as the personnel notice recording Dolores Correa Zapata's resignation and Emilia Tuchs's appointment.
 
 `PDHD-D000063`, *México intelectual* of 1889, now contributes a complete A–D batch from the HNDM primary viewer cross-walked from UNAM-RI `897145`. The recovery itself exposed an important interface trap: changing `intPagina` returned the same current leaf, so that first artifact was rejected. A corrected traversal followed the viewer's persistent `siguienteLink` page IDs and recovered 45 unique primary pages. Direct visual inspection replaces the weak secondary slot-A pointer with the explicit primary-teacher action paragraph on p. 34, confirms a bounded institutional-uniformity paragraph on p. 2 for slot B, fixes the Normal de Jalapa student/faculty/curriculum block on p. 27 for source criticism, and moves the control from the incorrect p. 6 secondary pointer to the actual `CONDICIONES` section on p. 32. No facsimile or source transcription is committed.
 
@@ -64,7 +66,7 @@ The `PDHD-F000033` recovery established the post-sprint exact-pointer workflow: 
 
 ## Remaining localization work
 
-The union of all `fragment_locator_progress*.csv` shards contains **83/96** pilot slots. Sixty-one are frozen. The remaining **22** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **13 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **86/96** pilot slots. Sixty-one are frozen. The remaining **21** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **10 slots remain without a locator.**
 
 The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. The active phase now converts strong page-resolved candidates through direct historical-object inspection and opportunistically fills missing deterministic slots when the same inspected page provides structurally distinct evidence.
 
@@ -102,7 +104,7 @@ Mandatory distinctions remain:
 
 Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.
 
-The current 61 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with an alternate primary scan. They do not justify coder labeling before the package is complete.
+The current 65 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with an alternate primary scan. They do not justify coder labeling before the package is complete.
 
 ## Rights constraint
 
@@ -112,4 +114,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The project is now at **83/96 localized** and **61/96 frozen**. Recent primary-object recovery has expanded the frozen package while preserving the unlocalized complement at 13. The next quantitative localization checkpoint remains **84/96**, while the stronger scientific priority is converting high-quality existing page pointers and completing document batches without weakening the evidence hierarchy.
+The project is now at **86/96 localized** and **65/96 frozen**. Recent primary-object recovery has expanded the frozen package while preserving the unlocalized complement at 13. The next quantitative localization checkpoint is **88/96**, while the stronger scientific priority is converting high-quality existing page pointers and completing document batches without weakening the evidence hierarchy.

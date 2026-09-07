@@ -1,14 +1,11 @@
 fragment_id,document_id,slot,priority,retrieval_route,current_blocker,target_evidence
-PDHD-F000001,PDHD-D000065,A,high,HNDM_or_UNAM_issue_page_recovery,"El Periquito no. 4 is object-resolved but no issue-page passage has been inspected",direct_primary_pedagogical_passage
-PDHD-F000002,PDHD-D000065,B,medium,HNDM_or_UNAM_issue_page_recovery,"Publication identity is known but no page-level professional/editorial region is resolved for no. 4",direct_primary_professional_region
-PDHD-F000004,PDHD-D000065,D,medium,HNDM_or_UNAM_issue_page_recovery,"No page-level administrative or deliberately non-analytical control region has been inspected",direct_primary_control_region
-PDHD-F000005,PDHD-D000064,A,high,HNDM_alias_page_recovery,"UNAM-RI to HNDM crosswalk is resolved; only p. 8 is currently page-resolved and it fills slot B",direct_primary_instructional_or_prescriptive_passage
-PDHD-F000007,PDHD-D000064,C,medium,HNDM_alias_page_recovery,"Selected issue lacks a second page-level content pointer beyond the Liceo de Niñas item",direct_primary_source_criticism_passage
-PDHD-F000008,PDHD-D000064,D,medium,HNDM_alias_page_recovery,"Issue opening/front matter has not been inspected at page level",direct_primary_control_region
-PDHD-F000021,PDHD-D000058,A,high,UNAM_RI_issue_page_recovery,"Rébsamen's La Pedagogía Moderna at pp. 17-18 fills slot C only; an explicit teaching-act span is still missing",direct_primary_pedagogical_passage
-PDHD-F000022,PDHD-D000058,B,medium,UNAM_RI_issue_page_recovery,"Professional/editorial or institutional-relations span not yet localized in the 31 October 1889 issue",direct_primary_professional_region
-PDHD-F000024,PDHD-D000058,D,medium,UNAM_RI_issue_page_recovery,"No administrative or other low-pedagogical-content control span is page-resolved",direct_primary_control_region
-PDHD-F000029,PDHD-D000006,A,high,HNDM_37page_issue_manual_inspection,"HNDM directly resolves the 15 March 1896 issue as a 37-page object; p. 31 is the only page-level content pointer currently identified, so an explicit instructional/prescriptive page still requires manual page inspection",direct_primary_pedagogical_passage
-PDHD-F000031,PDHD-D000006,C,medium,HNDM_37page_issue_manual_inspection,"HNDM directly resolves the selected issue as 37 pages, but no second historically salient page beyond the p. 31 personnel notice has yet been identified",direct_primary_source_criticism_passage
-PDHD-F000032,PDHD-D000006,D,medium,HNDM_37page_issue_manual_inspection,"The HNDM issue viewer exposes the complete 37-page object, but an administrative/front-matter control region still requires direct page inspection",direct_primary_control_region
+PDHD-F000001,PDHD-D000065,A,high,HNDM_or_UNAM_issue_page_recovery,El Periquito no. 4 is object-resolved but no issue-page passage has been inspected,direct_primary_pedagogical_passage
+PDHD-F000002,PDHD-D000065,B,medium,HNDM_or_UNAM_issue_page_recovery,Publication identity is known but no page-level professional/editorial region is resolved for no. 4,direct_primary_professional_region
+PDHD-F000004,PDHD-D000065,D,medium,HNDM_or_UNAM_issue_page_recovery,No page-level administrative or deliberately non-analytical control region has been inspected,direct_primary_control_region
+PDHD-F000005,PDHD-D000064,A,high,HNDM_alias_page_recovery,UNAM-RI to HNDM crosswalk is resolved; only p. 8 is currently page-resolved and it fills slot B,direct_primary_instructional_or_prescriptive_passage
+PDHD-F000007,PDHD-D000064,C,medium,HNDM_alias_page_recovery,Selected issue lacks a second page-level content pointer beyond the Liceo de Niñas item,direct_primary_source_criticism_passage
+PDHD-F000008,PDHD-D000064,D,medium,HNDM_alias_page_recovery,Issue opening/front matter has not been inspected at page level,direct_primary_control_region
+PDHD-F000021,PDHD-D000058,A,high,UNAM_RI_issue_page_recovery,Rébsamen's La Pedagogía Moderna at pp. 17-18 fills slot C only; an explicit teaching-act span is still missing,direct_primary_pedagogical_passage
+PDHD-F000022,PDHD-D000058,B,medium,UNAM_RI_issue_page_recovery,Professional/editorial or institutional-relations span not yet localized in the 31 October 1889 issue,direct_primary_professional_region
+PDHD-F000024,PDHD-D000058,D,medium,UNAM_RI_issue_page_recovery,No administrative or other low-pedagogical-content control span is page-resolved,direct_primary_control_region
 PDHD-F000064,PDHD-D000067,D,high,HathiTrust_txu.059173025410517_manual_inspection,"HathiTrust confirms an 8-page full-view University of Texas copy (item txu.059173025410517); A/B/C already point to p. 5 through scholarship, so a different low-pedagogical-content page still requires direct page inspection",direct_primary_control_region
