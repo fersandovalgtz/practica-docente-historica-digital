@@ -1,0 +1,76 @@
+name: Retrieve Google Books primary scan for El papel social del maestro rural
+
+on:
+  push:
+    branches: [freeze-papel-social-maestro-rural-control]
+    paths:
+      - ".github/workflows/retrieve-papel-social-googlebooks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve and download exact Google Books PDF
+        shell: python
+        run: |
+          import html,json,pathlib,re,urllib.request,http.cookiejar
+          out=pathlib.Path('papel-social-primary'); out.mkdir()
+          gid='PhRQAAAAMAAJ'
+          oclc='4798509'
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.7'}
+          cj=http.cookiejar.CookieJar(); opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+          about='https://books.google.com/books?vid=OCLC'+oclc
+          req=urllib.request.Request(about,headers=headers)
+          with opener.open(req,timeout=90) as r: body=r.read(); final=r.geturl(); status=r.status
+          text=html.unescape(body.decode('utf-8',errors='replace'))
+          (out/'about.html').write_text(text,encoding='utf-8')
+          gates={
+            'status_200':status==200,
+            'gid':gid in text,
+            'title':'El papel social del maestro rural' in text,
+            'publisher_year':('La Secretaría' in text or 'La Secretar' in text) and '1925' in text,
+            'texas':'Universidad de Texas' in text or 'University of Texas' in text,
+            'eight_pages':'8 páginas' in text or '8 pages' in text,
+            'public_domain':bool(re.search(r'is_public_domain.{0,30}true',text,re.I)),
+            'downloadable':bool(re.search(r'can_download_pdf.{0,30}true',text,re.I)),
+          }
+          print('IDENTITY_GATES',json.dumps(gates,ensure_ascii=False))
+          if not all(gates.values()): raise SystemExit('Google Books object identity gate failed')
+          m=re.search(r'download_pdf_url\\?"?\s*:\s*\\?"(https://books\.google\.com/books/download/[^"<]+)',text,re.I)
+          if not m:
+              m=re.search(r'(https://books\.google\.com/books/download/El_papel_social_del_maestro_rural\.pdf\?id='+re.escape(gid)+r'[^"<]+)',text,re.I)
+          if not m: raise SystemExit('live download_pdf_url not found')
+          pdf_url=m.group(1).replace('\\u0026','&').replace('\\u003d','=').replace('\\/','/')
+          print('PDF_URL',pdf_url)
+          req=urllib.request.Request(pdf_url,headers={**headers,'Referer':about})
+          with opener.open(req,timeout=180) as r: pdf=r.read(); pstatus=r.status; ctype=r.headers.get('content-type',''); pfinal=r.geturl()
+          print('PDF_FETCH',pstatus,ctype,len(pdf),pfinal)
+          if not pdf.startswith(b'%PDF') or len(pdf)<100000: raise SystemExit('invalid Google Books PDF payload')
+          (out/'el-papel-social-del-maestro-rural-1925.pdf').write_bytes(pdf)
+          (out/'metadata.json').write_text(json.dumps({'google_books_id':gid,'oclc':oclc,'about_url':about,'pdf_url':pdf_url,'bytes':len(pdf)},ensure_ascii=False,indent=2),encoding='utf-8')
+      - name: Render complete primary object
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          pdfinfo papel-social-primary/el-papel-social-del-maestro-rural-1925.pdf | tee papel-social-primary/pdfinfo.txt
+          pages=$(pdfinfo papel-social-primary/el-papel-social-del-maestro-rural-1925.pdf | awk '/^Pages:/ {print $2}')
+          echo "PDF_PHYSICAL_PAGES=$pages"
+          if [ -z "$pages" ] || [ "$pages" -lt 8 ] || [ "$pages" -gt 30 ]; then
+            echo "Unexpected PDF physical page count: $pages"; exit 1
+          fi
+          mkdir -p papel-social-primary/rendered
+          pdftoppm -jpeg -r 220 papel-social-primary/el-papel-social-del-maestro-rural-1925.pdf papel-social-primary/rendered/page >/dev/null 2>&1
+          ls -lh papel-social-primary/rendered
+          pdftotext -layout papel-social-primary/el-papel-social-del-maestro-rural-1925.pdf papel-social-primary/embedded-text.txt || true
+      - name: Upload primary review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-papel-social-maestro-rural-primary-review
+          path: papel-social-primary/
+          retention-days: 1
