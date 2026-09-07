@@ -1,0 +1,80 @@
+name: Resolve SEP El Sembrador in HNDM catalog
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/d067-primary-surrogate-20260907
+    paths:
+      - .github/workflows/probe-hndm-el-sembrador.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Inspect public HNDM title listings and exposed routes
+        shell: python
+        run: |
+          import html, json, pathlib, re, urllib.parse, urllib.request, urllib.error
+          out=pathlib.Path('hndm-sembrador'); out.mkdir(exist_ok=True)
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          def fetch(url):
+              req=urllib.request.Request(url,headers=headers)
+              try:
+                  with urllib.request.urlopen(req,timeout=60) as r:
+                      return r.status,r.geturl(),r.headers.get('Content-Type',''),r.read()
+              except urllib.error.HTTPError as e:
+                  return e.code,e.geturl(),e.headers.get('Content-Type',''),e.read()
+          urls=[
+              'https://hndm.iib.unam.mx/consulta/busqueda/buscarPorLetra?letra=S',
+              'https://hndm.iib.unam.mx/consulta/busqueda/buscarPorLetra/?letra=S&max=20&offset=20',
+              'https://hndm.iib.unam.mx/consulta/busqueda/buscarPorLetra?letra=E',
+          ]
+          report=[]
+          candidates=[]
+          for u in urls:
+              st,final,ct,b=fetch(u); t=html.unescape(b.decode('utf-8',errors='replace'))
+              low=t.lower()
+              print('\nURL',u,'status',st,'bytes',len(b),'sembrador_count',low.count('sembrador'),'1929_count',low.count('1929'))
+              for term in ['sembrador','1929','secretaría de educación pública','secretaria de educacion publica']:
+                  start=0
+                  while True:
+                      p=low.find(term,start)
+                      if p<0: break
+                      window=t[max(0,p-1800):p+2600]
+                      clean=re.sub(r'\s+',' ',window)
+                      print('\nMATCH',term,clean[:4200])
+                      candidates.append({'source':u,'term':term,'context':clean[:6000]})
+                      start=p+len(term)
+              # collect all form/input/button/link elements containing potentially useful identifiers/values
+              elems=[]
+              for m in re.finditer(r'<(?:form|input|button|a)\b[^>]*>',t,re.I):
+                  tag=m.group(0)
+                  if any(x in tag.lower() for x in ['sembr','1929','558','publicacion','visualizar','descripcion','ide=','id=']):
+                      elems.append(tag[:3000])
+              print('INTERESTING_ELEMS',len(elems))
+              for e in elems[:200]: print(e)
+              # broader harvest: input values and form actions
+              vals=[]
+              for m in re.finditer(r'<input\b([^>]*)>',t,re.I):
+                  attrs=m.group(1)
+                  vm=re.search(r'value=["\']([^"\']*)',attrs,re.I); nm=re.search(r'name=["\']([^"\']*)',attrs,re.I)
+                  if vm:
+                      val=html.unescape(vm.group(1))
+                      if val.strip(): vals.append({'name':nm.group(1) if nm else None,'value':val[:1000],'attrs':attrs[:2000]})
+              forms=[html.unescape(x) for x in re.findall(r'<form\b[^>]*>',t,re.I)]
+              hrefs=[urllib.parse.urljoin(final,html.unescape(x)) for x in re.findall(r'href=["\']([^"\']+)',t,re.I)]
+              report.append({'url':u,'status':st,'bytes':len(b),'forms':forms[:100],'values':vals[:1000],'hrefs':list(dict.fromkeys(hrefs))[:500]})
+          (out/'report.json').write_text(json.dumps({'pages':report,'matches':candidates},ensure_ascii=False,indent=2),encoding='utf-8')
+
+      - name: Upload one-day HNDM catalog report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-hndm-el-sembrador-catalog
+          path: hndm-sembrador/
+          retention-days: 1
+          if-no-files-found: error
