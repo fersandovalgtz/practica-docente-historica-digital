@@ -1,0 +1,88 @@
+name: Render D072 8FNL target pages with public dq snippet URLs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/d072-primary-surrogate-20260907
+    paths:
+      - .github/workflows/render-d072-8fnl-dq-snippets.yml
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Prepare Selenium
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d072-dq/full d072-dq/elements
+          python3 -m pip install -q selenium
+
+      - name: Render public dq selected-page URLs
+        shell: python
+        run: |
+          import json, pathlib, time, urllib.parse
+          from selenium import webdriver
+          from selenium.webdriver.chrome.options import Options
+
+          out=pathlib.Path('d072-dq')
+          targets={
+            'PA113':'mejorar la preparación académica de los maestros rurales en servicio',
+            'PA303':'Los trabajos realizados en el Departamento de Psicopedagogía e Higiene',
+            'PA467':'Esta oficina tiene a su cargo el desarrollo de funciones consultivas',
+            'PA487':'enseñanza técnica escuela primaria escuela rural',
+          }
+          results={}
+          for pg,dq in targets.items():
+              opts=Options(); opts.add_argument('--headless=new'); opts.add_argument('--no-sandbox'); opts.add_argument('--disable-gpu'); opts.add_argument('--disable-dev-shm-usage'); opts.add_argument('--window-size=1600,2200'); opts.add_argument('--lang=es-MX')
+              opts.set_capability('goog:loggingPrefs', {'browser':'ALL','performance':'ALL'})
+              d=webdriver.Chrome(options=opts)
+              try:
+                  params={'id':'8FNLAAAAYAAJ','pg':pg,'dq':dq,'hl':'es','source':'gbs_selected_pages','cad':'1'}
+                  url='https://books.google.com/books?'+urllib.parse.urlencode(params)
+                  d.get(url); time.sleep(15)
+                  d.save_screenshot(str(out/'full'/f'{pg}.png'))
+                  imgs=d.find_elements('tag name','img'); info=[]; ranked=[]
+                  for i,el in enumerate(imgs):
+                      try:
+                          r=el.rect; src=el.get_attribute('src') or ''; natural=d.execute_script('return [arguments[0].naturalWidth||0,arguments[0].naturalHeight||0]',el)
+                          row={'index':i,'src':src[:1600],'rect':r,'natural':natural,'alt':(el.get_attribute('alt') or '')[:300]}; info.append(row)
+                          area=max(0,r.get('width',0))*max(0,r.get('height',0))
+                          if area>12000 and r.get('height',0)>100: ranked.append((area,i,el,row))
+                      except Exception: pass
+                  ranked.sort(reverse=True,key=lambda x:x[0]); saved=[]
+                  for rank,(_,i,el,row) in enumerate(ranked[:12],start=1):
+                      try:
+                          p=out/'elements'/f'{pg}-rank{rank:02d}-img{i}.png'; el.screenshot(str(p)); saved.append({'file':p.name,'row':row})
+                      except Exception: pass
+                  perf=d.get_log('performance'); image_responses=[]
+                  for ev in perf:
+                      try:
+                          msg=json.loads(ev['message'])['message']
+                          if msg.get('method')=='Network.responseReceived':
+                              resp=msg.get('params',{}).get('response',{}); u=resp.get('url',''); mime=resp.get('mimeType','')
+                              if mime.startswith('image/') or '/books/content' in u:
+                                  image_responses.append({'url':u[:1800],'status':resp.get('status'),'mime':mime})
+                      except Exception: pass
+                  body=(d.find_element('tag name','body').text or '')[:10000]
+                  results[pg]={'requested_url':url,'current_url':d.current_url,'title':d.title,'body_text':body,'images':info[:120],'saved_elements':saved,'image_responses':image_responses[-150:],'browser_logs':d.get_log('browser')[-50:]}
+                  page_specific=[x for x in image_responses if '8FNLAAAAYAAJ' in x['url'] and (pg in x['url'] or 'jscmd=SearchWithinVolume2' in x['url'])]
+                  print('\nTARGET',pg,'current',d.current_url,'imgs',len(info),'large',len(ranked),'saved',[x['file'] for x in saved])
+                  print('BODY',body[:2200].replace('\n',' | '))
+                  print('PAGE_SPECIFIC',[(x['status'],x['mime'],x['url'][:600]) for x in page_specific[-30:]])
+              finally:
+                  d.quit()
+          (out/'report.json').write_text(json.dumps(results,ensure_ascii=False,indent=2),encoding='utf-8')
+
+      - name: Upload one-day dq browser evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d072-8fnl-dq-browser-review
+          path: d072-dq/
+          retention-days: 1
+          if-no-files-found: error
