@@ -2,6 +2,71 @@ name: Validate PDHD
 
 on:
   push:
+    branches:
+      - main
+      - work/prepare-human-calibration-20260907
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-calibration-status:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/work/prepare-human-calibration-20260907'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Synchronize status prose and restore canonical workflow
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise RuntimeError(f"{label}: expected exactly one occurrence, found {count}")
+              return text.replace(old, new, 1)
+
+          path = Path("docs/PDHD_U1_COHORT_STATUS.md")
+          text = path.read_text(encoding="utf-8")
+          text = replace_once(text, "| Human-validated pedagogical fragments | 0 | not started |", "| Human-validated pedagogical fragments | 0 | calibration package prepared; coding not started |", "human status")
+          text = replace_once(text, "The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. The active phase now converts strong page-resolved candidates through direct historical-object inspection and opportunistically fills missing deterministic slots when the same inspected page provides structurally distinct evidence.", "The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. Fragment conversion is complete for the current pilot: no page-resolved candidate remains outside the frozen registry, so the active methodological phase has moved from source recovery to human calibration.", "obsolete active phase")
+          text = replace_once(text, "Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.", "Human annotation has **not** started. The same 96 frozen fragments are now partitioned methodologically into a 12-fragment calibration set and an 84-fragment first independent reliability batch. Calibration items are excluded from the formal reliability calculation; no additional historical fragments are created by this partition. Every fragment retains an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.", "calibration partition")
+          text = replace_once(text, "The current 92 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with an alternate primary scan. They do not justify coder labeling before the package is complete.", "The current 96 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with alternate primary scans. The freeze package is complete; coder labeling remains intentionally at zero until two real human coders begin the prepared calibration round.", "stale frozen count")
+          text = replace_once(text, "The project is now at **96/96 localized** and **96/96 frozen**. The final substitution closes the package while preserving the unlocalized complement at 0. Both the localization and freeze gates are complete; the stronger scientific priority is now calibration, codebook freeze and independent human reliability testing without exposing proposed labels to coders.", "The project is now at **96/96 localized** and **96/96 frozen**. The final substitution closes the package while preserving the unlocalized complement at 0. The deterministic 12-item calibration package is prepared under `PDHD-CAL-0.1-20260907`, with `PDHD-CB-0.2-calibration` pinned as the pre-calibration baseline. Human coding remains at 0; the next gate requires two real independent first-pass calibration sheets before any codebook revision, formal 84-item reliability round or gold-label adjudication.", "decision phase")
+          path.write_text(text, encoding="utf-8")
+
+          path = Path("data/samples/README.md")
+          text = path.read_text(encoding="utf-8")
+          marker = "\n## Evidence-promotion chain\n"
+          if "## Human calibration package" not in text:
+              addition = """
+## Human calibration package
+
+The completed 96-fragment frozen pilot is now partitioned for the first human-validation stage: **12 fragments for calibration and 84 remaining fragments for the later independent reliability round**. This is a methodological partition of the existing 96 fragments, not an expansion of the corpus.
+
+`calibration_manifest_0_1.csv` records the deterministic researcher-facing selection under seed `PDHD-CAL-0.1-20260907`. `calibration_coder_sheet_0_1.csv` is the blind coder-facing projection: it omits A-D slot, era, publication, place, selection role, semantic locator slug and preparation notes, and contains no proposed labels. `codebook_registry.csv` pins the exact pre-calibration manual and taxonomy blobs as `PDHD-CB-0.2-calibration`.
+
+`scripts/build_calibration_package.py --check` reproduces the committed selection and coder sheet byte for byte. `scripts/validate_calibration_package.py` enforces the structural quotas, blinding, blank response fields, codebook hashes and non-overlap with any future `reliability_manifest_0_1.csv`.
+
+The 12 calibration items do not enter the formal reliability calculation. Two real human coders must first complete independent first-pass sheets; only after those responses are frozen and discussed may PDHD version and freeze the codebook for the 84-item reliability round.
+"""
+              if marker not in text:
+                  raise RuntimeError("samples README insertion marker missing")
+              text = text.replace(marker, addition + marker, 1)
+          path.write_text(text, encoding="utf-8")
+
+          temp = Path(".github/workflows/sync-calibration-status.yml")
+          if temp.exists():
+              temp.unlink()
+
+          canonical = '''name: Validate PDHD
+
+on:
+  push:
     branches: [main]
   pull_request:
 
@@ -42,3 +107,27 @@ jobs:
         run: python scripts/build_calibration_package.py --check
       - name: Validate calibration blinding and codebook provenance
         run: python scripts/validate_calibration_package.py
+'''
+          Path(".github/workflows/validate.yml").write_text(canonical, encoding="utf-8")
+
+      - name: Validate synchronized tree
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python scripts/validate_repository.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_status_counts.py
+          python scripts/build_fragment_manifest.py --check
+          python scripts/build_calibration_package.py --check
+          python scripts/validate_calibration_package.py
+          python scripts/annotation_agreement.py --self-test
+          git diff --check
+      - name: Commit synchronized tree
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git config user.name "Fernando Sandoval"
+          git config user.email "fernando.sandoval@uacj.mx"
+          git add -A
+          git commit -m "Synchronize human calibration status"
+          git push origin HEAD:work/prepare-human-calibration-20260907
