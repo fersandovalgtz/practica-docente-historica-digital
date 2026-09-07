@@ -1,0 +1,140 @@
+name: Retrieve PDHD D072 Google Books primary windows
+
+on:
+  push:
+    branches:
+      - "work/d072-googlebooks-freeze"
+    paths:
+      - ".github/workflows/retrieve-d072-googlebooks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve current Google Books PDF
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import urllib.parse
+          import urllib.request
+
+          volume_id = "ypWS82YskN4C"
+          page_ids = ["PA111", "PA307", "PA465", "PA487"]
+          out = pathlib.Path("d072-googlebooks-review")
+          out.mkdir(exist_ok=True)
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+          }
+          report = {"volume_id": volume_id, "selected_pages": {}, "pdf_saved": False}
+          pdf_candidates = []
+
+          for page_id in page_ids:
+              page_url = f"https://books.google.com/books?id={volume_id}&pg={page_id}"
+              row = {"url": page_url}
+              try:
+                  req = urllib.request.Request(page_url, headers=headers)
+                  with urllib.request.urlopen(req, timeout=45) as response:
+                      raw = response.read()
+                      row["status"] = response.status
+                      row["content_type"] = response.headers.get("Content-Type", "")
+                  text = raw.decode("utf-8", errors="replace")
+                  decoded = html.unescape(text)
+                  candidates = re.findall(
+                      r'https?://books\.google\.com/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',
+                      decoded,
+                  )
+                  if not candidates:
+                      candidates = [
+                          urllib.parse.urljoin("https://books.google.com", m)
+                          for m in re.findall(
+                              r'href=["\']([^"\']*?/books/download/[^"\']+?\.pdf\?[^"\']+)["\']',
+                              decoded,
+                          )
+                      ]
+                  row["pdf_candidate_count"] = len(candidates)
+                  pdf_candidates.extend(candidates)
+              except Exception as exc:
+                  row["error"] = f"{type(exc).__name__}: {exc}"
+              report["selected_pages"][page_id] = row
+
+          unique = []
+          seen = set()
+          for candidate in pdf_candidates:
+              if candidate not in seen:
+                  unique.append(candidate)
+                  seen.add(candidate)
+          report["pdf_candidates"] = unique[:20]
+          pdf_url = next((u for u in unique if "output=pdf" in u), unique[0] if unique else None)
+          report["selected_pdf_url"] = pdf_url
+
+          if pdf_url:
+              try:
+                  req = urllib.request.Request(pdf_url, headers=headers)
+                  with urllib.request.urlopen(req, timeout=120) as response:
+                      body = response.read()
+                      report["pdf_status"] = response.status
+                      report["pdf_content_type"] = response.headers.get("Content-Type", "")
+                  report["pdf_bytes"] = len(body)
+                  if len(body) > 100000 and body.startswith(b"%PDF"):
+                      (out / "volume.pdf").write_bytes(body)
+                      report["pdf_saved"] = True
+              except Exception as exc:
+                  report["pdf_error"] = f"{type(exc).__name__}: {exc}"
+
+          (out / "retrieval-report.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+
+      - name: Inspect PDF structure and render broad target windows
+        shell: bash
+        run: |
+          set -u
+          out="d072-googlebooks-review"
+          if [ ! -f "$out/volume.pdf" ]; then
+            echo "No primary PDF recovered"
+            exit 0
+          fi
+          if ! command -v pdftoppm >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq poppler-utils
+          fi
+          pdfinfo "$out/volume.pdf" | tee "$out/pdfinfo.txt"
+          mkdir -p "$out/rendered"
+          # Broad windows deliberately avoid assuming that printed page equals physical PDF index.
+          # They bracket the four registered printed-page candidates with enough front-matter slack
+          # to identify the exact printed labels visually before any fragment is frozen.
+          for spec in "101 133 p111" "297 329 p307" "455 499 p465" "477 521 p487"; do
+            set -- $spec
+            first="$1"; last="$2"; label="$3"
+            pdftoppm -f "$first" -l "$last" -jpeg -r 125 "$out/volume.pdf" "$out/rendered/${label}" || true
+          done
+          ls -lh "$out/rendered" | head -200
+
+      - name: Upload one-day D072 primary-review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d072-googlebooks-review
+          path: d072-googlebooks-review/
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Require auditable primary review material
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(d072-googlebooks-review/rendered/*.jpg)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No auditable Google Books primary-page images were recovered"
+            exit 1
+          fi
+          echo "Recovered ${#files[@]} rendered primary-page images for D072 review"
