@@ -1,0 +1,141 @@
+name: Identify equivalent public copies of D074
+
+on:
+  push:
+    branches:
+      - "work/d074-primary-freeze"
+    paths:
+      - ".github/workflows/identify-d074-equivalent-copies.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  identify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fingerprint related Google Books volumes against canonical D074
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import time
+          import urllib.parse
+          import urllib.request
+
+          ids = [
+              "1HsQAAAAYAAJ", "3X8QAAAAYAAJ", "7OdDbshzWaUC", "InoQAAAAYAAJ",
+              "KH0QAAAAYAAJ", "N3wQAAAAYAAJ", "Xd0U5ozjxNgC", "e3wQAAAAYAAJ", "03wQAAAAYAAJ"
+          ]
+          fingerprints = [
+              "distribucion de las becas por entidades federativas y por clases de trabajadores",
+              "organo de consulta necesaria del Gobierno Federal",
+              "trabajo manual medio alumno manifieste gusto artistico",
+              "Funcion social de las Bibliotecas Prueba escrita",
+          ]
+          out = pathlib.Path("d074-equivalent-copy-probe")
+          out.mkdir(exist_ok=True)
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
+          }
+
+          def fetch(url, timeout=90):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=timeout) as response:
+                  return response.status, response.headers.get("Content-Type", ""), response.geturl(), response.read()
+
+          report = {}
+          for vid in ids:
+              row = {"volume_id": vid, "fingerprints": {}, "score": 0, "pdf_attempts": []}
+              for q in fingerprints:
+                  url = f"https://books.google.com/books?id={vid}&jscmd=SearchWithinVolume2&q={urllib.parse.quote(q)}"
+                  try:
+                      status, ctype, final, body = fetch(url, 45)
+                      data = json.loads(body.decode("utf-8", errors="replace"))
+                      results = [
+                          {"page_id": r.get("page_id"), "page_number": r.get("page_number"), "snippet_text": r.get("snippet_text")}
+                          for r in data.get("search_results", [])[:5]
+                      ]
+                      row["fingerprints"][q] = results
+                      if results:
+                          row["score"] += 1
+                  except Exception as exc:
+                      row["fingerprints"][q] = {"error": f"{type(exc).__name__}: {exc}"}
+                  time.sleep(0.15)
+
+              # Only attempt PDF recovery for volumes with at least two canonical fingerprints.
+              if row["score"] >= 2:
+                  selected = f"https://books.google.com/books?id={vid}&pg=PA35"
+                  try:
+                      status, ctype, final, body = fetch(selected, 60)
+                      decoded = html.unescape(body.decode("utf-8", errors="replace")).replace("\\/", "/").replace("\\u0026", "&")
+                      pdfs = re.findall(
+                          r'https?://books\.google\.[^/]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+', decoded
+                      )
+                      seen = set(); pdfs = [u for u in pdfs if not (u in seen or seen.add(u))]
+                      row["pdf_candidates"] = pdfs[:3]
+                      for attempt_no in range(1, 4):
+                          if not pdfs:
+                              break
+                          try:
+                              pstatus, pctype, pfinal, pbody = fetch(pdfs[0], 240)
+                              attempt = {
+                                  "attempt": attempt_no,
+                                  "status": pstatus,
+                                  "content_type": pctype,
+                                  "bytes": len(pbody),
+                                  "final_url": pfinal,
+                              }
+                              if pstatus == 200 and pctype.startswith("application/pdf") and pbody.startswith(b"%PDF") and len(pbody) > 1000000:
+                                  dest = out / f"equivalent-{vid}.pdf"
+                                  dest.write_bytes(pbody)
+                                  attempt["saved"] = dest.name
+                                  row["pdf_attempts"].append(attempt)
+                                  break
+                              row["pdf_attempts"].append(attempt)
+                          except Exception as exc:
+                              row["pdf_attempts"].append({"attempt": attempt_no, "error": f"{type(exc).__name__}: {exc}"})
+                          time.sleep(1.0)
+                  except Exception as exc:
+                      row["pdf_probe_error"] = f"{type(exc).__name__}: {exc}"
+              report[vid] = row
+              print("VOLUME", vid, "SCORE", row["score"])
+              for q, results in row["fingerprints"].items():
+                  print(" QUERY", q)
+                  if isinstance(results, list):
+                      for r in results:
+                          print("  ", r["page_id"], "p.", r["page_number"], "::", r["snippet_text"])
+                  else:
+                      print("  ", results)
+              print(" PDF", row.get("pdf_attempts"))
+
+          (out / "equivalence-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+      - name: Validate any equivalent PDFs by exact page fingerprints
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v pdftotext >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq poppler-utils
+          fi
+          shopt -s nullglob
+          for pdf in d074-equivalent-copy-probe/equivalent-*.pdf; do
+            base="${pdf%.pdf}"
+            pdftotext -layout "$pdf" "${base}.txt"
+            echo "=== PDF $(basename "$pdf") ==="
+            grep -Eina "SEPTIEMBRE DE 1936|AGOSTO DE 1937|distribución de las becas|DISTRIBUCION DE BECAS|consulta necesaria del Gobierno Federal|trabajo manual|Función social de las Bibliotecas" "${base}.txt" | head -120 || true
+          done
+
+      - name: Upload one-day equivalence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-equivalent-copy-probe
+          path: d074-equivalent-copy-probe/
+          retention-days: 1
+          if-no-files-found: error
