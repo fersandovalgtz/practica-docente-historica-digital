@@ -1,0 +1,156 @@
+name: Probe canonical D074 Google Books pages
+
+on:
+  push:
+    branches: [work/d074-canonical-page-recovery]
+    paths: [.github/workflows/probe-d074-canonical-pages.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect canonical public page/search routes
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import urllib.parse
+          import urllib.request
+          import urllib.error
+
+          vid = 'KRV2_jMW8-wC'
+          targets = {
+              'PA372': 'trabajo manual educacion integral',
+              'PA21': 'Consejo Nacional Educación Superior Investigación Científica',
+              'PA444': 'bibliotecas 1937 usuarios',
+              'PA35': 'distribucion becas entidades trabajadores',
+          }
+          out = pathlib.Path('d074-canonical-probe')
+          out.mkdir(exist_ok=True)
+          headers = {
+              'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
+              'Accept-Language': 'es-MX,es;q=0.9,en;q=0.8',
+          }
+
+          def fetch(url, timeout=90):
+              req = urllib.request.Request(url, headers=headers)
+              try:
+                  with urllib.request.urlopen(req, timeout=timeout) as r:
+                      return {'status': r.status, 'ctype': r.headers.get('Content-Type',''), 'final': r.geturl(), 'body': r.read()}
+              except urllib.error.HTTPError as e:
+                  return {'status': e.code, 'ctype': e.headers.get('Content-Type',''), 'final': e.geturl(), 'body': e.read(), 'error': str(e)}
+              except Exception as e:
+                  return {'status': None, 'ctype': '', 'final': url, 'body': b'', 'error': f'{type(e).__name__}: {e}'}
+
+          def safe_text(body):
+              return body.decode('utf-8', errors='replace')
+
+          report = {'volume_id': vid, 'targets': {}}
+          for pg, query in targets.items():
+              row = {'page_id': pg, 'query': query, 'search_routes': [], 'page_routes': [], 'image_candidates': []}
+
+              # SearchWithinVolume2 is a public Google Books endpoint historically
+              # used by the Books UI. It is used here only for page discovery.
+              for host in ['https://books.google.com/books', 'https://www.google.com/books']:
+                  url = host + '?' + urllib.parse.urlencode({'id': vid, 'jscmd': 'SearchWithinVolume2', 'q': query})
+                  r = fetch(url)
+                  text = safe_text(r['body'])
+                  entry = {'url': url, 'status': r['status'], 'ctype': r['ctype'], 'bytes': len(r['body']), 'final': r['final']}
+                  try:
+                      data = json.loads(text)
+                      entry['json_keys'] = sorted(data.keys()) if isinstance(data, dict) else []
+                      results = data.get('entry') or data.get('results') or [] if isinstance(data, dict) else []
+                      if isinstance(results, dict): results = [results]
+                      summary=[]
+                      for item in results[:25] if isinstance(results,list) else []:
+                          if not isinstance(item,dict): continue
+                          summary.append({k:item.get(k) for k in ['page_id','page_number','page_url','page_order','snippet_text'] if k in item})
+                      entry['entries'] = summary
+                      # Record any URL-like values without storing large OCR payloads.
+                      encoded = json.dumps(data, ensure_ascii=False)
+                      urls = re.findall(r'https?://[^"\\ ]+', encoded)
+                      entry['url_count'] = len(urls)
+                      entry['urls'] = [html.unescape(u).replace('\\u0026','&').replace('\\/','/') for u in urls[:20]]
+                  except Exception as e:
+                      entry['parse_error'] = f'{type(e).__name__}: {e}'
+                      entry['text_prefix'] = re.sub(r'\s+',' ',text[:500])
+                  row['search_routes'].append(entry)
+
+              # Selected-page HTML: inspect only route/token diagnostics around the
+              # target page id, not source text.
+              variants = [
+                  f'https://books.google.com/books?id={vid}&pg={pg}&source=gbs_selected_pages&cad=1',
+                  f'https://books.google.com/books?id={vid}&pg={pg}&hl=es',
+                  f'https://books.google.com/books?vid={vid}&pg={pg}',
+              ]
+              for url in variants:
+                  r = fetch(url)
+                  text = html.unescape(safe_text(r['body'])).replace('\\/','/').replace('\\u0026','&')
+                  entry={'url':url,'status':r['status'],'ctype':r['ctype'],'bytes':len(r['body']),'final':r['final']}
+                  entry['signals']={s: text.count(s) for s in [pg,'books/content','sig=','pageImage','page_image','BookPage','SearchWithinVolume2','pageOrder','page_id']}
+                  # Extract public content URLs and nearby fragments that may contain signed tokens.
+                  urls=[]
+                  for pat in [r'https?://[^"\'<> ]*?/books/content\?[^"\'<> ]+', r'https?://books\.googleusercontent\.com/[^"\'<> ]+']:
+                      urls += re.findall(pat,text)
+                  urls=[u.replace('&amp;','&') for u in urls]
+                  dedup=[]
+                  for u in urls:
+                      if u not in dedup: dedup.append(u)
+                  entry['content_urls']=dedup[:30]
+                  # Keep small diagnostic windows around the page id; redact long text.
+                  windows=[]
+                  for m in list(re.finditer(re.escape(pg),text))[:10]:
+                      w=text[max(0,m.start()-800):min(len(text),m.end()+1600)]
+                      w=re.sub(r'>[^<]{160,}<','><LONG_TEXT_REDACTED><',w)
+                      windows.append(w[:2400])
+                  entry['page_id_windows']=windows
+                  row['page_routes'].append(entry)
+                  row['image_candidates'].extend(dedup)
+
+              # Try only ordinary unsigned public image forms and any signed URLs
+              # actually exposed in the selected-page HTML. Placeholder-sized
+              # responses are recorded, never treated as primary evidence.
+              standard = []
+              for zoom in [1,2,3]:
+                  standard.append('https://books.google.com/books/content?' + urllib.parse.urlencode({'id':vid,'pg':pg,'img':'1','zoom':str(zoom),'hl':'es'}))
+              candidates=[]
+              for u in row['image_candidates'] + standard:
+                  if u not in candidates: candidates.append(u)
+              image_attempts=[]
+              saved=[]
+              for i,u in enumerate(candidates[:40]):
+                  r=fetch(u,timeout=120)
+                  body=r['body']; ctype=r['ctype']
+                  rec={'url':u,'status':r['status'],'ctype':ctype,'bytes':len(body),'final':r['final']}
+                  is_image=ctype.startswith('image/') or body.startswith(b'\xff\xd8\xff') or body.startswith(b'\x89PNG')
+                  rec['is_image']=is_image
+                  # Require enough bytes to avoid the known 855-byte placeholder.
+                  if is_image and len(body) > 20000:
+                      ext='.jpg' if ('jpeg' in ctype or body.startswith(b'\xff\xd8\xff')) else '.png'
+                      dest=out/f'{pg}-candidate-{i:02d}{ext}'
+                      dest.write_bytes(body)
+                      rec['saved']=dest.name
+                      saved.append(dest.name)
+                  image_attempts.append(rec)
+              row['image_attempts']=image_attempts
+              row['saved_images']=saved
+              report['targets'][pg]=row
+              print('\nTARGET',pg)
+              print(json.dumps({'search':row['search_routes'],'page_signals':[x['signals'] for x in row['page_routes']], 'image_attempts':image_attempts, 'saved':saved},ensure_ascii=False,indent=2))
+
+          (out/'probe-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+
+      - name: Upload one-day diagnostic artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-canonical-probe
+          path: d074-canonical-probe/
+          retention-days: 1
+          if-no-files-found: error
