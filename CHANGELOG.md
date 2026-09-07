@@ -1,4 +1,5 @@
 # Changelog
+- Versioned pilot substitution `PDHD-PS000003`: position 23 moves from inaccessible-for-primary-review 1937 `PDHD-D000074` to directly inspected 1939 `PDHD-D000077`; freezes `PDHD-F000089`–`PDHD-F000092` and advances the pilot to 92/96 frozen.
 
 All notable changes to PDHD are documented here.
 

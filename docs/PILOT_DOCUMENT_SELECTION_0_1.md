@@ -17,7 +17,7 @@ The previous blocking condition was the absence of primary-localized rural-teach
 - `PDHD-D000069` — *Las misiones culturales en 1927: Las escuelas normales rurales* (SEP, 1928), full-view HathiTrust object;
 - `PDHD-D000071` — *Las misiones culturales, 1932-1933* (SEP, 1933), stable Google Books object with searchable internal passages;
 - `PDHD-D000072` and `PDHD-D000073` — SEP institutional memories with direct sections on missions, rural schools, normal education and inspection;
-- `PDHD-D000074` and `PDHD-D000075` — Cardenista SEP memories with rural, regional-normal and supervision material.
+- `PDHD-D000077` and `PDHD-D000075` — Cardenista SEP memories with rural, regional-normal and supervision material; `PDHD-D000077` replaces the inaccessible-for-primary-review `PDHD-D000074` through the versioned decision `PDHD-PS000003`.
 
 These are primary documentary objects with stable digital identities. They do not depend on treating later historiography as if it were the historical source itself.
 

@@ -1,4 +1,4 @@
-name: Apply PDHD position-23 substitution
+name: Retrieve PDHD P4 Google Books title-page window
 
 on:
   push:
@@ -7,414 +7,114 @@ on:
       - ".github/workflows/retrieve-p4-googlebooks-pdf.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply:
+  retrieve:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Apply versioned substitution and freeze four slots
+      - name: Resolve current Google Books PDF link
         shell: python
         run: |
-          import csv
-          import io
+          import html
+          import json
           import pathlib
           import re
+          import urllib.parse
+          import urllib.request
 
-          ROOT = pathlib.Path('.')
-          SAMPLES = ROOT / 'data' / 'samples'
-          CATALOG = ROOT / 'data' / 'catalog'
-
-          def read_csv(path):
-              with path.open(encoding='utf-8', newline='') as f:
-                  r = csv.DictReader(f)
-                  return list(r), list(r.fieldnames or [])
-
-          def write_csv(path, rows, fields):
-              with path.open('w', encoding='utf-8', newline='') as f:
-                  w = csv.DictWriter(f, fieldnames=fields, lineterminator='\n')
-                  w.writeheader()
-                  w.writerows(rows)
-
-          def replace_once(text, old, new, label):
-              count = text.count(old)
-              if count != 1:
-                  raise RuntimeError(f'{label}: expected one occurrence, found {count}')
-              return text.replace(old, new, 1)
-
-          # 1. Register the directly inspected 1939 primary object as PDHD-D000077.
-          path = CATALOG / 'documents_balancing_w1.csv'
-          rows, fields = read_csv(path)
-          by_id = {r['document_id']: r for r in rows}
-          if 'PDHD-D000077' not in by_id:
-              rows.append({
-                  'document_id': 'PDHD-D000077',
-                  'source_id': 'GOOGLE-BOOKS',
-                  'title': 'Memoria de la Secretaría de Educación Pública',
-                  'author': 'México. Secretaría de Educación Pública',
-                  'publication': 'Memoria de la Secretaría de Educación Pública',
-                  'publication_date': '1939',
-                  'volume': '2',
-                  'issue': '',
-                  'page_start': '',
-                  'page_end': '',
-                  'place': 'México',
-                  'publisher': 'D.A.P.P.',
-                  'source_url': 'https://books.google.com/books?id=08ygAAAAMAAJ',
-                  'source_identifier': 'GB:08ygAAAAMAAJ',
-                  'accessed_at': '2026-09-07',
-                  'rights_status': 'review_required',
-                  'document_type': 'official_report',
-                  'period': '1935-1940',
-                  'era_code': 'E4',
-                  'notes': 'Direct Google Books primary PDF. Visual inspection of the title page identifies Memoria de la Secretaría de Educación Pública, septiembre de 1938-agosto de 1939, presented by Gonzalo Vázquez Vela, Tomo II, D.A.P.P., México 1939. Printed pp. 11, 21 and 27 provide directly inspected rural-normal institutional, pedagogical and source-critical evidence. Added as the position-23 replacement after the 1937 volume remained searchable/localizable but did not expose an auditable primary page image or PDF in the retrieval environment.'
-              })
-          write_csv(path, rows, fields)
-
-          # 2. Preserve the 24-position sampling design while replacing position 23.
-          path = SAMPLES / 'pilot_document_selection_0_1.csv'
-          rows, fields = read_csv(path)
-          target = [r for r in rows if r['selection_order'] == '23']
-          if len(target) != 1:
-              raise RuntimeError('pilot selection position 23 missing or duplicated')
-          target[0]['document_id'] = 'PDHD-D000077'
-          target[0]['publication'] = 'Memoria de la Secretaría de Educación Pública'
-          target[0]['place'] = 'México'
-          target[0]['document_type'] = 'official_report'
-          target[0]['era_code'] = 'E4'
-          target[0]['selection_role'] = 'cardenista_rural_policy'
-          target[0]['status'] = 'selected'
-          write_csv(path, rows, fields)
-
-          # 3. Retire secondary leads attached to the outgoing object as active promotions.
-          path = SAMPLES / 'pilot_content_leads.csv'
-          rows, fields = read_csv(path)
-          for lead_id in ('PDHD-PL000013', 'PDHD-PL000014'):
-              hit = [r for r in rows if r['content_lead_id'] == lead_id]
-              if len(hit) != 1:
-                  raise RuntimeError(f'{lead_id}: missing or duplicated')
-              row = hit[0]
-              row['promotion_status'] = 'not_eligible_for_fragment_locator'
-              row['promoted_fragment_id'] = ''
-              row['note'] = row['note'].rstrip() + ' Pilot position 23 was subsequently substituted to PDHD-D000077 after the 1937 Google Books object failed the direct-primary visual/PDF gate. This lead remains discovery provenance for the outgoing PDHD-D000074 only and no longer claims an active pilot fragment ID.'
-          write_csv(path, rows, fields)
-
-          # 4. Replace the four candidate locators with direct-primary fixed spans from D000077.
-          path = SAMPLES / 'fragment_locator_progress_threshold64_w8.csv'
-          rows, fields = read_csv(path)
-          replacements = {
-              'PDHD-F000089': {
-                  'document_id': 'PDHD-D000077', 'slot': 'A', 'page': '21',
-                  'source_locator': 'p21-caracter-ensenanza-practica-aprender-haciendo',
-                  'locator_evidence_url': 'https://books.google.com/books?id=08ygAAAAMAAJ&pg=PA21',
-                  'boundary_status': 'fixed', 'public_text_status': 'metadata_only', 'freeze_status': 'frozen',
-                  'preparation_note': 'Direct inspection of the downloaded Google Books primary PDF maps printed p. 21 to physical PDF page 24. Fix subsection d) Carácter de la enseñanza from its heading through the paragraph ending the statement that the Escuela Regional Campesina teaches through work; stop before subsection e) on agricultural teaching for adult campesinos. The unit explicitly prescribes practical learning through what the pupil does, observes and experiments, guided by the teacher, and rejects verbalist passive methods. No source text or image is committed.',
-                  'checked_at': '2026-09-07'
-              },
-              'PDHD-F000090': {
-                  'document_id': 'PDHD-D000077', 'slot': 'B', 'page': '11',
-                  'source_locator': 'p11-organizacion-departamento-ensenanza-agricola-normal-rural',
-                  'locator_evidence_url': 'https://books.google.com/books?id=08ygAAAAMAAJ&pg=PA11',
-                  'boundary_status': 'fixed', 'public_text_status': 'metadata_only', 'freeze_status': 'frozen',
-                  'preparation_note': 'Direct primary-PDF inspection maps printed p. 11 to physical PDF page 14. Fix the first two substantive paragraphs under ORGANIZACION: the rationale for creating the Departamento de Enseñanza Agrícola y Normal Rural, including improvement of in-service teachers, formation of rural teachers and agricultural specialists, and the institutional forms through which those objectives are carried out. Stop before the paragraph beginning the internal reorganization of the current year. No source text or image is committed.',
-                  'checked_at': '2026-09-07'
-              },
-              'PDHD-F000091': {
-                  'document_id': 'PDHD-D000077', 'slot': 'C', 'page': '27',
-                  'source_locator': 'p27-investigacion-region-nucleos-indigenas-estudio-especial',
-                  'locator_evidence_url': 'https://books.google.com/books?id=08ygAAAAMAAJ&pg=PA27',
-                  'boundary_status': 'fixed', 'public_text_status': 'metadata_only', 'freeze_status': 'frozen',
-                  'preparation_note': 'Direct primary-PDF inspection maps printed p. 27 to physical PDF page 30. Fix the opening paragraph defining the two-part research program: direct study of the region, population and economic/social/educational/sanitary conditions, including a specially careful study where the official source identifies unincorporated Indigenous groups, followed by technical experimental investigation. The unit is retained as source-critical evidence of the state classificatory/incorporation framework rather than as neutral description. Stop before the next paragraph on agriculture and agricultural industries.',
-                  'checked_at': '2026-09-07'
-              },
-              'PDHD-F000092': {
-                  'document_id': 'PDHD-D000077', 'slot': 'D', 'page': 'unnumbered',
-                  'source_locator': 'pdf6-title-page-sept1938-aug1939-tomo2-control',
-                  'locator_evidence_url': 'https://books.google.com/books?id=08ygAAAAMAAJ',
-                  'boundary_status': 'fixed', 'public_text_status': 'metadata_only', 'freeze_status': 'frozen',
-                  'preparation_note': 'Direct inspection of physical PDF page 6 fixes the bibliographic title-page core identifying Memoria de la Secretaría de Educación Pública, septiembre de 1938-agosto de 1939, presentation to Congress by Gonzalo Vázquez Vela, Tomo II, D.A.P.P., México 1939. Exclude the national seal, blank margins and Google digitization watermark. This is deliberately a non-analytical control.',
-                  'checked_at': '2026-09-07'
-              },
+          out = pathlib.Path("p4-googlebooks-title-page")
+          out.mkdir()
+          report = {}
+          page_url = "https://books.google.com/books?cad=1&id=O2oLAQAAIAAJ&pg=PR5&source=gbs_selected_pages"
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
           }
-          seen = set()
-          for row in rows:
-              fid = row['fragment_id']
-              if fid in replacements:
-                  row.update(replacements[fid])
-                  seen.add(fid)
-          if seen != set(replacements):
-              raise RuntimeError(f'locator replacement mismatch: {seen}')
-          write_csv(path, rows, fields)
 
-          # 5. Register the four frozen spans in a dedicated auditable shard.
-          frozen_path = SAMPLES / 'frozen_fragments_sep1939_w30.csv'
-          frozen_fields = ['fragment_id','document_id','slot','page','source_locator','locator_evidence_url','boundary_definition','transcription_status','access_basis','public_text_status','selection_role','freeze_status','preparation_note','checked_at']
-          frozen_rows = [
-              {
-                  'fragment_id':'PDHD-F000089','document_id':'PDHD-D000077','slot':'A','page':'21',
-                  'source_locator':'p21-caracter-ensenanza-practica-aprender-haciendo','locator_evidence_url':'https://books.google.com/books?id=08ygAAAAMAAJ&pg=PA21',
-                  'boundary_definition':'Printed p. 21 / physical PDF page 24, subsection d) Carácter de la enseñanza: from the subsection heading through the paragraph concluding that the Escuela Regional Campesina teaches through work; stop before subsection e) on agricultural teaching for adult campesinos.',
-                  'transcription_status':'not_transcribed','access_basis':'Google_Books_direct_primary_PDF_inspection','public_text_status':'metadata_only','selection_role':'explicit_pedagogical_act','freeze_status':'frozen',
-                  'preparation_note':'Direct visual inspection establishes a deterministic instructional unit centered on practical pupil activity, observation and experimentation under teacher guidance, while explicitly rejecting passive verbalist methods. No facsimile or historical transcription is committed.','checked_at':'2026-09-07'
-              },
-              {
-                  'fragment_id':'PDHD-F000090','document_id':'PDHD-D000077','slot':'B','page':'11',
-                  'source_locator':'p11-organizacion-departamento-ensenanza-agricola-normal-rural','locator_evidence_url':'https://books.google.com/books?id=08ygAAAAMAAJ&pg=PA11',
-                  'boundary_definition':'Printed p. 11 / physical PDF page 14 under ORGANIZACION: the first two substantive paragraphs, from the rationale for creating the Departamento de Enseñanza Agrícola y Normal Rural through the list of institutions carrying out its objectives; stop before the paragraph on current-year internal reorganization.',
-                  'transcription_status':'not_transcribed','access_basis':'Google_Books_direct_primary_PDF_inspection','public_text_status':'metadata_only','selection_role':'institutional_relation','freeze_status':'frozen',
-                  'preparation_note':'The fixed unit directly documents institutional authority and professional formation: improvement of teachers in service, formation of rural teachers and practical agricultural specialists, and the organizational instruments used by SEP.','checked_at':'2026-09-07'
-              },
-              {
-                  'fragment_id':'PDHD-F000091','document_id':'PDHD-D000077','slot':'C','page':'27',
-                  'source_locator':'p27-investigacion-region-nucleos-indigenas-estudio-especial','locator_evidence_url':'https://books.google.com/books?id=08ygAAAAMAAJ&pg=PA27',
-                  'boundary_definition':'Printed p. 27 / physical PDF page 30: the opening paragraph defining the research program, from its first sentence through the sentence ending with the experimental-work basis of the second research chapter; stop before the paragraph on agriculture and agricultural industries.',
-                  'transcription_status':'not_transcribed','access_basis':'Google_Books_direct_primary_PDF_inspection','public_text_status':'metadata_only','selection_role':'source_criticism_salient','freeze_status':'frozen',
-                  'preparation_note':'The unit is selected source-critically because it exposes the official framework for studying region, population and social conditions, including the classificatory language applied to Indigenous populations. It is evidence about state representation, not an endorsement of the categories.','checked_at':'2026-09-07'
-              },
-              {
-                  'fragment_id':'PDHD-F000092','document_id':'PDHD-D000077','slot':'D','page':'unnumbered',
-                  'source_locator':'pdf6-title-page-sept1938-aug1939-tomo2-control','locator_evidence_url':'https://books.google.com/books?id=08ygAAAAMAAJ',
-                  'boundary_definition':'Physical PDF page 6: bibliographic title-page core identifying the SEP Memoria, September 1938-August 1939 reporting period, Gonzalo Vázquez Vela, Tomo II, D.A.P.P. and México 1939; exclude seal, blank margins and digitization watermark.',
-                  'transcription_status':'not_transcribed','access_basis':'Google_Books_direct_primary_PDF_inspection','public_text_status':'metadata_only','selection_role':'control','freeze_status':'frozen',
-                  'preparation_note':'Direct visual inspection fixes a deliberately non-analytical bibliographic control and simultaneously proves that this object is the 1939 tomo II rather than the outgoing 1937 volume.','checked_at':'2026-09-07'
-              },
-          ]
-          write_csv(frozen_path, frozen_rows, frozen_fields)
+          try:
+              req = urllib.request.Request(page_url, headers=headers)
+              with urllib.request.urlopen(req, timeout=45) as response:
+                  raw = response.read()
+                  report["page_status"] = response.status
+                  report["page_content_type"] = response.headers.get("Content-Type", "")
+              text = raw.decode("utf-8", errors="replace")
+              (out / "selected-page.html").write_text(text, encoding="utf-8")
+              decoded = html.unescape(text)
 
-          # 6. Version the substitution decision.
-          path = SAMPLES / 'pilot_document_substitutions_0_1.csv'
-          rows, fields = read_csv(path)
-          if not any(r['substitution_id'] == 'PDHD-PS000003' for r in rows):
-              rows.append({
-                  'substitution_id':'PDHD-PS000003','selection_order':'23','outgoing_document_id':'PDHD-D000074','replacement_document_id':'PDHD-D000077',
-                  'reason':'The canonical 1937 SEP Memoria tomo II remained searchable and page-localizable in Google Books but repeated selected-page, signed-image and PDF recovery routes did not yield an auditable primary page image or full PDF. A linked alternate Memoria tomo II initially discovered during recovery was downloaded as a complete Google Books primary PDF; title-page inspection proved it to be the September 1938-August 1939 report, not the 1937 object. Rather than silently conflate editions, PDHD registers it as a new object and uses it as a versioned position-23 replacement because direct visual inspection supplies all four deterministic slots.',
-                  'era_effect':'none; both documents are E4 (1935-1940)','geography_effect':'none; both are México','document_type_effect':'none; both are official_report','publication_concentration_effect':'none; the SEP Memoria series remains within the pilot cap',
-                  'primary_evidence_basis':'Google Books 08ygAAAAMAAJ exposes a complete 349-page primary PDF. Physical page 6 identifies September 1938-August 1939, Tomo II, Gonzalo Vázquez Vela and México 1939; printed p. 21 / physical 24 supplies an explicit practical-teaching prescription; printed p. 11 / physical 14 supplies rural-normal institutional/professional organization; printed p. 27 / physical 30 supplies a source-critical regional and Indigenous-population research frame.','decided_at':'2026-09-07'
-              })
-          write_csv(path, rows, fields)
+              candidates = re.findall(
+                  r'https?://books\.google\.com/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',
+                  decoded,
+              )
+              if not candidates:
+                  candidates = [
+                      urllib.parse.urljoin("https://books.google.com", m)
+                      for m in re.findall(
+                          r'href=["\']([^"\']*?/books/download/[^"\']+?\.pdf\?[^"\']+)["\']',
+                          decoded,
+                      )
+                  ]
+              report["pdf_candidates"] = candidates[:10]
 
-          # 7. Structured retrieval provenance for the successful replacement route.
-          path = SAMPLES / 'retrieval_attempts.csv'
-          rows, fields = read_csv(path)
-          if not any(r['attempt_id'] == 'PDHD-RA000021' for r in rows):
-              rows.append({
-                  'attempt_id':'PDHD-RA000021','document_id':'PDHD-D000077','fragment_ids':'PDHD-F000089;PDHD-F000090;PDHD-F000091;PDHD-F000092','source_id':'GOOGLE-BOOKS','object_url':'https://books.google.com/books?id=08ygAAAAMAAJ','target':'all_four_substitution_slots','result_status':'superseded_by_locator',
-                  'blocker':'Recovery began from outgoing PDHD-D000074 (1937 tomo II). Canonical SearchWithinVolume2 resolved page candidates and page signatures, but the available browser/signed-image routes returned landing pages or tiny placeholders and no auditable 1937 scan. A linked Google Books alternate volume was then downloaded as a 10.7 MB primary PDF. Direct title-page inspection rejected any identity equivalence with 1937 and established it as the September 1938-August 1939 tomo II. Because it preserves E4, México, official-report form and Cardenista rural-normal function, it was registered as PDHD-D000077 and directly inspected at printed pp. 11, 21 and 27 plus the title page.','next_route':'pilot_substitution_registry_locator_frozen_shard_and_status_sync_completed','checked_at':'2026-09-07'
-              })
-          write_csv(path, rows, fields)
+              pdf_url = next((u for u in candidates if "output=pdf" in u), candidates[0] if candidates else None)
+              report["selected_pdf_url"] = pdf_url
+              if pdf_url:
+                  req = urllib.request.Request(pdf_url, headers=headers)
+                  with urllib.request.urlopen(req, timeout=90) as response:
+                      body = response.read()
+                      report["pdf_status"] = response.status
+                      report["pdf_content_type"] = response.headers.get("Content-Type", "")
+                  report["pdf_bytes"] = len(body)
+                  if len(body) > 100000 and body.startswith(b"%PDF"):
+                      (out / "volume1.pdf").write_bytes(body)
+                      report["pdf_saved"] = True
+                  else:
+                      (out / "pdf-response.bin").write_bytes(body)
+                      report["pdf_saved"] = False
+              else:
+                  report["pdf_saved"] = False
+          except Exception as exc:
+              report["error"] = f"{type(exc).__name__}: {exc}"
+              report["pdf_saved"] = False
 
-          # 8. Versioned prose decision.
-          path = ROOT / 'docs' / 'PILOT_DOCUMENT_SUBSTITUTION_0_1.md'
-          text = path.read_text(encoding='utf-8')
-          if '## PDHD-PS000003 — position 23' not in text:
-              text = text.rstrip() + '''\n\n## PDHD-PS000003 — position 23\n\nPilot selection position 23 changes from `PDHD-D000074` (*Memoria de la Secretaría de Educación Pública*, septiembre de 1936-agosto de 1937, tomo II) to `PDHD-D000077` (*Memoria de la Secretaría de Educación Pública*, septiembre de 1938-agosto de 1939, tomo II).\n\nThe outgoing 1937 object remains a valid catalog object and retains its discovery leads. Google Books resolves its table of contents and searchable page targets, but repeated direct retrieval attempts did not expose an auditable page image or complete PDF in the research environment. A linked alternate `Memoria: Volumen 2` resolved to Google Books `08ygAAAAMAAJ`. Its complete PDF was recovered, and primary title-page inspection proved that it is the 1938-1939 report rather than the 1937 edition. PDHD therefore does not treat it as an identity-equivalent scan: it is registered separately as `PDHD-D000077` and substituted explicitly.\n\nThe replacement preserves E4, México, `official_report`, the SEP *Memoria* documentary regime and the Cardenista rural-normal analytical function of position 23. Direct visual inspection fixes slot A at printed p. 21 / physical PDF 24 on practical teaching through pupil activity and experimentation; slot B at p. 11 / physical 14 on the Departamento de Enseñanza Agrícola y Normal Rural and teacher formation; slot C at p. 27 / physical 30 on the official regional-research and Indigenous-population classificatory frame; and slot D at physical PDF 6 as the bibliographic title-page control. The outgoing 1937 secondary leads are retained as provenance but no longer point to active pilot fragment IDs.\n'''
-          path.write_text(text, encoding='utf-8')
+          (out / "retrieval-report.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+          print(json.dumps(report, ensure_ascii=False, indent=2))
 
-          path = ROOT / 'docs' / 'PILOT_DOCUMENT_SELECTION_0_1.md'
-          text = path.read_text(encoding='utf-8')
-          text = text.replace('`PDHD-D000074` and `PDHD-D000075` — Cardenista SEP memories with rural, regional-normal and supervision material.', '`PDHD-D000077` and `PDHD-D000075` — Cardenista SEP memories with rural, regional-normal and supervision material; `PDHD-D000077` replaces the inaccessible-for-primary-review `PDHD-D000074` through the versioned decision `PDHD-PS000003`.')
-          path.write_text(text, encoding='utf-8')
-
-          # 9. Synchronize public scientific status and add the new complete batch narrative.
-          path = ROOT / 'README.md'
-          text = path.read_text(encoding='utf-8')
-          text = replace_once(text, '| Objetos documentales con identidad y localizador | **76** |', '| Objetos documentales con identidad y localizador | **77** |', 'README object count')
-          text = replace_once(text, 'Los 76 objetos forman una **cohorte de estabilización y preparación metodológica**', 'Los 77 objetos forman una **cohorte de estabilización y preparación metodológica**', 'README object prose')
-          text = replace_once(text, '| Fragmentos completamente congelados | **88 / 96** |', '| Fragmentos completamente congelados | **92 / 96** |', 'README frozen table')
-          text = replace_once(text, 'su unión contiene **88/96** fragmentos', 'su unión contiene **92/96** fragmentos', 'README frozen union')
-          text = replace_once(text, '**8 localizadores todavía no congelados**', '**4 localizadores todavía no congelados**', 'README remaining locators')
-          text = replace_once(text, 'Los **88/96** congelados demuestran el pipeline', 'Los **92/96** congelados demuestran el pipeline', 'README pipeline count')
-          text = text.replace('Los candidatos no congelados se concentran ahora en otros documentos, especialmente `PDHD-D000072` y `PDHD-D000074`, siempre sujetos al mismo gate primario.', 'Los candidatos no congelados se concentran ahora exclusivamente en `PDHD-D000072`, siempre sujetos al mismo gate primario. La posición 23 sustituyó `PDHD-D000074` por `PDHD-D000077` mediante `PDHD-PS000003`, sin confundir las ediciones de 1937 y 1939.')
-          if '`PDHD-D000077`, *Memoria de la Secretaría de Educación Pública* (1939)' not in text:
-              marker = '\n\nEl mismo PDF primario permite completar ahora los tres slots analíticos de `PDHD-D000066`.'
-              addition = '\n\n`PDHD-D000077`, *Memoria de la Secretaría de Educación Pública* (1939), sustituye de manera versionada la posición 23 después de que el tomo II de 1937 permaneciera localizable pero sin imagen primaria auditable en el entorno de recuperación. El PDF completo de Google Books `08ygAAAAMAAJ` fue inspeccionado directamente: la portada física 6 fija el control bibliográfico; la p. 21 fija un acto didáctico de enseñanza práctica mediante actividad, observación y experimentación del alumno; la p. 11 fija la organización rural-normal y la formación docente; y la p. 27 fija una unidad de crítica de fuentes sobre investigación regional y clasificación oficial de población indígena. La sustitución conserva E4, México, informe oficial y función rural-normal.\n'
-              if marker not in text:
-                  raise RuntimeError('README insertion marker missing')
-              text = text.replace(marker, addition + marker, 1)
-          path.write_text(text, encoding='utf-8')
-
-          path = ROOT / 'docs' / 'PDHD_U1_COHORT_STATUS.md'
-          text = path.read_text(encoding='utf-8')
-          text = replace_once(text, '| Object-level documents | 76 |', '| Object-level documents | 77 |', 'cohort object count')
-          text = replace_once(text, 'The 76-object cohort remains', 'The 77-object cohort remains', 'cohort object prose')
-          text = replace_once(text, '| Fully frozen fragments | **88 / 96** |', '| Fully frozen fragments | **92 / 96** |', 'cohort frozen table')
-          text = replace_once(text, '**88 units** have crossed the stronger frozen-fragment gate.', '**92 units** have crossed the stronger frozen-fragment gate.', 'cohort frozen headline')
-          text = replace_once(text, '**22 selected documents** now have complete four-slot batches.', '**23 selected documents** now have complete four-slot batches.', 'cohort complete batches')
-          text = replace_once(text, 'Eighty-eight are frozen.', 'Ninety-two are frozen.', 'cohort frozen prose')
-          text = replace_once(text, 'remaining **8** located rows', 'remaining **4** located rows', 'cohort remaining rows')
-          text = replace_once(text, 'The current 88 frozen units demonstrate', 'The current 92 frozen units demonstrate', 'cohort human coding prose')
-          text = replace_once(text, 'project is now at **96/96 localized** and **88/96 frozen**', 'project is now at **96/96 localized** and **92/96 frozen**', 'cohort decision count')
-          if '`PDHD-D000077`, *Memoria de la Secretaría de Educación Pública* (1939)' not in text:
-              marker = '\n\n`PDHD-D000073`, the 1934 SEP memory, now contributes a complete four-slot batch'
-              addition = '\n\n`PDHD-D000077`, *Memoria de la Secretaría de Educación Pública* (September 1938-August 1939, tomo II), now contributes a complete A-D batch as the versioned replacement for pilot position 23. Google Books `08ygAAAAMAAJ` exposes a complete primary PDF whose title page was visually inspected before use, preventing conflation with the outgoing 1937 tomo II. Direct inspection fixes F000089 at printed p. 21 / physical 24 as an explicit practical-teaching prescription; F000090 at p. 11 / physical 14 as the rural-normal departmental and teacher-formation unit; F000091 at p. 27 / physical 30 as source-critical evidence of the official regional and Indigenous-population research frame; and F000092 at physical 6 as a bibliographic control. The outgoing D000074 remains cataloged with its failed-access provenance.\n'
-              if marker not in text:
-                  raise RuntimeError('cohort insertion marker missing')
-              text = text.replace(marker, addition + marker, 1)
-          path.write_text(text, encoding='utf-8')
-
-          # 10. Changelog note.
-          path = ROOT / 'CHANGELOG.md'
-          text = path.read_text(encoding='utf-8')
-          note = '- Versioned pilot substitution `PDHD-PS000003`: position 23 moves from inaccessible-for-primary-review 1937 `PDHD-D000074` to directly inspected 1939 `PDHD-D000077`; freezes `PDHD-F000089`–`PDHD-F000092` and advances the pilot to 92/96 frozen.\n'
-          if note not in text:
-              lines = text.splitlines(keepends=True)
-              insert_at = 1 if lines else 0
-              lines.insert(insert_at, note)
-              text = ''.join(lines)
-          path.write_text(text, encoding='utf-8')
-
-          # 11. Restore the canonical P4 recovery workflow after using this temporary mutation runner.
-          canonical = '''name: Retrieve PDHD P4 Google Books title-page window
-
-          on:
-            push:
-              branches: [main]
-              paths:
-                - ".github/workflows/retrieve-p4-googlebooks-pdf.yml"
-
-          permissions:
-            contents: read
-
-          jobs:
-            retrieve:
-              runs-on: ubuntu-latest
-              steps:
-                - name: Resolve current Google Books PDF link
-                  shell: python
-                  run: |
-                    import html
-                    import json
-                    import pathlib
-                    import re
-                    import urllib.parse
-                    import urllib.request
-
-                    out = pathlib.Path("p4-googlebooks-title-page")
-                    out.mkdir()
-                    report = {}
-                    page_url = "https://books.google.com/books?cad=1&id=O2oLAQAAIAAJ&pg=PR5&source=gbs_selected_pages"
-                    headers = {
-                        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
-                        "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
-                    }
-
-                    try:
-                        req = urllib.request.Request(page_url, headers=headers)
-                        with urllib.request.urlopen(req, timeout=45) as response:
-                            raw = response.read()
-                            report["page_status"] = response.status
-                            report["page_content_type"] = response.headers.get("Content-Type", "")
-                        text = raw.decode("utf-8", errors="replace")
-                        (out / "selected-page.html").write_text(text, encoding="utf-8")
-                        decoded = html.unescape(text)
-
-                        candidates = re.findall(
-                            r'https?://books\\.google\\.com/books/download/[^"\\'<> ]+?\\.pdf\\?[^"\\'<> ]+',
-                            decoded,
-                        )
-                        if not candidates:
-                            candidates = [
-                                urllib.parse.urljoin("https://books.google.com", m)
-                                for m in re.findall(
-                                    r'href=["\\']([^"\\']*?/books/download/[^"\\']+?\\.pdf\\?[^"\\']+)["\\']',
-                                    decoded,
-                                )
-                            ]
-                        report["pdf_candidates"] = candidates[:10]
-
-                        pdf_url = next((u for u in candidates if "output=pdf" in u), candidates[0] if candidates else None)
-                        report["selected_pdf_url"] = pdf_url
-                        if pdf_url:
-                            req = urllib.request.Request(pdf_url, headers=headers)
-                            with urllib.request.urlopen(req, timeout=90) as response:
-                                body = response.read()
-                                report["pdf_status"] = response.status
-                                report["pdf_content_type"] = response.headers.get("Content-Type", "")
-                            report["pdf_bytes"] = len(body)
-                            if len(body) > 100000 and body.startswith(b"%PDF"):
-                                (out / "volume1.pdf").write_bytes(body)
-                                report["pdf_saved"] = True
-                            else:
-                                (out / "pdf-response.bin").write_bytes(body)
-                                report["pdf_saved"] = False
-                        else:
-                            report["pdf_saved"] = False
-                    except Exception as exc:
-                        report["error"] = f"{type(exc).__name__}: {exc}"
-                        report["pdf_saved"] = False
-
-                    (out / "retrieval-report.json").write_text(
-                        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
-                    )
-                    print(json.dumps(report, ensure_ascii=False, indent=2))
-
-                - name: Render first twelve PDF pages when available
-                  shell: bash
-                  run: |
-                    set -u
-                    out="p4-googlebooks-title-page"
-                    if [ -f "$out/volume1.pdf" ]; then
-                      if ! command -v pdftoppm >/dev/null 2>&1; then
-                        sudo apt-get update -qq
-                        sudo apt-get install -y -qq poppler-utils
-                      fi
-                      mkdir -p "$out/rendered"
-                      pdftoppm -f 1 -l 12 -jpeg -r 170 "$out/volume1.pdf" "$out/rendered/page"
-                      ls -lh "$out/rendered" || true
-                    else
-                      echo "No PDF available to render"
-                    fi
-
-                - name: Upload one-day primary-review artifact
-                  if: always()
-                  uses: actions/upload-artifact@v4
-                  with:
-                    name: pdhd-p4-googlebooks-title-page-review
-                    path: p4-googlebooks-title-page/
-                    retention-days: 1
-                    if-no-files-found: error
-
-                - name: Require at least one rendered page
-                  shell: bash
-                  run: |
-                    shopt -s nullglob
-                    files=(p4-googlebooks-title-page/rendered/*.jpg)
-                    if [ ${#files[@]} -eq 0 ]; then
-                      echo "No auditable Google Books page image was recovered"
-                      exit 1
-                    fi
-                    echo "Recovered ${#files[@]} rendered primary pages"
-          '''
-          import textwrap
-          (ROOT / '.github/workflows/retrieve-p4-googlebooks-pdf.yml').write_text(textwrap.dedent(canonical), encoding='utf-8')
-
-      - name: Run full PDHD validation suite
+      - name: Render first twelve PDF pages when available
         shell: bash
         run: |
-          set -euo pipefail
-          python scripts/validate_repository.py
-          python scripts/validate_object_aliases.py
-          python scripts/validate_content_leads.py
-          python scripts/validate_retrieval_attempts.py
-          python scripts/validate_fragment_shards.py
-          python scripts/validate_freeze_conversion_queue.py
-          python scripts/prepare_freeze_review.py --check
-          python scripts/validate_status_counts.py
-          python scripts/annotation_agreement.py --self-test
-          python scripts/build_fragment_manifest.py --check
+          set -u
+          out="p4-googlebooks-title-page"
+          if [ -f "$out/volume1.pdf" ]; then
+            if ! command -v pdftoppm >/dev/null 2>&1; then
+              sudo apt-get update -qq
+              sudo apt-get install -y -qq poppler-utils
+            fi
+            mkdir -p "$out/rendered"
+            pdftoppm -f 1 -l 12 -jpeg -r 170 "$out/volume1.pdf" "$out/rendered/page"
+            ls -lh "$out/rendered" || true
+          else
+            echo "No PDF available to render"
+          fi
 
-      - name: Commit validated scientific update
+      - name: Upload one-day primary-review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-p4-googlebooks-title-page-review
+          path: p4-googlebooks-title-page/
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Require at least one rendered page
         shell: bash
         run: |
-          set -euo pipefail
-          git config user.name "PDHD automation"
-          git config user.email "actions@users.noreply.github.com"
-          git add .
-          git diff --cached --stat
-          git commit -m "Substitute 1939 SEP memory and freeze position 23 [skip ci]"
-          git push origin HEAD:main
+          shopt -s nullglob
+          files=(p4-googlebooks-title-page/rendered/*.jpg)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No auditable Google Books page image was recovered"
+            exit 1
+          fi
+          echo "Recovered ${#files[@]} rendered primary pages"
