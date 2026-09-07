@@ -1,0 +1,67 @@
+name: Render D072 Google Books viewer
+
+on:
+  push:
+    branches:
+      - work/d072-primary-recovery-20260907
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v google-chrome || command -v chromium || command -v chromium-browser
+          google-chrome --version 2>/dev/null || chromium --version 2>/dev/null || true
+
+      - name: Render selected primary pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d072_viewer
+          BROWSER="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          for pg in PA41 PA53 PA59 PA104; do
+            url="https://books.google.com/books?id=JFRLAAAAYAAJ&pg=${pg}&hl=es&jscmd=SearchWithinVolume2"
+            echo "Rendering $pg"
+            timeout 40s "$BROWSER" \
+              --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
+              --window-size=1600,1400 --hide-scrollbars --force-device-scale-factor=1 \
+              --virtual-time-budget=15000 \
+              --screenshot="d072_viewer/${pg}.png" "$url" \
+              >"d072_viewer/${pg}.log" 2>&1 || true
+            if [ -f "d072_viewer/${pg}.png" ]; then
+              file "d072_viewer/${pg}.png"
+              sha256sum "d072_viewer/${pg}.png"
+            else
+              echo "NO_SCREENSHOT $pg"
+            fi
+            tail -20 "d072_viewer/${pg}.log" || true
+          done
+
+      - name: Basic image diversity check
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,struct
+          for p in sorted(Path('d072_viewer').glob('*.png')):
+              b=p.read_bytes()
+              w=h=None
+              if b[:8]==b'\x89PNG\r\n\x1a\n' and len(b)>=24:
+                  w,h=struct.unpack('>II',b[16:24])
+              print(p.name,'bytes',len(b),'size',w,h,'sha256',hashlib.sha256(b).hexdigest())
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: d072-google-viewer-render
+          path: d072_viewer
+          retention-days: 1
