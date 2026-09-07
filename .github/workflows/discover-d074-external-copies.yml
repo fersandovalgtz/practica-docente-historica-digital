@@ -1,0 +1,137 @@
+name: Discover external digitized copies for D074
+
+on:
+  push:
+    branches:
+      - "work/d074-primary-freeze"
+    paths:
+      - ".github/workflows/discover-d074-external-copies.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query public bibliographic repositories
+        shell: python
+        run: |
+          import json
+          import pathlib
+          import re
+          import urllib.parse
+          import urllib.request
+
+          out = pathlib.Path("d074-external-discovery")
+          out.mkdir(exist_ok=True)
+          headers = {"User-Agent": "PDHD-U1-source-verification/0.1 (+https://github.com/fersandovalgtz/practica-docente-historica-digital)"}
+
+          def fetch(url, timeout=60):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=timeout) as r:
+                  return r.status, r.headers.get("Content-Type", ""), r.geturl(), r.read()
+
+          report = {}
+
+          ia_queries = [
+              'title:"Memoria de la Secretaría de Educación Pública" AND year:1937',
+              'title:"Memoria de la Secretaria de Educacion Publica" AND year:1937',
+              'creator:"Secretaría de Educación Pública" AND year:1937 AND title:Memoria',
+              '"septiembre de 1936" AND "agosto de 1937"',
+          ]
+          ia_rows = []
+          for q in ia_queries:
+              params = urllib.parse.urlencode({
+                  "q": q,
+                  "fl[]": ["identifier", "title", "creator", "date", "year", "description", "mediatype"],
+                  "rows": 50,
+                  "page": 1,
+                  "output": "json",
+              }, doseq=True)
+              url = "https://archive.org/advancedsearch.php?" + params
+              row = {"query": q, "url": url}
+              try:
+                  status, ctype, final, body = fetch(url)
+                  data = json.loads(body.decode("utf-8", errors="replace"))
+                  row["status"] = status
+                  row["numFound"] = data.get("response", {}).get("numFound")
+                  row["docs"] = data.get("response", {}).get("docs", [])
+              except Exception as exc:
+                  row["error"] = f"{type(exc).__name__}: {exc}"
+              ia_rows.append(row)
+          report["internet_archive"] = ia_rows
+
+          ol_queries = [
+              "Memoria de la Secretaría de Educación Pública 1937",
+              "Memoria Secretaria Educacion Publica 1937 Mexico",
+          ]
+          ol_rows = []
+          for q in ol_queries:
+              url = "https://openlibrary.org/search.json?" + urllib.parse.urlencode({"q": q, "limit": 50})
+              row = {"query": q, "url": url}
+              try:
+                  status, ctype, final, body = fetch(url)
+                  data = json.loads(body.decode("utf-8", errors="replace"))
+                  docs = []
+                  for d in data.get("docs", []):
+                      years = d.get("publish_year") or []
+                      if 1937 in years or "1937" in [str(y) for y in years] or "1937" in str(d.get("first_publish_year", "")):
+                          docs.append({
+                              "key": d.get("key"),
+                              "title": d.get("title"),
+                              "author_name": d.get("author_name"),
+                              "publish_year": years[:20],
+                              "edition_key": (d.get("edition_key") or [])[:20],
+                              "ia": (d.get("ia") or [])[:20],
+                          })
+                  row["status"] = status
+                  row["numFound"] = data.get("numFound")
+                  row["1937_candidates"] = docs
+              except Exception as exc:
+                  row["error"] = f"{type(exc).__name__}: {exc}"
+              ol_rows.append(row)
+          report["open_library"] = ol_rows
+
+          # HathiTrust public catalog discovery only. This does not attempt page-image access.
+          hathi_queries = [
+              '"Memoria de la Secretaría de Educación Pública" 1937 Mexico',
+              '"Memoria de la Secretaria de Educacion Publica" 1937',
+          ]
+          hathi_rows = []
+          for q in hathi_queries:
+              url = "https://catalog.hathitrust.org/Search/Home?" + urllib.parse.urlencode({"lookfor": q, "type": "all", "inst": ""})
+              row = {"query": q, "url": url}
+              try:
+                  status, ctype, final, body = fetch(url)
+                  text = body.decode("utf-8", errors="replace")
+                  row.update({"status": status, "content_type": ctype, "bytes": len(body), "final_url": final})
+                  # Keep only bibliographic/result snippets and hrefs likely to resolve records.
+                  row["record_links"] = list(dict.fromkeys(re.findall(r'href=["\']([^"\']*(?:Record|pt\?id=)[^"\']*)', text, flags=re.I)))[:50]
+                  plain = re.sub(r"<script\b.*?</script>", " ", text, flags=re.I|re.S)
+                  plain = re.sub(r"<style\b.*?</style>", " ", plain, flags=re.I|re.S)
+                  plain = re.sub(r"<[^>]+>", " ", plain)
+                  plain = re.sub(r"\s+", " ", plain)
+                  hits = []
+                  for phrase in ["1937", "Memoria de la Secretaría", "Memoria de la Secretaria", "Educación Pública", "Educacion Publica"]:
+                      pos = plain.lower().find(phrase.lower())
+                      if pos >= 0:
+                          hits.append(plain[max(0,pos-250):pos+500])
+                  row["text_hits"] = hits[:20]
+              except Exception as exc:
+                  row["error"] = f"{type(exc).__name__}: {exc}"
+              hathi_rows.append(row)
+          report["hathitrust_catalog"] = hathi_rows
+
+          (out / "external-copy-discovery.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+
+      - name: Upload one-day external discovery artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-external-copy-discovery
+          path: d074-external-discovery/
+          retention-days: 1
+          if-no-files-found: error
