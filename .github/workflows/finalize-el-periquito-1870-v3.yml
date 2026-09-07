@@ -1,0 +1,109 @@
+name: Finalize El Periquito 6 Nov 1870 primary batch v3
+
+on:
+  push:
+    branches: [freeze-el-periquito-1870]
+    paths:
+      - ".github/workflows/finalize-el-periquito-1870-v3.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reuse vetted promotion and restore canonical status markers
+        shell: python
+        run: |
+          import pathlib,re,textwrap
+          p=pathlib.Path('.github/workflows/finalize-el-periquito-1870.yml')
+          text=p.read_text(encoding='utf-8')
+          m=re.search(r'      - name: Promote exact four-page primary batch\n        shell: python\n        run: \|\n(.*?)\n      - name: Remove temporary El Periquito workflows',text,re.S)
+          if not m:
+              raise SystemExit('could not locate vetted promotion block')
+          code=textwrap.dedent(m.group(1))
+          old='https://hndm.iib.unam.mx/consulta/publicacion/visualizar/558075be7d1e63c9fea1a3df?intPagina=1&tipo=publicacion&anio=1870&mes=11&dia=6'
+          new='https://www.hndm.unam.mx/consulta/publicacion/visualizar/558075be7d1e63c9fea1a3df?intPagina=1&tipo=publicacion&anio=1870&mes=11&dia=6'
+          if code.count(old)!=1:
+              raise SystemExit(f'expected one alias-host target, got {code.count(old)}')
+          code=code.replace(old,new,1)
+          exec(compile(code,'<el-periquito-vetted-promotion>','exec'),{})
+
+          readme=pathlib.Path('README.md')
+          t=readme.read_text(encoding='utf-8')
+          if 'Queda **1 slot sin localizador**' not in t:
+              raise SystemExit('expected singular README marker from promotion block')
+          t=t.replace('Queda **1 slot sin localizador**','Quedan **1 slots sin localizador**',1)
+          readme.write_text(t,encoding='utf-8')
+
+          cohort=pathlib.Path('docs/PDHD_U1_COHORT_STATUS.md')
+          c=cohort.read_text(encoding='utf-8')
+          if '**1 slot remains without a locator.**' not in c:
+              raise SystemExit('expected singular cohort marker from promotion block')
+          c=c.replace('**1 slot remains without a locator.**','**1 slots remain without a locator.**',1)
+          cohort.write_text(c,encoding='utf-8')
+
+      - name: Remove temporary El Periquito workflows
+        shell: bash
+        run: |
+          rm -f .github/workflows/probe-el-periquito-1870.yml
+          rm -f .github/workflows/retrieve-el-periquito-1870.yml
+          rm -f .github/workflows/finalize-el-periquito-1870.yml
+          rm -f .github/workflows/finalize-el-periquito-1870-v2.yml
+          rm -f .github/workflows/finalize-el-periquito-1870-v3.yml
+
+      - name: Run canonical validation suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_repository.py
+          python scripts/validate_object_aliases.py
+          python scripts/validate_content_leads.py
+          python scripts/validate_retrieval_attempts.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_freeze_conversion_queue.py
+          python scripts/prepare_freeze_review.py --check
+          python scripts/validate_status_counts.py
+          python scripts/annotation_agreement.py --self-test
+          python scripts/build_fragment_manifest.py --check
+
+      - name: Gate effective final tree including new shards
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          { git diff --name-only origin/main -- .; git ls-files --others --exclude-standard; } | sed '/^$/d' | sort -u > /tmp/changed
+          cat /tmp/changed
+          cat > /tmp/allowed <<'EOF'
+          README.md
+          data/catalog/object_aliases.csv
+          data/samples/fragment_gap_queue_0_1.csv
+          data/samples/fragment_locator_progress_el_periquito_w14.csv
+          data/samples/fragment_locator_progress_hndm_el_periquito1870_w25.csv
+          data/samples/frozen_fragments_hndm_el_periquito1870_w25.csv
+          data/samples/retrieval_attempts.csv
+          docs/OBJECT_CROSSWALK_LOG.md
+          docs/PDHD_U1_COHORT_STATUS.md
+          EOF
+          sort -u /tmp/allowed -o /tmp/allowed
+          bad=$(comm -23 /tmp/changed /tmp/allowed || true)
+          missing=$(comm -13 /tmp/changed /tmp/allowed || true)
+          if [ -n "$bad" ]; then echo 'Unexpected final-tree paths:'; echo "$bad"; exit 1; fi
+          if [ -n "$missing" ]; then echo 'Missing expected final-tree paths:'; echo "$missing"; exit 1; fi
+          if grep -q '^\.github/workflows/' /tmp/changed; then echo 'temporary workflow leaked into final tree'; exit 1; fi
+
+      - name: Commit and push clean scientific tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Fernando Sandoval'
+          git config user.email 'fernando.sandoval@uacj.mx'
+          git add README.md data/catalog/object_aliases.csv data/samples/fragment_gap_queue_0_1.csv data/samples/fragment_locator_progress_el_periquito_w14.csv data/samples/fragment_locator_progress_hndm_el_periquito1870_w25.csv data/samples/frozen_fragments_hndm_el_periquito1870_w25.csv data/samples/retrieval_attempts.csv docs/OBJECT_CROSSWALK_LOG.md docs/PDHD_U1_COHORT_STATUS.md
+          git add -u .github/workflows/
+          git commit -m 'Freeze El Periquito 6 Nov 1870 primary batch'
+          git push origin HEAD:freeze-el-periquito-1870
