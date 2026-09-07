@@ -20,7 +20,9 @@ jobs:
           fetch-depth: 0
 
       - name: Apply canonical promotion
-        run: python scripts/promote_d067_surrogate_20260907.py
+        run: |
+          python scripts/promote_d067_surrogate_20260907.py
+          python scripts/fix_d067_substitution_provenance_20260907.py
 
       - name: Validate repository
         run: |
@@ -40,7 +42,7 @@ jobs:
         run: |
           git config user.name 'Fernando Sandoval'
           git config user.email 'fernando.sandoval@uacj.mx'
-          git add README.md docs/PILOT_DOCUMENT_SELECTION_0_1.md docs/PILOT_DOCUMENT_SUBSTITUTION_0_1.md docs/PDHD_U1_COHORT_STATUS.md data/catalog/documents_balancing_w1.csv data/samples/pilot_document_selection_0_1.csv data/samples/fragment_locator_progress_0_1.csv data/samples/frozen_fragments_0_1.csv data/samples/fragment_gap_queue_0_1.csv data/samples/pilot_document_substitutions_0_1.csv
+          git add README.md docs/PILOT_DOCUMENT_SELECTION_0_1.md docs/PILOT_DOCUMENT_SUBSTITUTION_0_1.md docs/PDHD_U1_COHORT_STATUS.md data/catalog/documents_balancing_w1.csv data/samples/pilot_document_selection_0_1.csv data/samples/fragment_locator_progress_0_1.csv data/samples/frozen_fragments_0_1.csv data/samples/fragment_gap_queue_0_1.csv data/samples/pilot_document_substitutions_0_1.csv data/samples/retrieval_attempts.csv
           git diff --cached --check
           git commit -m 'Substitute inaccessible D067 and freeze position 16'
           git push origin HEAD:work/d067-primary-surrogate-20260907
