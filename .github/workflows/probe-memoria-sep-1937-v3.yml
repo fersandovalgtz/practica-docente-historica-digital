@@ -1,4 +1,4 @@
-name: Probe alternate Google Books copies for Memoria SEP 1937
+name: Resolve browsable Memoria SEP copies by date and title page
 
 on:
   push:
@@ -9,80 +9,96 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Cross-check alternate copies by internal content and access
+      - name: Resolve bibliographic identity and primary title-page access
         shell: python
         run: |
           import html, json, pathlib, re, urllib.parse, urllib.request
-          out=pathlib.Path('memoria-sep-1937-alternates'); out.mkdir()
+          out=pathlib.Path('memoria-sep-1937-identity'); out.mkdir()
           ids=['KRV2_jMW8-wC','1HsQAAAAYAAJ','3X8QAAAAYAAJ','7OdDbshzWaUC','InoQAAAAYAAJ','KH0QAAAAYAAJ','N3wQAAAAYAAJ','Xd0U5ozjxNgC','e3wQAAAAYAAJ','03wQAAAAYAAJ','X3oQAAAAYAAJ']
           headers={'User-Agent':'Mozilla/5.0 PDHD-source-verification/0.1'}
-          probes={
-            'manual':'trabajo manual aplicaciones conocimientos',
-            'consejo':'CONSEJO NACIONAL DE LA EDUCACION SUPERIOR Y DE LA INVESTIGACION',
-            'becas':'DISTRIBUCION DE BECAS EN LA REPUBLICA',
-            'bibliotecas':'bibliotecas lectores asistencia',
-          }
           def get(url,timeout=180):
               try:
                   req=urllib.request.Request(url,headers=headers)
                   with urllib.request.urlopen(req,timeout=timeout) as r:
                       b=r.read(); return {'ok':True,'status':r.status,'final_url':r.geturl(),'content_type':r.headers.get('content-type',''),'bytes':len(b),'body':b}
               except Exception as e: return {'ok':False,'error':repr(e),'body':b''}
-          def textmeta(txt):
-              def one(pattern):
-                  m=re.search(pattern,txt,re.I|re.S); return html.unescape(m.group(1)).strip() if m else None
-              return {
-                'html_title':one(r'<title>(.*?)</title>'),
-                'meta_title':one(r'<meta[^>]+(?:name|property)=["\'](?:title|og:title)["\'][^>]+content=["\']([^"\']+)["\']'),
-                'date_candidates':list(dict.fromkeys(re.findall(r'\b(?:19(?:2[0-9]|3[0-9]))\b',txt)))[:20],
-                'flags':{k:(m.group(1).lower() if (m:=re.search(r'"?'+k+r'"?\s*[:=]\s*(true|false)',txt,re.I)) else None) for k in ['is_ebook','can_download_pdf','is_browsable','is_public_domain','has_scanned_text','has_flowing_text']},
-              }
-          report={'target':'Memoria SEP 1936-1937','copies':[]}
+          def save(name,r): (out/name).write_bytes(r.get('body',b''))
+          def urls(txt):
+              s=html.unescape(txt).replace('\\u0026','&').replace('\\/','/')
+              got=[]
+              for pat in [r'https://books\.google\.com/books/content[^"\'<> ]+',r'https://books\.googleusercontent\.com/books/content[^"\'<> ]+',r'["\']([^"\']*books/content[^"\']*)["\']']:
+                  for u in re.findall(pat,s,re.I):
+                      if u.startswith('//'): u='https:'+u
+                      if u.startswith('/'): u='https://books.google.com'+u
+                      if u.startswith('http') and u not in got: got.append(u)
+              return got
+          report=[]
           for bid in ids:
-              c={'id':bid,'known_negative_control':bid=='X3oQAAAAYAAJ'}
-              r=get(f'https://books.google.com/books?id={bid}')
-              c['about']={'ok':r['ok'],'status':r.get('status'),'bytes':r.get('bytes'),'final_url':r.get('final_url'),'error':r.get('error')}
-              txt=''
-              if r['ok']:
-                  txt=r['body'].decode('utf-8','ignore'); c['metadata']=textmeta(txt)
-                  (out/f'about_{bid}.html').write_bytes(r['body'])
-                  exposed=[]
-                  s=html.unescape(txt).replace('\\u0026','&').replace('\\/','/')
-                  for pat in [r'href=["\']([^"\']*output=download_pdf[^"\']*)["\']',r'"pdfUrl"\s*:\s*"([^"]+)"']:
-                      for u in re.findall(pat,s,re.I):
-                          if u.startswith('/'): u='https://books.google.com'+u
-                          if u.startswith('http') and u not in exposed: exposed.append(u)
-                  c['pdf_urls']=exposed[:10]
-              matches={}
-              for key,q in probes.items():
-                  u='https://books.google.com/books?'+urllib.parse.urlencode({'id':bid,'jscmd':'SearchWithinVolume2','q':q})
-                  sr=get(u); x={'ok':sr['ok'],'status':sr.get('status'),'bytes':sr.get('bytes'),'error':sr.get('error')}
+              c={'id':bid}
+              # Exact per-volume API is stronger bibliographic metadata than keyword API search.
+              ar=get('https://www.googleapis.com/books/v1/volumes/'+bid)
+              c['api']={'ok':ar['ok'],'status':ar.get('status'),'bytes':ar.get('bytes'),'error':ar.get('error')}
+              if ar['ok']:
+                  save('api_'+bid+'.json',ar)
+                  try:
+                      j=json.loads(ar['body']); vi=j.get('volumeInfo',{}); ai=j.get('accessInfo',{})
+                      c['volumeInfo']={k:vi.get(k) for k in ['title','subtitle','authors','publisher','publishedDate','description','pageCount','printType','language','industryIdentifiers']}
+                      c['accessInfo']={k:ai.get(k) for k in ['viewability','embeddable','publicDomain','textToSpeechPermission','pdf','epub','webReaderLink','accessViewStatus']}
+                  except Exception as e: c['api_parse_error']=repr(e)
+              # Search exact report-period phrases and title-frontmatter markers.
+              searches={}
+              for key,q in {
+                'period':'septiembre 1936 agosto 1937',
+                'period2':'1936-1937',
+                'secretario':'Secretaria de Educacion Publica 1937',
+                'manual':'trabajo manual aplicaciones conocimientos',
+              }.items():
+                  sr=get('https://books.google.com/books?'+urllib.parse.urlencode({'id':bid,'jscmd':'SearchWithinVolume2','q':q}))
+                  x={'ok':sr['ok'],'status':sr.get('status'),'bytes':sr.get('bytes'),'error':sr.get('error')}
                   if sr['ok']:
-                      st=sr['body'].decode('utf-8','ignore')
+                      save(f'search_{bid}_{key}.txt',sr)
                       try:
-                          j=json.loads(st); x['number_of_results']=j.get('number_of_results'); x['search_results']=j.get('search_results',[])
-                      except Exception as e: x['parse_error']=repr(e); x['head']=st[:1000]
-                      (out/f'search_{bid}_{key}.txt').write_bytes(sr['body'])
-                  matches[key]=x
-              c['matches']=matches
-              c['fingerprint_score']=sum(1 for x in matches.values() if (x.get('number_of_results') or 0)>0)
-              c['candidate_1937_content']=((matches['manual'].get('number_of_results') or 0)>0 and (matches['consejo'].get('number_of_results') or 0)>0)
-              # Fetch only PDF URLs explicitly exposed by this copy.
-              for i,u in enumerate(c.get('pdf_urls',[])):
-                  pr=get(u,300); meta={'url':u,'ok':pr['ok'],'status':pr.get('status'),'bytes':pr.get('bytes'),'content_type':pr.get('content_type'),'final_url':pr.get('final_url'),'error':pr.get('error')}
-                  c.setdefault('pdf_fetches',[]).append(meta)
-                  if pr['ok'] and 'pdf' in (pr.get('content_type') or '').lower() and 10000 < pr.get('bytes',0) < 150_000_000:
-                      (out/f'candidate_{bid}_{i}.pdf').write_bytes(pr['body'])
-              report['copies'].append(c)
-              print('COPY',json.dumps(c,ensure_ascii=False)[:12000])
+                          j=json.loads(sr['body']); x['number_of_results']=j.get('number_of_results'); x['search_results']=j.get('search_results',[])
+                      except Exception as e: x['parse_error']=repr(e)
+                  searches[key]=x
+              c['searches']=searches
+              # Follow every distinct page returned for period searches plus common title-page labels.
+              page_ids=[]
+              for key in ['period','period2','secretario']:
+                  for hit in searches[key].get('search_results',[]):
+                      p=hit.get('page_id')
+                      if p and p not in page_ids: page_ids.append(p)
+              for p in ['PP1','PP3','PP5','PR1','PR3','PR5','PA1']:
+                  if p not in page_ids: page_ids.append(p)
+              inspected=[]
+              for p in page_ids[:15]:
+                  rr=get('https://books.google.com/books?'+urllib.parse.urlencode({'id':bid,'pg':p}))
+                  item={'page_id':p,'ok':rr['ok'],'status':rr.get('status'),'bytes':rr.get('bytes'),'final_url':rr.get('final_url'),'error':rr.get('error')}
+                  if rr['ok']:
+                      txt=rr['body'].decode('utf-8','ignore'); item['contains_page_id']=p in txt
+                      item['flags']={k:(m.group(1).lower() if (m:=re.search(r'"?'+k+r'"?\s*[:=]\s*(true|false)',txt,re.I)) else None) for k in ['is_browsable','is_public_domain','can_download_pdf']}
+                      cand=urls(txt)
+                      # Keep only this book's own image URLs; related-edition covers are noise.
+                      cand=[u for u in cand if ('id='+bid) in u]
+                      item['image_urls']=cand[:10]
+                      save(f'page_{bid}_{p.replace("-","_")}.html',rr)
+                      for k,u in enumerate(cand[:4]):
+                          ir=get(u); im={'url':u,'ok':ir['ok'],'status':ir.get('status'),'bytes':ir.get('bytes'),'content_type':ir.get('content_type'),'error':ir.get('error')}
+                          item.setdefault('image_fetches',[]).append(im)
+                          if ir['ok'] and (ir.get('content_type') or '').startswith('image/') and ir.get('bytes',0)>2500:
+                              save(f'image_{bid}_{p.replace("-","_")}_{k}.jpg',ir)
+                  inspected.append(item)
+              c['pages']=inspected
+              report.append(c)
+              print('IDENTITY',json.dumps(c,ensure_ascii=False)[:18000])
           (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
           print('SUMMARY')
-          for c in report['copies']:
-              print(c['id'],'fingerprint',c['fingerprint_score'],'target_content',c['candidate_1937_content'],'flags',c.get('metadata',{}).get('flags'),'title',c.get('metadata',{}).get('html_title'),'pdfs',len(c.get('pdf_urls',[])))
-          print('FILES',[p.name for p in out.iterdir() if p.suffix=='.pdf'])
-      - name: Upload alternate-copy audit artifact
+          for c in report:
+              print(c['id'],c.get('volumeInfo',{}).get('publishedDate'),c.get('volumeInfo',{}).get('pageCount'),c.get('accessInfo',{}).get('viewability'),'period_hits',c['searches']['period'].get('number_of_results'),'manual',c['searches']['manual'].get('number_of_results'))
+          print('IMAGES',len(list(out.glob('image_*.jpg'))))
+      - name: Upload identity review artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pdhd-memoria-sep-1937-alternate-copies
-          path: memoria-sep-1937-alternates/
+          name: pdhd-memoria-sep-1937-identity
+          path: memoria-sep-1937-identity/
           retention-days: 1
