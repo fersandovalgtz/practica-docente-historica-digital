@@ -1,0 +1,149 @@
+name: Apply D056 substitution
+
+on:
+  push:
+    branches: [fix/substitute-d053-with-d056]
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.event.head_commit.message != 'Apply D056 substitution package'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/substitute-d053-with-d056
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply substitution package
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import csv
+
+          root = Path('.')
+          s = root / 'data/samples'
+
+          def load(path):
+              with path.open(encoding='utf-8', newline='') as f:
+                  r = csv.DictReader(f)
+                  return list(r), r.fieldnames
+
+          def write(path, rows, fields):
+              with path.open('w', encoding='utf-8', newline='') as f:
+                  w = csv.DictWriter(f, fieldnames=fields, lineterminator='\n')
+                  w.writeheader(); w.writerows(rows)
+
+          # Position 13: D053 -> D056.
+          p = s/'pilot_document_selection_0_1.csv'
+          rows, fields = load(p)
+          for r in rows:
+              if r['selection_order'] == '13':
+                  if r['document_id'] not in {'PDHD-D000053','PDHD-D000056'}:
+                      raise SystemExit('unexpected document at selection order 13')
+                  r['document_id'] = 'PDHD-D000056'
+          write(p, rows, fields)
+
+          # Retire active locator rows tied to outgoing D053.
+          for name, ids in {
+              'fragment_locator_progress_el_maestro_secondary_w7.csv': {'PDHD-F000049','PDHD-F000051'},
+              'fragment_locator_progress_primary_ocr_w13.csv': {'PDHD-F000050'},
+              'fragment_locator_progress_threshold72_w9.csv': {'PDHD-F000052'},
+          }.items():
+              p = s/name; rows, fields = load(p)
+              rows = [r for r in rows if r['fragment_id'] not in ids]
+              write(p, rows, fields)
+
+          loc_fields = ['fragment_id','document_id','slot','page','source_locator','locator_evidence_url','boundary_status','public_text_status','freeze_status','preparation_note','checked_at']
+          loc_rows = [
+            {'fragment_id':'PDHD-F000049','document_id':'PDHD-D000056','slot':'A','page':'83','source_locator':'ia-bookreader-n86-p83-ensenanza-dibujo-ejercicios-suplementarios','locator_evidence_url':'https://archive.org/download/n1n3elmaestrorev02mexi/page/n86','boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen','preparation_note':'Direct primary-image inspection of El Maestro, tomo II, núm. I, October 1921 fixes printed p. 83 / BookReader n86 in La enseñanza del dibujo. The bounded exercise sequence explicitly directs the teacher to show objects, require drawings, take pupils to a cinematograph presentation and have them reproduce what they observed. It is selected only after visual review as a clear instructional-action span; no source image or full transcription is committed.','checked_at':'2026-09-07'},
+            {'fragment_id':'PDHD-F000050','document_id':'PDHD-D000056','slot':'B','page':'scan-n5','source_locator':'ia-bookreader-n5-oct1921-sep-imprint','locator_evidence_url':'https://archive.org/download/n1n3elmaestrorev02mexi/page/n5','boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen','preparation_note':'Direct inspection of BookReader n5 fixes the issue-specific institutional imprint for tomo II, núm. I: Secretaría de Educación Pública / Talleres Gráficos de la Nación and México, octubre de 1921. The span is bounded to the imprint block and supplies an institutional-relation unit distinct from the cover control.','checked_at':'2026-09-07'},
+            {'fragment_id':'PDHD-F000051','document_id':'PDHD-D000056','slot':'C','page':'57','source_locator':'ia-bookreader-n60-p57-mistral-vasconcelos-publicaciones-pedagogicas','locator_evidence_url':'https://archive.org/download/n1n3elmaestrorev02mexi/page/n60','boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen','preparation_note':'Direct primary-image inspection fixes printed p. 57 / BookReader n60 in Gabriela Mistral’s letter to José Vasconcelos. The bounded passage discusses pedagogical publications, teacher formation and the relation between technical instruction, reading and formative culture. It is retained as source-critical evidence of the early SEP cultural project rather than as a predetermined positive pedagogical label.','checked_at':'2026-09-07'},
+            {'fragment_id':'PDHD-F000052','document_id':'PDHD-D000056','slot':'D','page':'scan-n4','source_locator':'ia-bookreader-n4-t2n1-oct1921-cover','locator_evidence_url':'https://archive.org/download/n1n3elmaestrorev02mexi/page/n4','boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen','preparation_note':'Direct inspection of BookReader n4 fixes the bibliographic cover cartouche identifying El Maestro, Revista de Cultura Nacional, tomo II, número I, octubre de 1921, México. The decorative illustration is excluded; the cartouche is retained as a deliberately non-analytical control.','checked_at':'2026-09-07'},
+          ]
+          write(s/'fragment_locator_progress_el_maestro_oct1921_w29.csv', loc_rows, loc_fields)
+
+          old = s/'frozen_fragments_el_maestro_t2n3_w17.csv'
+          if old.exists(): old.unlink()
+          fr_fields = ['fragment_id','document_id','slot','page','source_locator','locator_evidence_url','boundary_definition','transcription_status','access_basis','public_text_status','selection_role','freeze_status','preparation_note','checked_at']
+          fr_rows = [
+            {'fragment_id':'PDHD-F000049','document_id':'PDHD-D000056','slot':'A','page':'83','source_locator':'ia-bookreader-n86-p83-ensenanza-dibujo-ejercicios-suplementarios','locator_evidence_url':'https://archive.org/download/n1n3elmaestrorev02mexi/page/n86','boundary_definition':'BookReader n86 / printed p. 83, La enseñanza del dibujo: the compact supplementary-exercises block in which the teacher presents objects or visual material, asks pupils to draw them, takes the class to a cinematograph presentation, and has pupils reproduce what they observed; stop before the text changes to the next exercise/topic.','transcription_status':'not_transcribed','access_basis':'Internet_Archive_direct_primary_image_inspection','public_text_status':'metadata_only','selection_role':'explicit_pedagogical_act','freeze_status':'frozen','preparation_note':'Primary visual inspection confirms an explicit sequence of teacher actions and pupil tasks, satisfying deterministic slot A without relying on OCR or educational context alone. No facsimile or full historical transcription is committed.','checked_at':'2026-09-07'},
+            {'fragment_id':'PDHD-F000050','document_id':'PDHD-D000056','slot':'B','page':'scan-n5','source_locator':'ia-bookreader-n5-oct1921-sep-imprint','locator_evidence_url':'https://archive.org/download/n1n3elmaestrorev02mexi/page/n5','boundary_definition':'BookReader n5: the institutional imprint block beginning with Secretaría de Educación Pública, including Talleres Gráficos de la Nación and the address line, and ending with México, octubre de 1921.','transcription_status':'not_transcribed','access_basis':'Internet_Archive_direct_primary_image_inspection','public_text_status':'metadata_only','selection_role':'institutional_relation','freeze_status':'frozen','preparation_note':'The issue-specific SEP/Talleres imprint is visually verified and structurally separate from the cover, providing a compact institutional-authority unit for slot B.','checked_at':'2026-09-07'},
+            {'fragment_id':'PDHD-F000051','document_id':'PDHD-D000056','slot':'C','page':'57','source_locator':'ia-bookreader-n60-p57-mistral-vasconcelos-publicaciones-pedagogicas','locator_evidence_url':'https://archive.org/download/n1n3elmaestrorev02mexi/page/n60','boundary_definition':'BookReader n60 / printed p. 57: the contiguous source-critical portion of Gabriela Mistral’s letter to José Vasconcelos discussing pedagogical publications and the formation/instruction of teachers and readers; bound the unit to the argument before the letter shifts to a different topic.','transcription_status':'not_transcribed','access_basis':'Internet_Archive_direct_primary_image_inspection','public_text_status':'metadata_only','selection_role':'source_criticism_salient','freeze_status':'frozen','preparation_note':'The passage is selected because it documents a historically salient internal critique of pedagogical publication and formation within the early SEP cultural project. Selection is source-critical, not a predicted annotation.','checked_at':'2026-09-07'},
+            {'fragment_id':'PDHD-F000052','document_id':'PDHD-D000056','slot':'D','page':'scan-n4','source_locator':'ia-bookreader-n4-t2n1-oct1921-cover','locator_evidence_url':'https://archive.org/download/n1n3elmaestrorev02mexi/page/n4','boundary_definition':'BookReader n4: bibliographic cover cartouche identifying El Maestro / Revista de Cultura Nacional, tomo II, número I, octubre de 1921, México; exclude the surrounding decorative illustration.','transcription_status':'not_transcribed','access_basis':'Internet_Archive_direct_primary_image_inspection','public_text_status':'metadata_only','selection_role':'control','freeze_status':'frozen','preparation_note':'The issue-identification cartouche is a visually verified, deliberately non-analytical control span. No source image or full source text is committed.','checked_at':'2026-09-07'},
+          ]
+          write(s/'frozen_fragments_el_maestro_oct1921_w29.csv', fr_rows, fr_fields)
+
+          p = s/'pilot_content_leads.csv'; rows, fields = load(p)
+          for r in rows:
+              if r['content_lead_id'] == 'PDHD-PL000009':
+                  r['promotion_status']='not_eligible_for_fragment_locator'; r['promoted_fragment_id']=''
+                  r['note']="A UNAM thesis cites Gabriela Mistral's Lecturas escolares. El cardo in El Maestro, tomo II, no. III, diciembre de 1921, pp. 299-300. The pointer was originally cross-walked to pilot position 13 and later checked against the primary images. Direct inspection confirmed the pages but rejected the passage for slot A because it lacks an explicit pedagogical action or instructional prescription. After D000053 was substituted out of the pilot, this lead remains discovery provenance only and has no active promoted_fragment_id."
+              if r['content_lead_id'] == 'PDHD-PL000010':
+                  r['promotion_status']='not_eligible_for_fragment_locator'; r['promoted_fragment_id']=''
+                  r['note']='A peer-reviewed Historia de la Educación study identifies Democracia Criolla in El Maestro 2(3), pp. 293-297. The pointer was originally cross-walked to pilot position 13; direct primary inspection later fixed the relevant p. 294 scene. When D000053 was substituted out of the pilot because its slot A could not be satisfied, this content lead was retired from the active fragment crosswalk and is preserved only as historical discovery provenance.'
+          write(p, rows, fields)
+
+          p = s/'retrieval_attempts.csv'; rows, fields = load(p)
+          rows = [r for r in rows if r['attempt_id'] not in {'PDHD-RA000006','PDHD-RA000013'}]
+          if not any(r['attempt_id']=='PDHD-RA000020' for r in rows):
+              rows.append({'attempt_id':'PDHD-RA000020','document_id':'PDHD-D000056','fragment_ids':'PDHD-F000049;PDHD-F000050;PDHD-F000051;PDHD-F000052','source_id':'INTERNET-ARCHIVE','object_url':'https://archive.org/details/n1n3elmaestrorev02mexi','target':'all_four_substitution_slots','result_status':'superseded_by_locator','blocker':'Pilot position 13 originally used the December 1921 issue, but exhaustive OCR-assisted discovery followed by direct primary-page inspection found no passage meeting deterministic slot A without weakening the explicit pedagogical-act rule. The October 1921 issue in the same bound Internet Archive object was therefore evaluated as a stratification-preserving substitute. Direct images verify the October cover at n4, SEP/Talleres imprint at n5, Gabriela Mistral letter on printed p. 57 / n60, and La enseñanza del dibujo on printed p. 83 / n86.','next_route':'pilot_substitution_registry_locator_frozen_shards_and_status_sync_completed','checked_at':'2026-09-07'})
+          write(p, rows, fields)
+
+          sub_fields=['substitution_id','selection_order','outgoing_document_id','replacement_document_id','reason','era_effect','geography_effect','document_type_effect','publication_concentration_effect','primary_evidence_basis','decided_at']
+          sub_rows=[{'substitution_id':'PDHD-PS000001','selection_order':'13','outgoing_document_id':'PDHD-D000053','replacement_document_id':'PDHD-D000056','reason':'Exhaustive primary inspection of El Maestro tomo II núm. 3 (December 1921) did not identify a defensible explicit pedagogical act or instructional prescription for deterministic slot A. Candidate El Cardo and all lexical-survivor pages failed the slot-fit gate. El Maestro tomo II núm. 1 (October 1921) contains a directly inspected explicit instructional sequence in La enseñanza del dibujo and supports all four deterministic slots.','era_effect':'none; both documents are E3 (1921-1934)','geography_effect':'none; both are México','document_type_effect':'none; both are issue','publication_concentration_effect':'none; El Maestro remains four of 24 selected documents','primary_evidence_basis':'Internet Archive n4/n5 identify tomo II núm. I and México, octubre de 1921; n60 / printed p. 57 supplies source-critical evidence; n86 / printed p. 83 supplies an explicit teacher-action sequence.','decided_at':'2026-09-07'}]
+          write(s/'pilot_document_substitutions_0_1.csv', sub_rows, sub_fields)
+
+          p = root/'README.md'; t = p.read_text(encoding='utf-8')
+          t=t.replace('| Fragmentos completamente congelados | **83 / 96** |','| Fragmentos completamente congelados | **84 / 96** |')
+          t=t.replace('su unión contiene **83/96** fragmentos','su unión contiene **84/96** fragmentos')
+          t=t.replace('**12 localizadores todavía no congelados**','**11 localizadores todavía no congelados**')
+          t=t.replace('Los **83/96** congelados demuestran el pipeline','Los **84/96** congelados demuestran el pipeline')
+          old='*El Maestro* suma ahora cuatro congelamientos adicionales a su primer lote completo. En tomo II, núm. 3, `PDHD-F000050` fija en `n237` el bloque institucional de la Secretaría de Educación Pública y Talleres Gráficos de la Nación, mientras `PDHD-F000052` fija en `n236` el cartucho bibliográfico de portada como control. La portada identifica explícitamente tomo II, número III, diciembre de 1921 y la imprenta independiente confirma México, diciembre de 1921. Para los números 2 y 4 de 1921, `PDHD-F000044` y `PDHD-F000048` quedan congelados como controles mediante los cartuchos bibliográficos de las portadas primarias `n104` y `n4`, respectivamente.'
+          new='*El Maestro* aporta ahora cuatro lotes completos dentro del piloto. La posición 13 sustituye el tomo II, núm. 3 de diciembre por el tomo II, núm. 1 de octubre de 1921 después de que la inspección exhaustiva del número saliente no encontrara un acto pedagógico explícito defendible para el slot A. La sustitución conserva era, lugar, tipo documental y concentración editorial. `PDHD-F000049`–`PDHD-F000052` quedan fijados en la edición de octubre: p. 83 / `n86` para la secuencia didáctica de *La enseñanza del dibujo*, `n5` para la imprenta institucional SEP/Talleres, p. 57 / `n60` para la carta de Gabriela Mistral a Vasconcelos y `n4` para la portada bibliográfica. La decisión se versiona en `data/samples/pilot_document_substitutions_0_1.csv`.'
+          if old in t: t=t.replace(old,new)
+          old='La fase reciente ha reforzado especialmente la revista *El Maestro*. El primer número y los números 2 y 4 de 1921 tienen ya lotes A–D completos; el tomo II, núm. 3 conserva `PDHD-F000049` como su único slot pendiente porque la lectura escolar *El Cardo* no satisface por sí misma el requisito de acto pedagógico explícito. Los restantes candidatos no congelados se concentran ahora en ese slot y en los bloques documentales `PDHD-D000067`, `PDHD-D000072` y `PDHD-D000074`, todos sujetos al mismo gate de inspección primaria.\n\n`PDHD-F000051` cruza ahora ese gate en *El Maestro*, tomo II, núm. 3. La recuperación corregida de Internet Archive permitió inspeccionar directamente la p. 294 (`n305`) de *Democracia Criolla* y fijar un bloque narrativo compacto sobre explicación de la función electoral, incomprensión rural y mediación política. En cambio, la inspección directa de *El Cardo* confirma `PDHD-F000049` en pp. 299–300 (`n310`–`n311`) pero no lo congela: el pasaje funciona como lectura escolar, aunque no contiene por sí mismo la acción o prescripción pedagógica explícita exigida por el slot A. Esta decisión negativa queda preservada como evidencia metodológica.'
+          new='La fase reciente ha reforzado especialmente la revista *El Maestro*. Los cuatro objetos de la revista incluidos en el piloto tienen ya lotes A–D completos. El antiguo número de diciembre (`PDHD-D000053`) fue retirado de la posición 13 sólo después de una búsqueda exhaustiva: *El Cardo* y los demás candidatos inspeccionados no satisfacen el requisito de acto pedagógico explícito. El reemplazo `PDHD-D000056`, octubre de 1921, sí ofrece en p. 83 / `n86` una secuencia instruccional inequívoca y conserva sin cambios la estratificación. Los candidatos no congelados se concentran ahora en `PDHD-D000067`, `PDHD-D000072` y `PDHD-D000074`, todos sujetos al mismo gate de inspección primaria.\n\nLa decisión negativa sobre diciembre no se borra: los content leads y la evidencia de recuperación permanecen como provenance histórico, pero ya no apuntan a IDs activos del piloto. Esta separación evita convertir un contexto educativo débil en evidencia pedagógica positiva y mantiene `fragment_freezing != annotation`.'
+          if old in t: t=t.replace(old,new)
+          old='`PDHD-F000050` y `PDHD-F000052`, correspondientes a *El Maestro*, tomo II, núm. 3, ya cruzaron el gate de imagen primaria. El workflow corregido recuperó BookReader `n232–n238`; la inspección directa fija `F000050` en el bloque institucional SEP/Talleres de `n237` y `F000052` en el cartucho bibliográfico de la portada `n236`. `n238` comienza *La inconsciencia de la hora* en la p. 227 y confirma la secuencia interna del número.'
+          new='`PDHD-F000049`–`PDHD-F000052`, correspondientes ahora a *El Maestro*, tomo II, núm. 1, cruzaron el gate completo de imagen primaria. La inspección directa fija `F000049` en p. 83 / `n86`, `F000050` en el bloque institucional de `n5`, `F000051` en p. 57 / `n60` y `F000052` en el cartucho bibliográfico de `n4`. La portada e imprenta identifican de manera independiente octubre de 1921.'
+          if old in t: t=t.replace(old,new)
+          p.write_text(t,encoding='utf-8')
+
+          p=root/'docs/PDHD_U1_COHORT_STATUS.md'; t=p.read_text(encoding='utf-8')
+          t=t.replace('| Fully frozen fragments | **83 / 96** |','| Fully frozen fragments | **84 / 96** |')
+          t=t.replace('**83 units** have crossed the stronger frozen-fragment gate.','**84 units** have crossed the stronger frozen-fragment gate.')
+          t=t.replace('**20 selected documents** now have complete four-slot batches.','**21 selected documents** now have complete four-slot batches.')
+          old='Internet Archive contributes four additional image-verified controls plus the institutional region of *El Maestro*. `PDHD-F000050` and `PDHD-F000052` are fixed from BookReader leaves `n237` and `n236` in tomo II, núm. 3. `PDHD-F000044` uses the issue-II cover cartouche at `n104`; `PDHD-F000048` uses the issue-IV cover cartouche at `n4`. These conversions preserve `reader_page_target != analytical_span`: the reader route supported retrieval, while the final boundary came only from visual inspection of the primary image.\n\nThe corrected tomo II, núm. 3 recovery now adds `PDHD-F000051` from printed p. 294 / BookReader `n305` as a directly inspected source-critical span in *Democracia Criolla*. The same inspection maps *El Cardo* to pp. 299–300 / `n310`–`n311`, strengthening `PDHD-F000049` to a direct primary locator while deliberately leaving it unfrozen: the visible literary school-reading unit does not itself satisfy slot A’s explicit pedagogical-act requirement. This preserves a failed-fit decision rather than converting mere educational context into a positive pedagogical fragment.'
+          new='Internet Archive now supplies a complete four-slot batch for the substituted pilot position 13. Exhaustive review of the outgoing December 1921 issue (`PDHD-D000053`) confirmed that *El Cardo* and the remaining lexical candidates do not satisfy deterministic slot A without weakening the explicit-act rule. The pilot therefore substitutes `PDHD-D000056`, *El Maestro*, tomo II, núm. I, October 1921. The substitution preserves E3, México, document type `issue` and the four-document publication concentration.\n\nDirect primary inspection fixes `PDHD-F000049` on printed p. 83 / BookReader `n86` in *La enseñanza del dibujo*, where a compact sequence specifies teacher demonstrations, pupil drawings, a cinematograph visit and subsequent reproduction of what was observed. `PDHD-F000050` fixes the SEP/Talleres institutional imprint at `n5`; `PDHD-F000051` fixes a source-critical passage in Gabriela Mistral’s letter to José Vasconcelos on printed p. 57 / `n60`; and `PDHD-F000052` fixes the October 1921 bibliographic cover at `n4` as the control. The failed December fit remains versioned as provenance, while its former pilot-ID links are retired.'
+          if old in t: t=t.replace(old,new)
+          t=t.replace('Eighty-three are frozen. The remaining **12** located rows','Eighty-four are frozen. The remaining **11** located rows')
+          t=t.replace('The current 77 frozen units demonstrate','The current 84 frozen units demonstrate')
+          t=t.replace('**83/96 frozen**','**84/96 frozen**')
+          p.write_text(t,encoding='utf-8')
+
+          (root/'docs/PILOT_DOCUMENT_SUBSTITUTION_0_1.md').write_text('''# PDHD pilot document substitution 0.1\n\nDecision date: **2026-09-07**\n\nPilot selection position 13 changes from `PDHD-D000053` (*El Maestro*, tomo II, núm. 3, December 1921) to `PDHD-D000056` (*El Maestro*, tomo II, núm. 1, October 1921).\n\nThe outgoing issue was directly inspected. Its candidate *El Cardo* and the remaining OCR-assisted lexical survivors failed the deterministic slot-A requirement because they did not contain a defensible explicit pedagogical action or instructional prescription. Freezing such a passage would have weakened the protocol.\n\nThe replacement was selected only after direct primary inspection. BookReader `n4` identifies tomo II, núm. I, October 1921; `n5` independently identifies the Secretaría de Educación Pública / Talleres Gráficos imprint and México, October 1921; printed p. 57 / `n60` supplies a source-critical passage in Gabriela Mistral's letter to José Vasconcelos; and printed p. 83 / `n86` in *La enseñanza del dibujo* contains an explicit sequence of teacher and pupil actions.\n\nThe substitution has no effect on pilot stratification: era remains E3, place remains México, documentary type remains `issue`, and *El Maestro* remains four of the 24 selected documents. Fragment IDs `PDHD-F000049`–`PDHD-F000052` remain stable because they are deterministically tied to selection position 13.\n\nThe outgoing December discoveries remain in provenance-oriented records without active pilot-fragment promotion links. The machine-readable decision is stored in `data/samples/pilot_document_substitutions_0_1.csv`.\n''', encoding='utf-8')
+          PY
+      - name: Run canonical validation suite
+        run: |
+          python scripts/validate_repository.py
+          python scripts/validate_object_aliases.py
+          python scripts/validate_content_leads.py
+          python scripts/validate_retrieval_attempts.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_freeze_conversion_queue.py
+          python scripts/prepare_freeze_review.py --check
+          python scripts/validate_status_counts.py
+          python scripts/annotation_agreement.py --self-test
+          python scripts/build_fragment_manifest.py --check
+      - name: Commit validated package
+        run: |
+          git config user.name 'Fernando Sandoval'
+          git config user.email 'fernando.sandoval@uacj.mx'
+          git add README.md docs data/samples
+          git commit -m 'Apply D056 substitution package'
+          git push origin HEAD:fix/substitute-d053-with-d056
