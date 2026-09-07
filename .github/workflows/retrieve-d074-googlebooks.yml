@@ -1,0 +1,197 @@
+name: Retrieve PDHD D074 Google Books primary evidence
+
+on:
+  push:
+    branches:
+      - "work/d074-primary-freeze"
+    paths:
+      - ".github/workflows/retrieve-d074-googlebooks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe candidate Google Books volume IDs and recover primary PDF when available
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import urllib.parse
+          import urllib.request
+
+          volume_ids = ["KRV2_jMW8-wC", "08ygAAAAMAAJ"]
+          target_pages = ["PA40", "PA41", "PA371", "PA444"]
+          out = pathlib.Path("d074-googlebooks-review")
+          out.mkdir(exist_ok=True)
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+          }
+          report = {"volumes": {}}
+
+          def fetch_bytes(url, timeout=60):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=timeout) as response:
+                  return response.status, response.headers.get("Content-Type", ""), response.geturl(), response.read()
+
+          for volume_id in volume_ids:
+              vout = out / volume_id
+              vout.mkdir(exist_ok=True)
+              row = {"volume_id": volume_id, "pages": {}, "pdf_candidates": []}
+
+              # Public Books API metadata establishes whether this exact object is
+              # the 1937 volume 2 and whether Google currently exposes a PDF route.
+              api_url = f"https://www.googleapis.com/books/v1/volumes/{volume_id}"
+              try:
+                  status, ctype, final_url, body = fetch_bytes(api_url)
+                  data = json.loads(body.decode("utf-8"))
+                  vi = data.get("volumeInfo", {})
+                  ai = data.get("accessInfo", {})
+                  row["api"] = {
+                      "status": status,
+                      "title": vi.get("title"),
+                      "subtitle": vi.get("subtitle"),
+                      "authors": vi.get("authors"),
+                      "publisher": vi.get("publisher"),
+                      "publishedDate": vi.get("publishedDate"),
+                      "pageCount": vi.get("pageCount"),
+                      "printType": vi.get("printType"),
+                      "viewability": ai.get("viewability"),
+                      "publicDomain": ai.get("publicDomain"),
+                      "accessViewStatus": ai.get("accessViewStatus"),
+                      "embeddable": ai.get("embeddable"),
+                      "pdf": ai.get("pdf"),
+                      "webReaderLink": ai.get("webReaderLink"),
+                  }
+                  (vout / "books-api.json").write_text(
+                      json.dumps(row["api"], ensure_ascii=False, indent=2), encoding="utf-8"
+                  )
+                  pdf = ai.get("pdf") or {}
+                  if pdf.get("downloadLink"):
+                      row["pdf_candidates"].append(pdf["downloadLink"])
+              except Exception as exc:
+                  row["api_error"] = f"{type(exc).__name__}: {exc}"
+
+              # Selected-page HTML sometimes contains a current signed PDF link even
+              # when the API does not. Capture only route metadata, not source text.
+              for page_id in target_pages:
+                  page_url = (
+                      f"https://books.google.com/books?cad=1&id={volume_id}&pg={page_id}"
+                      "&source=gbs_selected_pages"
+                  )
+                  prow = {"url": page_url}
+                  try:
+                      status, ctype, final_url, body = fetch_bytes(page_url)
+                      text = body.decode("utf-8", errors="replace")
+                      decoded = html.unescape(text).replace("\\/", "/").replace("\\u0026", "&")
+                      prow.update({"status": status, "content_type": ctype, "bytes": len(body)})
+                      pdfs = re.findall(
+                          r'https?://books\.google\.[^/]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',
+                          decoded,
+                      )
+                      if not pdfs:
+                          pdfs = [
+                              urllib.parse.urljoin("https://books.google.com", m)
+                              for m in re.findall(
+                                  r'href=["\']([^"\']*?/books/download/[^"\']+?\.pdf\?[^"\']+)["\']',
+                                  decoded,
+                              )
+                          ]
+                      prow["pdf_candidate_count"] = len(pdfs)
+                      row["pdf_candidates"].extend(pdfs)
+
+                      # Capture search-within-volume endpoint clues if present.
+                      search_endpoints = re.findall(
+                          r'https?://books\.google\.[^"\'<> ]+jscmd=SearchWithinVolume2[^"\'<> ]*',
+                          decoded,
+                      )
+                      prow["search_endpoint_count"] = len(search_endpoints)
+                  except Exception as exc:
+                      prow["error"] = f"{type(exc).__name__}: {exc}"
+                  row["pages"][page_id] = prow
+
+              # De-duplicate and attempt candidate PDFs in order.
+              unique = []
+              seen = set()
+              for candidate in row["pdf_candidates"]:
+                  candidate = html.unescape(candidate)
+                  if candidate not in seen:
+                      seen.add(candidate)
+                      unique.append(candidate)
+              row["pdf_candidates"] = unique[:20]
+              row["pdf_saved"] = False
+              for idx, pdf_url in enumerate(unique[:8], start=1):
+                  try:
+                      status, ctype, final_url, body = fetch_bytes(pdf_url, timeout=180)
+                      attempt = {
+                          "url": pdf_url,
+                          "status": status,
+                          "content_type": ctype,
+                          "bytes": len(body),
+                          "final_url": final_url,
+                      }
+                      if len(body) > 100000 and body.startswith(b"%PDF"):
+                          dest = vout / "volume.pdf"
+                          dest.write_bytes(body)
+                          attempt["saved"] = dest.name
+                          row["pdf_saved"] = True
+                          row["pdf_attempt"] = attempt
+                          break
+                      row.setdefault("pdf_attempts", []).append(attempt)
+                  except Exception as exc:
+                      row.setdefault("pdf_attempts", []).append({
+                          "url": pdf_url,
+                          "error": f"{type(exc).__name__}: {exc}",
+                      })
+
+              report["volumes"][volume_id] = row
+              print(json.dumps(row, ensure_ascii=False, indent=2))
+
+          (out / "retrieval-report.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+
+      - name: Render target neighborhoods from any recovered primary PDF
+        shell: bash
+        run: |
+          set -u
+          out="d074-googlebooks-review"
+          if ! command -v pdftoppm >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq poppler-utils
+          fi
+          recovered=0
+          for volume in KRV2_jMW8-wC 08ygAAAAMAAJ; do
+            pdf="$out/$volume/volume.pdf"
+            if [ ! -f "$pdf" ]; then
+              echo "$volume: no PDF recovered"
+              continue
+            fi
+            recovered=$((recovered+1))
+            pdfinfo "$pdf" | tee "$out/$volume/pdfinfo.txt"
+            mkdir -p "$out/$volume/rendered"
+            # Deliberately broad windows. Printed-page identity must be visually
+            # established before any locator is promoted; no fixed front-matter
+            # offset is assumed here.
+            for spec in "28 58 p40-p41" "355 390 p371" "428 463 p444"; do
+              set -- $spec
+              first="$1"; last="$2"; label="$3"
+              pdftoppm -f "$first" -l "$last" -jpeg -r 135 "$pdf" "$out/$volume/rendered/$label" || true
+            done
+          done
+          echo "Recovered PDF objects: $recovered"
+
+      - name: Upload one-day D074 primary-review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-googlebooks-review
+          path: d074-googlebooks-review/
+          retention-days: 1
+          if-no-files-found: error
