@@ -1,0 +1,90 @@
+name: Render D074 canonical pages with Google Books viewer
+
+on:
+  push:
+    branches: [work/d074-canonical-page-recovery]
+    paths: [.github/workflows/render-d074-embedded-viewer.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build documented Embedded Viewer test page
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d074-viewer/rendered d074-viewer/dom
+          cat > d074-viewer/viewer.html <<'HTML'
+          <!doctype html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>PDHD D074 primary page review</title>
+            <script src="https://www.google.com/books/jsapi.js"></script>
+            <style>
+              html,body{margin:0;padding:0;background:white;font-family:sans-serif}
+              #status{height:54px;padding:8px;box-sizing:border-box;font-size:14px}
+              #viewerCanvas{width:1280px;height:1650px;margin:0 auto}
+            </style>
+          </head>
+          <body data-state="boot">
+            <div id="status">Loading canonical Google Books volume…</div>
+            <div id="viewerCanvas"></div>
+            <script>
+              const target = new URLSearchParams(location.search).get('pg') || 'PA372';
+              document.body.dataset.target = target;
+              google.books.load({language:'es'});
+              function initialize(){
+                const viewer = new google.books.DefaultViewer(document.getElementById('viewerCanvas'));
+                window.viewer = viewer;
+                viewer.load('KRV2_jMW8-wC',
+                  function(){document.body.dataset.state='not_found';document.getElementById('status').textContent='Viewer load failed for '+target;},
+                  function(){
+                    document.body.dataset.state='loaded';
+                    let ok=false;
+                    try{ ok=viewer.goToPageId(target); }catch(e){ document.body.dataset.error=String(e); }
+                    document.body.dataset.goto=String(ok);
+                    document.getElementById('status').textContent='Target '+target+'; goToPageId='+ok;
+                    setTimeout(function(){
+                      try{
+                        document.body.dataset.currentPageId=viewer.getPageId() || '';
+                        document.body.dataset.currentPageNumber=viewer.getPageNumber() || '';
+                        document.body.dataset.state='settled';
+                        document.getElementById('status').textContent += '; current='+document.body.dataset.currentPageId+' / '+document.body.dataset.currentPageNumber;
+                      }catch(e){document.body.dataset.error2=String(e);}
+                    },7000);
+                  }
+                );
+              }
+              google.books.setOnLoadCallback(initialize);
+            </script>
+          </body>
+          </html>
+          HTML
+      - name: Render target page IDs in headless Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then echo 'Chrome/Chromium not available'; exit 1; fi
+          echo "Using $CHROME"
+          (cd d074-viewer && python3 -m http.server 8765 --bind 127.0.0.1 >server.log 2>&1 & echo $! > server.pid)
+          sleep 2
+          for pg in PA372 PA21 PA444 PA35; do
+            echo "Rendering $pg"
+            "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --window-size=1400,1800 --virtual-time-budget=22000 --screenshot="d074-viewer/rendered/${pg}.png" "http://127.0.0.1:8765/viewer.html?pg=${pg}" >"d074-viewer/chrome-${pg}.log" 2>&1 || true
+            "$CHROME" --headless=new --no-sandbox --disable-gpu --virtual-time-budget=22000 --dump-dom "http://127.0.0.1:8765/viewer.html?pg=${pg}" >"d074-viewer/dom/${pg}.html" 2>"d074-viewer/dom/${pg}.err" || true
+            ls -lh "d074-viewer/rendered/${pg}.png" || true
+            grep -o '<body[^>]*>' "d074-viewer/dom/${pg}.html" || true
+          done
+      - name: Upload one-day visual-review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-embedded-viewer-review
+          path: d074-viewer/
+          retention-days: 1
+          if-no-files-found: error
