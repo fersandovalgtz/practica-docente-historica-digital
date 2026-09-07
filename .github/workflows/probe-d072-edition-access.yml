@@ -1,0 +1,52 @@
+name: Classify D072 hidden-edition access
+
+on:
+  push:
+    branches:
+      - work/d072-primary-recovery-20260907
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Classify exact Google Books objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,urllib.request,urllib.parse,re,html
+          ids=['JFRLAAAAYAAJ','VFRLAAAAYAAJ','e_M8bhjM9N0C','FSwx9QqSVPcC','VngQAAAAYAAJ','aVRLAAAAYAAJ','_nkQAAAAYAAJ','mHgQAAAAYAAJ']
+          UA='Mozilla/5.0 PDHD-research/0.1'
+          def get(u):
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(u,headers={'User-Agent':UA,'Accept-Language':'es-MX,es;q=0.9'}),timeout=45) as r:
+                      return r.status,r.headers.get('content-type',''),r.geturl(),r.read()
+              except Exception as e: return None,'','',repr(e).encode()
+          for vid in ids:
+              st,ct,final,b=get(f'https://www.googleapis.com/books/v1/volumes/{vid}')
+              try: obj=json.loads(b)
+              except Exception: obj={}
+              vi=obj.get('volumeInfo',{}); ai=obj.get('accessInfo',{}); si=obj.get('saleInfo',{})
+              api={
+                'id':vid,'http':st,'title':vi.get('title'),'publishedDate':vi.get('publishedDate'),'publisher':vi.get('publisher'),
+                'pageCount':vi.get('pageCount'),'viewability':ai.get('viewability'),'publicDomain':ai.get('publicDomain'),
+                'embeddable':ai.get('embeddable'),'pdf':ai.get('pdf'),'epub':ai.get('epub'),'webReaderLink':ai.get('webReaderLink'),
+                'accessViewStatus':ai.get('accessViewStatus'),'country':ai.get('country'),'saleability':si.get('saleability')}
+              print('\nAPI',json.dumps(api,ensure_ascii=False))
+              st2,ct2,final2,b2=get(f'https://books.google.com/books?id={vid}&printsec=frontcover&hl=es')
+              s=b2.decode('utf-8','replace')
+              # Surface only ordinary links that explicitly advertise PDF/full view/download.
+              links=[]
+              for m in re.findall(r'href=["\']([^"\']+)',s,re.I):
+                  u=html.unescape(m.replace('\\u0026','&'))
+                  if any(x in u.lower() for x in ['download','output=1','jscmd=searchwithinvolume2']): links.append(urllib.parse.urljoin(final2 or 'https://books.google.com/',u))
+              labels=[]
+              plain=re.sub(r'<[^>]+>',' ',s); plain=re.sub(r'\s+',' ',html.unescape(plain))
+              for term in ['Full view','Vista completa','Vista previa restringida','No preview','Download PDF','Descargar PDF']:
+                  if term.lower() in plain.lower(): labels.append(term)
+              print('HTML',json.dumps({'http':st2,'ctype':ct2,'bytes':len(b2),'final':final2,'labels':labels,'links':list(dict.fromkeys(links))[:30]},ensure_ascii=False))
+          PY
