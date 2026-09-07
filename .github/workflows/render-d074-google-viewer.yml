@@ -1,0 +1,119 @@
+name: Render D074 canonical Google Books viewer
+
+on:
+  push:
+    branches:
+      - work/d074-primary-freeze
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start headless Chrome with DevTools
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d074-viewer
+          BROWSER="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$BROWSER" --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
+            --window-size=1600,1400 --hide-scrollbars --remote-debugging-port=9222 \
+            --user-data-dir=/tmp/pdhd-d074-chrome about:blank >d074-viewer/chrome.log 2>&1 &
+          echo $! > d074-viewer/chrome.pid
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:9222/json/version >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:9222/json/version > d074-viewer/version.json
+
+      - name: Capture canonical candidate pages and network evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const candidates = [
+            ['A','PA372','trabajo manual debe ser esencialmente practico factor esencial educacion integral alumno'],
+            ['B','PA21','Consejo Nacional Educacion Superior Investigacion Cientifica organo consulta necesaria'],
+            ['C','PA54','Funcion social de las Bibliotecas Prueba escrita'],
+            ['D1','PA35','distribucion de las becas por entidades federativas y por clases de trabajadores'],
+            ['D2','PA36','DISTRIBUCION DE BECAS EN LA REPUBLICA'],
+            ['D3','PA39','becas correspondiente a cada Entidad Federativa'],
+          ];
+          const vid='KRV2_jMW8-wC';
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+          async function main(){
+            const targets=await (await fetch('http://127.0.0.1:9222/json')).json();
+            const target=targets.find(x=>x.type==='page');
+            if(!target) throw new Error('No Chrome page target');
+            const ws=new WebSocket(target.webSocketDebuggerUrl);
+            let seq=0; const pending=new Map(); let network=[];
+            ws.onmessage=ev=>{
+              const msg=JSON.parse(ev.data);
+              if(msg.method==='Network.responseReceived'){
+                const r=msg.params.response||{};
+                const u=r.url||''; const mt=r.mimeType||'';
+                if(/books\/content|googleusercontent|books\.google|image/i.test(u+' '+mt)) network.push({url:u,status:r.status,mimeType:mt,fromDiskCache:r.fromDiskCache,fromServiceWorker:r.fromServiceWorker});
+              }
+              if(msg.id&&pending.has(msg.id)){
+                const {resolve,reject}=pending.get(msg.id); pending.delete(msg.id);
+                if(msg.error) reject(new Error(JSON.stringify(msg.error))); else resolve(msg.result||{});
+              }
+            };
+            await new Promise((resolve,reject)=>{ws.onopen=resolve;ws.onerror=reject;});
+            const send=(method,params={})=>new Promise((resolve,reject)=>{
+              const id=++seq;pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));
+              setTimeout(()=>{if(pending.has(id)){pending.delete(id);reject(new Error('CDP timeout '+method));}},25000);
+            });
+            await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable');
+            await send('Emulation.setDeviceMetricsOverride',{width:1600,height:1400,deviceScaleFactor:1,mobile:false});
+
+            for(const [slot,pg,q] of candidates){
+              network=[];
+              const url=`https://books.google.com/books?id=${vid}&pg=${pg}&dq=${encodeURIComponent(q)}&hl=es`;
+              console.log('NAVIGATE',slot,pg,url);
+              await send('Page.navigate',{url});
+              await sleep(15000);
+              const diag=await send('Runtime.evaluate',{expression:`JSON.stringify({title:document.title,url:location.href,ready:document.readyState,text:(document.body&&document.body.innerText||'').slice(0,7000),imgs:[...document.images].slice(0,60).map(i=>({src:i.currentSrc||i.src,w:i.naturalWidth,h:i.naturalHeight,alt:i.alt||''})),links:[...document.links].slice(0,100).map(a=>({text:(a.innerText||'').slice(0,120),href:a.href})).filter(x=>/read|preview|vista|leer|page|books/i.test(x.text+' '+x.href))})`,returnByValue:true});
+              fs.writeFileSync(`d074-viewer/${slot}-${pg}.json`,diag.result.value||'{}');
+              fs.writeFileSync(`d074-viewer/${slot}-${pg}-network.json`,JSON.stringify(network,null,2));
+              const shot=await send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
+              fs.writeFileSync(`d074-viewer/${slot}-${pg}.png`,Buffer.from(shot.data,'base64'));
+              console.log(slot,pg,'PNG_BYTES',Buffer.byteLength(shot.data,'base64'),'NETWORK_MATCHES',network.length);
+            }
+            ws.close();
+          }
+          main().catch(e=>{console.error(e);process.exit(1);});
+          NODE
+
+      - name: Report evidence quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,hashlib,struct
+          for p in sorted(Path('d074-viewer').glob('*.png')):
+              b=p.read_bytes(); w=h=None
+              if b[:8]==b'\x89PNG\r\n\x1a\n' and len(b)>=24: w,h=struct.unpack('>II',b[16:24])
+              print('\nIMAGE',p.name,'bytes',len(b),'size',w,h,'sha256',hashlib.sha256(b).hexdigest())
+              j=p.with_suffix('.json')
+              if j.exists():
+                  o=json.loads(j.read_text()); print('TITLE',o.get('title')); print('URL',o.get('url')); print('TEXT', (o.get('text') or '')[:1800]); print('IMAGES',o.get('imgs'))
+              n=p.with_name(p.stem+'-network.json')
+              if n.exists():
+                  rows=json.loads(n.read_text()); print('NETWORK',rows[:40])
+          PY
+          kill "$(cat d074-viewer/chrome.pid)" 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-canonical-viewer-render
+          path: d074-viewer/
+          retention-days: 1
+          if-no-files-found: error
