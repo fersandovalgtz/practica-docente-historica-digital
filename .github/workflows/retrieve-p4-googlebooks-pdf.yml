@@ -1,4 +1,4 @@
-name: Retrieve PDHD P4 Google Books title-page window
+name: Retrieve PDHD final Google Books primary batches
 
 on:
   push:
@@ -13,108 +13,226 @@ jobs:
   retrieve:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve current Google Books PDF link
+      - name: Install PDF tools
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+
+      - name: Recover exact primary PDFs and target page windows
         shell: python
         run: |
+          import hashlib
           import html
           import json
           import pathlib
           import re
+          import subprocess
           import urllib.parse
           import urllib.request
 
-          out = pathlib.Path("p4-googlebooks-title-page")
-          out.mkdir()
-          report = {}
-          page_url = "https://books.google.com/books?cad=1&id=O2oLAQAAIAAJ&pg=PR5&source=gbs_selected_pages"
-          headers = {
+          ROOT = pathlib.Path("final-googlebooks-review")
+          ROOT.mkdir()
+          HEADERS = {
               "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
               "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
           }
+          TARGETS = [
+              {
+                  "label": "PDHD-D000072",
+                  "canonical_id": "ypWS82YskN4C",
+                  "title": "Memoria relativa al estado que guarda el ramo de educación pública",
+                  "year": "1932",
+                  "pages": {
+                      "F000081": ["111", ["MISIONES CULTURALES", "ESCUELAS NORMALES"]],
+                      "F000082": ["307", ["PSICOPEDAGOG", "HIGIENE"]],
+                      "F000083": ["487", ["TECNICA", "RURAL"]],
+                      "F000084": ["465", ["REVALIDACION", "ESTUDIOS"]],
+                  },
+              },
+              {
+                  "label": "PDHD-D000074",
+                  "canonical_id": "KRV2_jMW8-wC",
+                  "title": "Memoria de la Secretaría de Educación Pública",
+                  "year": "1937",
+                  "pages": {
+                      "F000089": ["372", ["TRABAJO MANUAL", "EDUCACION INTEGRAL"]],
+                      "F000090": ["21", ["CONSEJO NACIONAL", "INVESTIGACION CIENTIFICA"]],
+                      "F000091": ["444", ["BIBLIOTEC", "ASISTENCIA"]],
+                      "F000092": ["35", ["DISTRIBUCION", "BECAS"]],
+                  },
+              },
+          ]
 
-          try:
-              req = urllib.request.Request(page_url, headers=headers)
-              with urllib.request.urlopen(req, timeout=45) as response:
-                  raw = response.read()
-                  report["page_status"] = response.status
-                  report["page_content_type"] = response.headers.get("Content-Type", "")
-              text = raw.decode("utf-8", errors="replace")
-              (out / "selected-page.html").write_text(text, encoding="utf-8")
-              decoded = html.unescape(text)
+          def get(url, timeout=60):
+              req = urllib.request.Request(url, headers=HEADERS)
+              with urllib.request.urlopen(req, timeout=timeout) as r:
+                  return r.read(), r.status, r.headers.get("Content-Type", "")
 
-              candidates = re.findall(
-                  r'https?://books\.google\.com/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',
-                  decoded,
-              )
-              if not candidates:
-                  candidates = [
+          def google_api_ids(target):
+              ids = [target["canonical_id"]]
+              q = urllib.parse.quote(f'intitle:"{target["title"]}" {target["year"]}')
+              url = f"https://www.googleapis.com/books/v1/volumes?q={q}&maxResults=40"
+              try:
+                  raw, _, _ = get(url)
+                  data = json.loads(raw)
+                  for item in data.get("items", []):
+                      vi = item.get("volumeInfo", {})
+                      title = vi.get("title", "")
+                      date = vi.get("publishedDate", "")
+                      if target["year"] in date and "memoria" in title.lower():
+                          ids.append(item.get("id"))
+              except Exception:
+                  pass
+              out = []
+              for x in ids:
+                  if x and x not in out:
+                      out.append(x)
+              return out
+
+          def pdf_candidates(book_id, page_label):
+              urls = []
+              page_url = f"https://books.google.com/books?cad=1&id={urllib.parse.quote(book_id)}&pg=PA{page_label}&source=gbs_selected_pages"
+              try:
+                  raw, status, ctype = get(page_url)
+                  text = raw.decode("utf-8", errors="replace")
+                  decoded = html.unescape(text)
+                  urls.extend(re.findall(r'https?://books\.google\.com/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+', decoded))
+                  urls.extend(
                       urllib.parse.urljoin("https://books.google.com", m)
-                      for m in re.findall(
-                          r'href=["\']([^"\']*?/books/download/[^"\']+?\.pdf\?[^"\']+)["\']',
-                          decoded,
-                      )
-                  ]
-              report["pdf_candidates"] = candidates[:10]
+                      for m in re.findall(r'href=["\']([^"\']*?/books/download/[^"\']+?\.pdf\?[^"\']+)["\']', decoded)
+                  )
+              except Exception:
+                  pass
+              try:
+                  raw, _, _ = get(f"https://www.googleapis.com/books/v1/volumes/{urllib.parse.quote(book_id)}")
+                  data = json.loads(raw)
+                  dl = data.get("accessInfo", {}).get("pdf", {}).get("downloadLink")
+                  if dl:
+                      urls.append(dl)
+              except Exception:
+                  pass
+              out = []
+              for u in urls:
+                  if u not in out:
+                      out.append(u)
+              return out
 
-              pdf_url = next((u for u in candidates if "output=pdf" in u), candidates[0] if candidates else None)
-              report["selected_pdf_url"] = pdf_url
-              if pdf_url:
-                  req = urllib.request.Request(pdf_url, headers=headers)
-                  with urllib.request.urlopen(req, timeout=90) as response:
-                      body = response.read()
-                      report["pdf_status"] = response.status
-                      report["pdf_content_type"] = response.headers.get("Content-Type", "")
-                  report["pdf_bytes"] = len(body)
-                  if len(body) > 100000 and body.startswith(b"%PDF"):
-                      (out / "volume1.pdf").write_bytes(body)
-                      report["pdf_saved"] = True
-                  else:
-                      (out / "pdf-response.bin").write_bytes(body)
-                      report["pdf_saved"] = False
-              else:
-                  report["pdf_saved"] = False
-          except Exception as exc:
-              report["error"] = f"{type(exc).__name__}: {exc}"
-              report["pdf_saved"] = False
+          def normalize(s):
+              import unicodedata
+              s = unicodedata.normalize("NFKD", s)
+              s = "".join(c for c in s if not unicodedata.combining(c))
+              return s.upper()
 
-          (out / "retrieval-report.json").write_text(
-              json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
-          )
-          print(json.dumps(report, ensure_ascii=False, indent=2))
+          global_report = {"targets": []}
+          rendered_total = 0
 
-      - name: Render first twelve PDF pages when available
-        shell: bash
-        run: |
-          set -u
-          out="p4-googlebooks-title-page"
-          if [ -f "$out/volume1.pdf" ]; then
-            if ! command -v pdftoppm >/dev/null 2>&1; then
-              sudo apt-get update -qq
-              sudo apt-get install -y -qq poppler-utils
-            fi
-            mkdir -p "$out/rendered"
-            pdftoppm -f 1 -l 12 -jpeg -r 170 "$out/volume1.pdf" "$out/rendered/page"
-            ls -lh "$out/rendered" || true
-          else
-            echo "No PDF available to render"
-          fi
+          for target in TARGETS:
+              out = ROOT / target["label"]
+              out.mkdir()
+              report = {
+                  "document_id": target["label"],
+                  "canonical_id": target["canonical_id"],
+                  "candidate_ids": [],
+                  "attempts": [],
+                  "selected_id": None,
+                  "pdf_sha256": None,
+                  "pdf_pages": None,
+                  "matches": {},
+              }
+              pdf_path = out / "primary.pdf"
+              candidate_ids = google_api_ids(target)
+              report["candidate_ids"] = candidate_ids
 
-      - name: Upload one-day primary-review artifact
+              for book_id in candidate_ids:
+                  if pdf_path.exists():
+                      break
+                  first_page = next(iter(target["pages"].values()))[0]
+                  for url in pdf_candidates(book_id, first_page):
+                      attempt = {"book_id": book_id, "url": url}
+                      try:
+                          body, status, ctype = get(url, timeout=120)
+                          attempt.update({"status": status, "content_type": ctype, "bytes": len(body)})
+                          if len(body) > 100000 and body.startswith(b"%PDF"):
+                              pdf_path.write_bytes(body)
+                              report["selected_id"] = book_id
+                              report["pdf_sha256"] = hashlib.sha256(body).hexdigest()
+                              attempt["saved"] = True
+                              report["attempts"].append(attempt)
+                              break
+                          attempt["saved"] = False
+                      except Exception as exc:
+                          attempt["error"] = f"{type(exc).__name__}: {exc}"
+                      report["attempts"].append(attempt)
+
+              if pdf_path.exists():
+                  info = subprocess.run(["pdfinfo", str(pdf_path)], capture_output=True, text=True).stdout
+                  m = re.search(r"^Pages:\s+(\d+)", info, flags=re.M)
+                  report["pdf_pages"] = int(m.group(1)) if m else None
+                  txt_path = out / "primary.txt"
+                  subprocess.run(["pdftotext", "-layout", str(pdf_path), str(txt_path)], check=False)
+                  text = txt_path.read_text(encoding="utf-8", errors="replace") if txt_path.exists() else ""
+                  physical_pages = text.split("\f")
+
+                  for frag, (printed, keywords) in target["pages"].items():
+                      nkeys = [normalize(k) for k in keywords]
+                      candidates = []
+                      for idx, page_text in enumerate(physical_pages, start=1):
+                          nt = normalize(page_text)
+                          score = sum(k in nt for k in nkeys)
+                          printed_hit = bool(re.search(rf"(?m)^\s*{re.escape(printed)}\s*$", page_text))
+                          if score or printed_hit:
+                              candidates.append((score, printed_hit, idx, page_text[:500].replace("\n", " ")))
+                      candidates.sort(key=lambda x: (x[0], x[1]), reverse=True)
+                      chosen = candidates[:5]
+                      report["matches"][frag] = [
+                          {"keyword_score": s, "printed_number_hit": p, "physical_page": i, "preview": prev}
+                          for s, p, i, prev in chosen
+                      ]
+                      render_pages = set()
+                      for _, _, i, _ in chosen[:3]:
+                          for j in range(max(1, i - 1), min(len(physical_pages), i + 1) + 1):
+                              render_pages.add(j)
+                      if not render_pages:
+                          guess = int(printed)
+                          for j in range(max(1, guess - 2), min(len(physical_pages), guess + 15) + 1):
+                              render_pages.add(j)
+                      frag_dir = out / frag
+                      frag_dir.mkdir()
+                      for pno in sorted(render_pages):
+                          prefix = frag_dir / f"physical-{pno:04d}"
+                          subprocess.run([
+                              "pdftoppm", "-f", str(pno), "-l", str(pno), "-singlefile",
+                              "-jpeg", "-r", "180", str(pdf_path), str(prefix)
+                          ], check=False)
+                          if prefix.with_suffix(".jpg").exists():
+                              rendered_total += 1
+
+                  # Keep report and page images only; PDF/text are transient retrieval aids.
+                  pdf_path.unlink(missing_ok=True)
+                  txt_path.unlink(missing_ok=True)
+
+              (out / "retrieval-report.json").write_text(
+                  json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+              )
+              global_report["targets"].append(report)
+
+          global_report["rendered_total"] = rendered_total
+          (ROOT / "summary.json").write_text(json.dumps(global_report, ensure_ascii=False, indent=2), encoding="utf-8")
+          print(json.dumps(global_report, ensure_ascii=False, indent=2))
+
+      - name: Upload one-day final primary-review artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pdhd-p4-googlebooks-title-page-review
-          path: p4-googlebooks-title-page/
+          name: pdhd-final-googlebooks-primary-review
+          path: final-googlebooks-review/
           retention-days: 1
           if-no-files-found: error
 
-      - name: Require at least one rendered page
+      - name: Report rendered evidence
         shell: bash
         run: |
-          shopt -s nullglob
-          files=(p4-googlebooks-title-page/rendered/*.jpg)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No auditable Google Books page image was recovered"
-            exit 1
-          fi
-          echo "Recovered ${#files[@]} rendered primary pages"
+          count=$(find final-googlebooks-review -type f -name '*.jpg' | wc -l)
+          echo "Recovered $count rendered primary page images"
+          test "$count" -gt 0
