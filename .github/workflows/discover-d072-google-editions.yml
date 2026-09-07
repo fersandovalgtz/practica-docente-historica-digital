@@ -1,0 +1,66 @@
+name: Discover D072 Google editions
+
+on:
+  push:
+    branches:
+      - work/d072-primary-recovery-20260907
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enumerate Google Books edition candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re, urllib.request, urllib.parse, html, json, time
+          UA='Mozilla/5.0 PDHD-research/0.1'
+          def get(u):
+              try:
+                  req=urllib.request.Request(u,headers={'User-Agent':UA,'Accept-Language':'es-MX,es;q=0.9,en;q=0.7'})
+                  with urllib.request.urlopen(req,timeout=45) as r:
+                      return r.status,r.headers.get('content-type',''),r.geturl(),r.read()
+              except Exception as e:
+                  return None,'','',repr(e).encode()
+          def ids_from(s):
+              pats=[r'[?&]id=([A-Za-z0-9_-]{8,20})',r'/books/edition/[^/]+/([A-Za-z0-9_-]{8,20})',r'books\?id=([A-Za-z0-9_-]{8,20})']
+              out=[]
+              for p in pats:
+                  out += re.findall(p,s)
+              return list(dict.fromkeys(out))
+          urls=[
+            'https://books.google.com/books?id=ypWS82YskN4C&q=editions:LCCN2013238778',
+            'https://books.google.com/books?'+urllib.parse.urlencode({'q':'editions:LCCN2013238778'}),
+            'https://books.google.com/books?'+urllib.parse.urlencode({'q':'"Memoria relativa al estado que guarda el ramo de educación pública" 1933'}),
+            'https://books.google.com/books?'+urllib.parse.urlencode({'q':'"Memoria relativa al estado que guarda el ramo de la educación pública" "1934" "Tomo I"'}),
+            'https://books.google.com/books?'+urllib.parse.urlencode({'q':'inauthor:"Mexico. Secretaría de Educación Pública" intitle:"Memoria relativa" 1933'}),
+          ]
+          cand=[]
+          for u in urls:
+              st,ct,final,b=get(u); s=b.decode('utf-8','replace')
+              ii=ids_from(s)
+              print('\nQUERY',u,'HTTP',st,ct,'bytes',len(b),'final',final,'IDs',ii[:100])
+              cand += ii
+          cand=list(dict.fromkeys(cand + ['ypWS82YskN4C','mHgQAAAAYAAJ','_nkQAAAAYAAJ','6aYQAAAAYAAJ']))
+          print('\nCANDIDATE_COUNT',len(cand))
+          for vid in cand[:120]:
+              u=f'https://books.google.com/books?id={urllib.parse.quote(vid)}&printsec=frontcover&hl=es'
+              st,ct,final,b=get(u); s=b.decode('utf-8','replace')
+              title=''
+              m=re.search(r'<title>(.*?)</title>',s,re.I|re.S)
+              if m: title=re.sub(r'\s+',' ',html.unescape(m.group(1))).strip()
+              # Keep small textual diagnostics only.
+              plain=re.sub(r'<script.*?</script>|<style.*?</style>',' ',s,flags=re.I|re.S)
+              plain=re.sub(r'<[^>]+>',' ',plain); plain=re.sub(r'\s+',' ',html.unescape(plain))
+              years=sorted(set(re.findall(r'\b19(?:31|32|33|34|35)\b',plain)))
+              tome=[]
+              for p in [r'Tomo\s+[IVX]+',r'Volume\s+[12]',r'Volumen(?:es)?\s+[12](?:-2)?']:
+                  tome += re.findall(p,plain,re.I)
+              print(json.dumps({'id':vid,'http':st,'bytes':len(b),'title':title[:300],'years':years,'tome':list(dict.fromkeys(tome))[:10],'has_download':'download' in s.lower(),'has_pdf':'.pdf' in s.lower(),'has_books_content':'books/content' in s,'sample':plain[:1200]},ensure_ascii=False))
+              time.sleep(.12)
+          PY
