@@ -1,4 +1,4 @@
-name: Probe PDHD D072 surrogate 1926
+name: Close PDHD-U1 final freeze
 
 on:
   push:
@@ -7,97 +7,310 @@ on:
       - ".github/workflows/probe-d072-surrogate-1926.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  probe:
+  close:
     runs-on: ubuntu-latest
     steps:
-      - name: Retrieve candidate primary volume
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply versioned position-21 substitution
         shell: python
         run: |
-          import html, json, pathlib, re, urllib.parse, urllib.request
-          out = pathlib.Path('d072-surrogate-probe')
-          out.mkdir()
-          book_id = 'yvMEAQAAIAAJ'
-          headers = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
-          urls = [f'https://books.google.com/books?id={book_id}&pg=PA1&source=gbs_selected_pages', f'https://books.google.com/books?id={book_id}&printsec=frontcover']
-          report={'book_id':book_id,'attempts':[]}
-          pdf=None
-          for page_url in urls:
-            try:
-              req=urllib.request.Request(page_url,headers=headers)
-              with urllib.request.urlopen(req,timeout=60) as r:
-                raw=r.read(); final=r.geturl(); ct=r.headers.get('Content-Type','')
-              text=html.unescape(raw.decode('utf-8',errors='replace'))
-              (out/f'page-{len(report["attempts"])+1}.html').write_bytes(raw)
-              raw_cands=re.findall(r'href=["\']([^"\']*?/books/download/[^"\']+?\.pdf\?[^"\']+)["\']',text)
-              raw_cands += re.findall(r'(https?://[^"\'<> ]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+)',text)
-              cands=[]
-              for m in raw_cands:
-                if m.startswith('http://') or m.startswith('https://'):
-                  u=m
-                elif m.startswith('//'):
-                  u='https:'+m
-                else:
-                  u=urllib.parse.urljoin(final,m)
-                if u not in cands: cands.append(u)
-              report['attempts'].append({'url':page_url,'final':final,'content_type':ct,'pdf_candidates':cands[:10]})
-              for u in cands:
-                if 'output=pdf' not in u: continue
-                try:
-                  req=urllib.request.Request(u,headers=headers)
-                  with urllib.request.urlopen(req,timeout=180) as r:
-                    body=r.read(); pct=r.headers.get('Content-Type','')
-                  if body.startswith(b'%PDF') and len(body)>100000:
-                    pdf=body; report['pdf_url']=u; report['pdf_bytes']=len(body); report['pdf_content_type']=pct; break
-                  report.setdefault('pdf_rejected',[]).append({'url':u,'bytes':len(body),'content_type':pct})
-                except Exception as exc:
-                  report.setdefault('pdf_errors',[]).append(f'{type(exc).__name__}: {exc}')
-              if pdf: break
-            except Exception as exc:
-              report['attempts'].append({'url':page_url,'error':f'{type(exc).__name__}: {exc}'})
-          if pdf: (out/'candidate.pdf').write_bytes(pdf)
-          (out/'retrieval-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
-          print(json.dumps(report,ensure_ascii=False,indent=2))
-
-      - name: Extract text and candidate pages
-        shell: bash
-        run: |
-          set -euxo pipefail
-          out=d072-surrogate-probe
-          test -f "$out/candidate.pdf"
-          pdftotext -layout "$out/candidate.pdf" "$out/candidate.txt"
-          pdfinfo "$out/candidate.pdf" > "$out/pdfinfo.txt"
-          python - <<'PY'
+          import csv
           import pathlib
-          out=pathlib.Path('d072-surrogate-probe')
-          pages=(out/'candidate.txt').read_text(errors='ignore').split('\f')
-          terms=['MISION','MISIONES','NORMAL RURAL','NORMALES RURALES','MAESTRO RURAL','MAESTROS RURALES','ENSEÑANZA','METODO','MÉTODO','DEMOSTRACION','DEMOSTRACIÓN','INSPECTOR','SUPERVISION','SUPERVISIÓN']
-          rows=[]
-          for i,p in enumerate(pages,1):
-            up=p.upper(); hits=[t for t in terms if t in up]
-            if hits: rows.append((i,hits,' '.join(p.split())[:1400]))
-          with open(out/'candidate-pages.txt','w',encoding='utf-8') as f:
-            for i,h,s in rows: f.write(f'PDF_PAGE={i}\tHITS={"|".join(h)}\n{s}\n\n')
-          print('candidate pages',len(rows)); print((out/'candidate-pages.txt').read_text(encoding='utf-8')[:30000])
-          PY
 
-      - name: Render review windows
+          ROOT = pathlib.Path('.')
+          CATALOG = ROOT / 'data' / 'catalog'
+          SAMPLES = ROOT / 'data' / 'samples'
+          TODAY = '2026-09-07'
+
+          def read_csv(path):
+              with path.open(encoding='utf-8', newline='') as f:
+                  r = csv.DictReader(f)
+                  return list(r), list(r.fieldnames or [])
+
+          def write_csv(path, rows, fields):
+              with path.open('w', encoding='utf-8', newline='') as f:
+                  w = csv.DictWriter(f, fieldnames=fields, lineterminator='\n')
+                  w.writeheader()
+                  w.writerows(rows)
+
+          def one(rows, field, value, label):
+              hits = [r for r in rows if r.get(field) == value]
+              if len(hits) != 1:
+                  raise RuntimeError(f'{label}: expected one row, found {len(hits)}')
+              return hits[0]
+
+          def replace_once(text, old, new, label):
+              n = text.count(old)
+              if n != 1:
+                  raise RuntimeError(f'{label}: expected one occurrence, found {n}')
+              return text.replace(old, new, 1)
+
+          # 1) Register the directly inspected 1926 SEP primary object.
+          path = CATALOG / 'documents_balancing_w1.csv'
+          rows, fields = read_csv(path)
+          if not any(r['document_id'] == 'PDHD-D000078' for r in rows):
+              rows.append({
+                  'document_id':'PDHD-D000078',
+                  'source_id':'GOOGLE-BOOKS',
+                  'title':'Memoria que indica el estado que guarda el ramo de educación pública el 31 de agosto de 1926',
+                  'author':'México. Secretaría de Educación Pública',
+                  'publication':'Memoria que indica el estado que guarda el ramo de educación pública',
+                  'publication_date':'1926',
+                  'volume':'X',
+                  'issue':'18',
+                  'page_start':'',
+                  'page_end':'',
+                  'place':'México',
+                  'publisher':'Talleres Gráficos de la Nación',
+                  'source_url':'https://books.google.com/books?id=yvMEAQAAIAAJ',
+                  'source_identifier':'GB:yvMEAQAAIAAJ',
+                  'accessed_at':TODAY,
+                  'rights_status':'review_required',
+                  'document_type':'official_report',
+                  'period':'1921-1934',
+                  'era_code':'E3',
+                  'notes':'Direct Google Books primary PDF, 503 physical pages. Visual title-page inspection fixes Publicaciones de la Secretaría de Educación Pública, Tomo X, Núm. 18, Memoria que indica el estado que guarda el ramo de educación pública el 31 de agosto de 1926, presented by J. M. Puig Casauranc, Talleres Gráficos de la Nación, México 1926. Direct inspection of printed pp. 222, 223 and 225 supplies rural-normal institutional, Cultural Missions training and source-critical Indigenous-student evidence. Added as the versioned position-21 replacement after the 1932 tomo I remained page-localizable but did not expose auditable primary page images or a complete PDF in the retrieval environment.'
+              })
+          write_csv(path, rows, fields)
+
+          # 2) Preserve the 24-position sample while replacing position 21.
+          path = SAMPLES / 'pilot_document_selection_0_1.csv'
+          rows, fields = read_csv(path)
+          r = one(rows, 'selection_order', '21', 'selection position 21')
+          if r['document_id'] != 'PDHD-D000072':
+              raise RuntimeError(f'position 21 unexpected document {r["document_id"]}')
+          r.update({
+              'document_id':'PDHD-D000078',
+              'publication':'Memoria que indica el estado que guarda el ramo de educación pública',
+              'era_code':'E3',
+              'place':'México',
+              'document_type':'official_report',
+              'fragment_target_count':'4',
+              'selection_role':'missions_normal_schools_report',
+              'status':'selected',
+          })
+          write_csv(path, rows, fields)
+
+          # 3) Replace the three original locator rows with directly inspected D78 spans.
+          path = SAMPLES / 'fragment_locator_progress_0_1.csv'
+          rows, fields = read_csv(path)
+          replacements = {
+              'PDHD-F000081': {
+                  'document_id':'PDHD-D000078','slot':'A','page':'223',
+                  'source_locator':'p223-misiones-culturales-curso-preparacion-entrenamiento',
+                  'locator_evidence_url':'https://books.google.com/books?id=yvMEAQAAIAAJ&pg=PA223',
+                  'boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen',
+                  'preparation_note':'Direct inspection of the complete 1926 Google Books primary PDF maps printed p. 223 to physical PDF page 238. Fix the Cultural Missions preparation paragraph from its opening explanation that mission personnel lacked sufficient preparation through the description of the March-April training, instruction on work with teachers and communities, and distribution of concrete work programs; stop before the paragraph beginning the departure/installation sequence. No facsimile or historical transcription is committed.',
+                  'checked_at':TODAY,
+              },
+              'PDHD-F000082': {
+                  'document_id':'PDHD-D000078','slot':'B','page':'222',
+                  'source_locator':'p222-escuelas-regionales-maestros-rurales-organizacion',
+                  'locator_evidence_url':'https://books.google.com/books?id=yvMEAQAAIAAJ&pg=PA222',
+                  'boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen',
+                  'preparation_note':'Direct primary-PDF inspection maps printed p. 222 to physical PDF page 237. Fix the coherent Escuelas Regionales para Maestros Rurales block describing the two SEP-supported schools, their rural-teacher preparation purpose and practical study organization; stop before the following Centro de Experimentación Industrial section. No source image or historical transcription is committed.',
+                  'checked_at':TODAY,
+              },
+              'PDHD-F000084': {
+                  'document_id':'PDHD-D000078','slot':'D','page':'unnumbered',
+                  'source_locator':'pdf6-title-page-memoria-1926-control',
+                  'locator_evidence_url':'https://books.google.com/books?id=yvMEAQAAIAAJ',
+                  'boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen',
+                  'preparation_note':'Direct inspection of physical PDF page 6 fixes the bibliographic title-page core identifying Publicaciones de la Secretaría de Educación Pública, Tomo X, Núm. 18, the 31 August 1926 Memoria, J. M. Puig Casauranc, Talleres Gráficos de la Nación, México and 1926. Exclude seal, blank margins and Google digitization marks. This is deliberately a non-analytical control.',
+                  'checked_at':TODAY,
+              },
+          }
+          for fid, upd in replacements.items():
+              r = one(rows, 'fragment_id', fid, fid)
+              if r['document_id'] != 'PDHD-D000072':
+                  raise RuntimeError(f'{fid}: unexpected outgoing document {r["document_id"]}')
+              r.update(upd)
+          write_csv(path, rows, fields)
+
+          # 4) Convert F83 from its secondary pointer to a directly inspected primary span.
+          path = SAMPLES / 'fragment_locator_progress_threshold72_w9.csv'
+          rows, fields = read_csv(path)
+          r = one(rows, 'fragment_id', 'PDHD-F000083', 'F83')
+          if r['document_id'] != 'PDHD-D000072':
+              raise RuntimeError(f'F83 unexpected outgoing document {r["document_id"]}')
+          r.update({
+              'document_id':'PDHD-D000078','slot':'C','page':'225',
+              'source_locator':'p225-casa-estudiante-indigena-incorporacion',
+              'locator_evidence_url':'https://books.google.com/books?id=yvMEAQAAIAAJ&pg=PA225',
+              'boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen',
+              'preparation_note':'Direct primary-PDF inspection maps printed p. 225 to physical PDF page 240. Fix the Casa del Estudiante Indígena heading and first two substantive paragraphs, which expose the official incorporation/assimilation framework, the decision against isolation, and shared study/work with criollo and mestizo students; stop before the paragraph beginning the solidarity/racial-development continuation. The unit is retained source-critically as evidence of state representation, not as endorsement of its categories. No source text or image is committed.',
+              'checked_at':TODAY,
+          })
+          write_csv(path, rows, fields)
+
+          # 5) Add the final four frozen rows in a dedicated auditable shard.
+          frozen_path = SAMPLES / 'frozen_fragments_sep1926_w31.csv'
+          if frozen_path.exists():
+              raise RuntimeError('final frozen shard already exists unexpectedly')
+          frozen_fields = ['fragment_id','document_id','slot','page','source_locator','locator_evidence_url','boundary_definition','transcription_status','access_basis','public_text_status','selection_role','freeze_status','preparation_note','checked_at']
+          frozen_rows = [
+              {
+                  'fragment_id':'PDHD-F000081','document_id':'PDHD-D000078','slot':'A','page':'223',
+                  'source_locator':'p223-misiones-culturales-curso-preparacion-entrenamiento','locator_evidence_url':'https://books.google.com/books?id=yvMEAQAAIAAJ&pg=PA223',
+                  'boundary_definition':'Printed p. 223 / physical PDF page 238: the Cultural Missions preparation paragraph from its opening explanation of insufficient preparation through the March-April training, instruction for work with teachers and communities, and delivery of concrete work programs; stop before the following departure/installation paragraph.',
+                  'transcription_status':'not_transcribed','access_basis':'Google_Books_direct_primary_PDF_inspection','public_text_status':'metadata_only','selection_role':'explicit_pedagogical_act','freeze_status':'frozen',
+                  'preparation_note':'Direct visual inspection fixes a deterministic professional-instruction unit documenting preparation and training of Cultural Mission personnel before field deployment. No facsimile or historical transcription is committed.','checked_at':TODAY,
+              },
+              {
+                  'fragment_id':'PDHD-F000082','document_id':'PDHD-D000078','slot':'B','page':'222',
+                  'source_locator':'p222-escuelas-regionales-maestros-rurales-organizacion','locator_evidence_url':'https://books.google.com/books?id=yvMEAQAAIAAJ&pg=PA222',
+                  'boundary_definition':'Printed p. 222 / physical PDF page 237: the Escuelas Regionales para Maestros Rurales block describing the two SEP-supported schools, their rural-teacher preparation purpose and practical study organization; stop before Centro de Experimentación Industrial.',
+                  'transcription_status':'not_transcribed','access_basis':'Google_Books_direct_primary_PDF_inspection','public_text_status':'metadata_only','selection_role':'institutional_relation','freeze_status':'frozen',
+                  'preparation_note':'The fixed unit directly documents institutional organization and professional formation of rural teachers in the SEP system.','checked_at':TODAY,
+              },
+              {
+                  'fragment_id':'PDHD-F000083','document_id':'PDHD-D000078','slot':'C','page':'225',
+                  'source_locator':'p225-casa-estudiante-indigena-incorporacion','locator_evidence_url':'https://books.google.com/books?id=yvMEAQAAIAAJ&pg=PA225',
+                  'boundary_definition':'Printed p. 225 / physical PDF page 240: heading Casa del Estudiante Indígena plus the first two substantive paragraphs on incorporation, non-isolation and shared study/work; stop before the following paragraph beginning the solidarity/racial-development continuation.',
+                  'transcription_status':'not_transcribed','access_basis':'Google_Books_direct_primary_PDF_inspection','public_text_status':'metadata_only','selection_role':'source_criticism_salient','freeze_status':'frozen',
+                  'preparation_note':'Selected source-critically because the passage exposes the official assimilatory and classificatory framework applied to Indigenous students. It is evidence about state representation, not an endorsement of those categories.','checked_at':TODAY,
+              },
+              {
+                  'fragment_id':'PDHD-F000084','document_id':'PDHD-D000078','slot':'D','page':'unnumbered',
+                  'source_locator':'pdf6-title-page-memoria-1926-control','locator_evidence_url':'https://books.google.com/books?id=yvMEAQAAIAAJ',
+                  'boundary_definition':'Physical PDF page 6: bibliographic title-page core identifying Publicaciones de la Secretaría de Educación Pública, Tomo X, Núm. 18, the 31 August 1926 Memoria, J. M. Puig Casauranc, Talleres Gráficos de la Nación, México and 1926; exclude seal, blank margins and digitization marks.',
+                  'transcription_status':'not_transcribed','access_basis':'Google_Books_direct_primary_PDF_inspection','public_text_status':'metadata_only','selection_role':'control','freeze_status':'frozen',
+                  'preparation_note':'Direct visual inspection fixes a deliberately non-analytical bibliographic control and proves the replacement object identity independently of catalog metadata.','checked_at':TODAY,
+              },
+          ]
+          write_csv(frozen_path, frozen_rows, frozen_fields)
+
+          # 6) Version the sample substitution.
+          path = SAMPLES / 'pilot_document_substitutions_0_1.csv'
+          rows, fields = read_csv(path)
+          if not any(r['substitution_id'] == 'PDHD-PS000004' for r in rows):
+              rows.append({
+                  'substitution_id':'PDHD-PS000004','selection_order':'21','outgoing_document_id':'PDHD-D000072','replacement_document_id':'PDHD-D000078',
+                  'reason':'The 1932 SEP Memoria tomo I remained fully page-localized through Google Books contents and secondary pointers, but repeated PDF, selected-page, browser-rendering and signed-image recovery routes did not yield an auditable primary page image or complete PDF. An open 1926 SEP Memoria in the same E3 official-report regime exposes a complete 503-page primary PDF. Direct inspection supplies all four deterministic slots while preserving the missions/normal-schools function of position 21.',
+                  'era_effect':'none; both documents are E3 (1921-1934)','geography_effect':'none; both are México','document_type_effect':'none; both are official_report','publication_concentration_effect':'none; SEP institutional memories remain within the pilot cap',
+                  'primary_evidence_basis':'Google Books yvMEAQAAIAAJ exposes a complete 15.8 MB / 503-page primary PDF. Physical page 6 identifies the 31 August 1926 SEP Memoria, Tomo X, Núm. 18, J. M. Puig Casauranc and México 1926; printed p. 223 / physical 238 supplies Cultural Missions preparation, p. 222 / physical 237 supplies Regional Schools for Rural Teachers, and p. 225 / physical 240 supplies source-critical evidence on the Casa del Estudiante Indígena.','decided_at':TODAY,
+              })
+          write_csv(path, rows, fields)
+
+          # 7) Preserve structured retrieval provenance.
+          path = SAMPLES / 'retrieval_attempts.csv'
+          rows, fields = read_csv(path)
+          if not any(r['attempt_id'] == 'PDHD-RA000022' for r in rows):
+              rows.append({
+                  'attempt_id':'PDHD-RA000022','document_id':'PDHD-D000078','fragment_ids':'PDHD-F000081;PDHD-F000082;PDHD-F000083;PDHD-F000084','source_id':'GOOGLE-BOOKS','object_url':'https://books.google.com/books?id=yvMEAQAAIAAJ','target':'all_four_substitution_slots','result_status':'superseded_by_locator',
+                  'blocker':'Recovery began from outgoing PDHD-D000072 (1932 tomo I). Its four positions were localized, but repeated Google Books API, selected-page, browser-rendering and signed-image routes did not expose an auditable primary page image or full PDF. A stratification-preserving 1926 SEP Memoria was then tested. Google Books dynamically exposed a signed 15.8 MB PDF. Direct title-page and page-image inspection established exact identity and fixed printed pp. 222, 223 and 225 plus the title-page control.','next_route':'pilot_substitution_registry_locator_frozen_shard_and_status_sync_completed','checked_at':TODAY,
+              })
+          write_csv(path, rows, fields)
+
+          # 8) Update the substitution rationale document.
+          path = ROOT / 'docs' / 'PILOT_DOCUMENT_SUBSTITUTION_0_1.md'
+          text = path.read_text(encoding='utf-8')
+          if '## PDHD-PS000004 — position 21' not in text:
+              text = text.rstrip() + '''\n\n## PDHD-PS000004 — position 21\n\nPilot selection position 21 changes from `PDHD-D000072` (*Memoria relativa al estado que guarda el ramo de educación pública*, tomo I, 1932) to `PDHD-D000078` (*Memoria que indica el estado que guarda el ramo de educación pública el 31 de agosto de 1926*, SEP, Tomo X, Núm. 18).\n\nThe outgoing 1932 object remains a valid catalog object and retains its page-localization provenance. Google Books exposes its contents and searchable targets, but repeated PDF, selected-page, browser-rendering and signed-image routes did not yield an auditable primary page image or complete PDF in the research environment. The replacement is not treated as an identity-equivalent edition: it is a separate SEP official report in E3 whose complete 503-page primary PDF is directly inspectable.\n\nThe replacement preserves E3, México, `official_report` and the missions/normal-schools analytical function of position 21. Direct visual inspection fixes slot A at printed p. 223 / physical PDF 238 on preparation of Cultural Mission personnel; slot B at p. 222 / physical 237 on Escuelas Regionales para Maestros Rurales; slot C at p. 225 / physical 240 on the official incorporation framework surrounding the Casa del Estudiante Indígena; and slot D at physical PDF 6 as the bibliographic title-page control. The outgoing 1932 pointers remain provenance but no longer carry the active pilot fragment IDs.\n'''
+          path.write_text(text, encoding='utf-8')
+
+          # 9) Synchronize the pilot-selection prose.
+          path = ROOT / 'docs' / 'PILOT_DOCUMENT_SELECTION_0_1.md'
+          text = path.read_text(encoding='utf-8')
+          text = replace_once(
+              text,
+              '- `PDHD-D000072` and `PDHD-D000073` — SEP institutional memories with direct sections on missions, rural schools, normal education and inspection;',
+              '- `PDHD-D000078` and `PDHD-D000073` — directly inspected SEP institutional memories with sections on missions, rural schools, normal education and inspection; `PDHD-D000078` replaces the inaccessible-for-primary-review `PDHD-D000072` through `PDHD-PS000004`;',
+              'pilot-selection D72 bullet',
+          )
+          text = replace_once(text, 'The **document-selection gate is passed**. Human coding begins only after all 96 fixed fragments are frozen and checked for source location, readability and rights-compatible handling.', 'The **document-selection gate and 96-fragment freeze gate are passed**. Human coding has not started; the next controlled step is calibration-set preparation, codebook freeze and independent coder onboarding.', 'pilot start condition')
+          path.write_text(text, encoding='utf-8')
+
+          # 10) Synchronize README counts, narrative and next methodological gate.
+          path = ROOT / 'README.md'
+          text = path.read_text(encoding='utf-8')
+          text = replace_once(text, '> Estado: `v0.1.0-dev` · `PDHD-U1` en congelamiento activo del primer piloto de validación humana.', '> Estado: `v0.1.0-dev` · `PDHD-U1` con el primer piloto **96/96 congelado**; calibración humana pendiente.', 'README status')
+          text = replace_once(text, '| Objetos documentales con identidad y localizador | **77** |', '| Objetos documentales con identidad y localizador | **78** |', 'README object table')
+          text = replace_once(text, '| Fragmentos completamente congelados | **92 / 96** |', '| Fragmentos completamente congelados | **96 / 96** |', 'README frozen table')
+          text = replace_once(text, 'Los 77 objetos forman una **cohorte de estabilización y preparación metodológica**', 'Los 78 objetos forman una **cohorte de estabilización y preparación metodológica**', 'README object prose')
+          marker = '`PDHD-D000077`, *Memoria de la Secretaría de Educación Pública* (1939), sustituye de manera versionada la posición 23'
+          if 'PDHD-D000078' not in text:
+              addition = '''`PDHD-D000078`, *Memoria que indica el estado que guarda el ramo de educación pública el 31 de agosto de 1926*, sustituye de manera versionada la posición 21 después de que el tomo I de 1932 permaneciera localizable pero sin imagen primaria auditable. El PDF completo de Google Books `yvMEAQAAIAAJ` fue inspeccionado directamente. `PDHD-F000081` fija la p. 223 como unidad de preparación del personal de Misiones Culturales; `PDHD-F000082` fija la p. 222 sobre Escuelas Regionales para Maestros Rurales; `PDHD-F000083` fija la p. 225 como unidad de crítica de fuentes sobre el marco oficial de incorporación de estudiantes indígenas; y `PDHD-F000084` usa la portada física 6 como control bibliográfico. La sustitución conserva E3, México, informe oficial y función misiones-normalismo.\n\n'''
+              if marker not in text:
+                  raise RuntimeError('README D77 insertion marker missing')
+              text = text.replace(marker, addition + marker, 1)
+          text = replace_once(text, 'su unión contiene **92/96** fragmentos.', 'su unión contiene **96/96** fragmentos.', 'README frozen union')
+          text = replace_once(text, 'Los candidatos no congelados se concentran ahora exclusivamente en `PDHD-D000072`, siempre sujetos al mismo gate primario.', 'La posición 21 sustituye `PDHD-D000072` por `PDHD-D000078` mediante `PDHD-PS000004`; `PDHD-F000081`–`PDHD-F000084` cruzan el gate primario y el paquete de confiabilidad queda completamente congelado.', 'README D72 pending sentence')
+          text = replace_once(text, '**4 localizadores todavía no congelados**', '**0 localizadores todavía no congelados**', 'README pending count')
+          text = replace_once(text, 'Los **92/96** congelados demuestran el pipeline', 'Los **96/96** congelados demuestran el pipeline', 'README frozen pipeline')
+          text = replace_once(text, 'La prioridad es convertir la mayor cantidad posible de los **0 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos.', 'El freeze gate está completo: quedan **0 localizadores todavía no congelados** y las 96 unidades tienen página primaria inspeccionada y límites fijos.', 'README next priority')
+          text = replace_once(text, 'Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.', 'Con el paquete 96/96 completo, el siguiente gate es preparar el set de calibración, congelar la versión del codebook y comenzar después la codificación humana independiente.', 'README calibration gate')
+          path.write_text(text, encoding='utf-8')
+
+          # 11) Synchronize the cohort dashboard and remove the stale D72/D74 paragraph.
+          path = ROOT / 'docs' / 'PDHD_U1_COHORT_STATUS.md'
+          text = path.read_text(encoding='utf-8')
+          text = replace_once(text, '| Object-level documents | 77 | stabilization advanced |', '| Object-level documents | 78 | stabilization advanced |', 'cohort object table')
+          text = replace_once(text, '| Target fixed fragments | 96 | preparation active |', '| Target fixed fragments | 96 | freeze gate complete |', 'cohort target status')
+          text = replace_once(text, '| Fully frozen fragments | **92 / 96** | page-resolved conversion phase active |', '| Fully frozen fragments | **96 / 96** | freeze gate complete |', 'cohort frozen table')
+          text = replace_once(text, 'The 77-object cohort remains a stabilization corpus', 'The 78-object cohort remains a stabilization corpus', 'cohort object prose')
+          text = replace_once(text, '**92 units** have crossed the stronger frozen-fragment gate.', '**96 units** have crossed the stronger frozen-fragment gate.', 'cohort headline frozen')
+          text = replace_once(text, '**23 selected documents** now have complete four-slot batches.', '**24 selected documents** now have complete four-slot batches.', 'cohort complete batches')
+          marker = '`PDHD-D000073`, the 1934 SEP memory, now contributes a complete four-slot batch'
+          if 'PDHD-D000078' not in text:
+              addition = '''`PDHD-D000078`, the 31 August 1926 SEP memory, now contributes the final complete A–D batch as the versioned replacement for pilot position 21. The outgoing 1932 tomo I remains cataloged and page-localized, but repeated retrieval routes did not expose auditable primary pages. Google Books `yvMEAQAAIAAJ` exposes a complete 503-page primary PDF. Direct inspection fixes F000081 at printed p. 223 / physical 238 for Cultural Missions personnel preparation, F000082 at p. 222 / physical 237 for Regional Schools for Rural Teachers, F000083 at p. 225 / physical 240 for source-critical evidence on the Casa del Estudiante Indígena, and F000084 at physical 6 as the bibliographic control.\n\n'''
+              if marker not in text:
+                  raise RuntimeError('cohort D73 insertion marker missing')
+              text = text.replace(marker, addition + marker, 1)
+          text = replace_once(text, 'Ninety-two are frozen. The remaining **4** located rows include page- or snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **0 slots remain without a locator.**', 'All ninety-six are frozen. The remaining **0** located rows mean that no localized pilot candidate remains outside the frozen registry. **0 slots remain without a locator.**', 'cohort remaining rows')
+          stale = 'With the localization gate complete, the remaining eight non-frozen pilot fragments are concentrated in `PDHD-D000072` and `PDHD-D000074`, four slots in each SEP memory. The next high-value work is therefore direct primary-image recovery for those two clustered objects, where one successful identity-gated retrieval can convert an entire A–D batch.'
+          text = replace_once(text, stale, 'The localization and freeze gates are now both complete. The final position-21 substitution is versioned as `PDHD-PS000004`; the outgoing 1932 object remains provenance, while the active pilot uses the directly inspected 1926 SEP memory. The next high-value work is calibration and independent human reliability testing rather than further fragment conversion.', 'cohort stale paragraph')
+          text = replace_once(text, 'PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.', 'PDHD-U1 has completed **pilot freezing**. Issue #1 stays open through the first independent human reliability round.', 'cohort decision status')
+          text = replace_once(text, 'The project is now at **96/96 localized** and **92/96 frozen**. Recent primary-object recovery has expanded the frozen package while preserving the unlocalized complement at 0. The localization gate is complete at **96/96**; the stronger scientific priority is converting the remaining eight localized fragments into fixed primary-inspected spans without weakening the evidence hierarchy.', 'The project is now at **96/96 localized** and **96/96 frozen**. The final substitution preserves the unlocalized complement at 0. Both the localization and freeze gates are complete; the stronger scientific priority is now calibration, codebook freeze and independent human reliability testing without exposing proposed labels to coders.', 'cohort decision counts')
+          path.write_text(text, encoding='utf-8')
+
+          # 12) Changelog note.
+          path = ROOT / 'CHANGELOG.md'
+          text = path.read_text(encoding='utf-8')
+          note = '- Versioned pilot substitution `PDHD-PS000004`: position 21 moves from inaccessible-for-primary-review 1932 `PDHD-D000072` to directly inspected 1926 `PDHD-D000078`; freezes `PDHD-F000081`–`PDHD-F000084` and completes the pilot at 96/96 frozen.\n'
+          if note not in text:
+              lines = text.splitlines(keepends=True)
+              if not lines or not lines[0].startswith('# Changelog'):
+                  raise RuntimeError('unexpected CHANGELOG header')
+              lines.insert(1, note)
+              text = ''.join(lines)
+          path.write_text(text, encoding='utf-8')
+
+          # 13) Remove the temporary recovery/apply workflow from the final scientific tree.
+          workflow = ROOT / '.github' / 'workflows' / 'probe-d072-surrogate-1926.yml'
+          if workflow.exists():
+              workflow.unlink()
+
+      - name: Run complete PDHD validation suite
         shell: bash
         run: |
           set -euxo pipefail
-          out=d072-surrogate-probe
-          mkdir -p "$out/rendered"
-          pdftoppm -f 1 -l 20 -jpeg -r 170 "$out/candidate.pdf" "$out/rendered/front"
-          pages=$(pdfinfo "$out/candidate.pdf" | awk '/^Pages:/ {print $2}')
-          for p in $(seq 25 25 "$pages"); do pdftoppm -f "$p" -l "$p" -singlefile -jpeg -r 130 "$out/candidate.pdf" "$out/rendered/p${p}"; done
+          python scripts/validate_repository.py
+          python scripts/validate_object_aliases.py
+          python scripts/validate_content_leads.py
+          python scripts/validate_retrieval_attempts.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_freeze_conversion_queue.py
+          python scripts/prepare_freeze_review.py --check
+          python scripts/validate_status_counts.py
+          python scripts/annotation_agreement.py --self-test
+          python scripts/build_fragment_manifest.py --check
+          git diff --check
 
-      - name: Upload primary review artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pdhd-d072-surrogate-1926
-          path: d072-surrogate-probe/
-          retention-days: 1
-          if-no-files-found: error
+      - name: Commit validated closure to work branch
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git config user.name "Fernando Sandoval"
+          git config user.email "fernando.sandoval@uacj.mx"
+          git add -A
+          git diff --cached --stat
+          git commit -m "Close PDHD-U1 pilot at 96/96 frozen [skip ci]"
+          git push origin HEAD:work/close-d072-pilot-20260907
