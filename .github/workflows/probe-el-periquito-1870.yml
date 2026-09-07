@@ -1,4 +1,4 @@
-name: Probe El Periquito 1870 bound HNDM container
+name: Probe El Periquito 1870 UNAM structured identifiers
 
 on:
   push:
@@ -14,70 +14,63 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Resolve La Escuela de primeras letras bound-container routes
+      - name: Resolve UNAM-RI 921573 structured metadata
         shell: python
         run: |
-          import html,json,pathlib,re,urllib.parse,urllib.request,urllib.error
-          out=pathlib.Path('probe-periquito'); out.mkdir()
+          import html,json,pathlib,re,urllib.request,urllib.error
+          out=pathlib.Path('probe-periquito-unam'); out.mkdir()
           headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.7'}
-          urls={
-            'bound_description':'https://hndm.iib.unam.mx/consulta/publicacion/visualizarDescripcion/558ff9317d1e32523086143f?ide=558ff9317d1e32523086143f&numDocs=20&palabrasBuscar=&tipoBusqueda=4&unaLetra=E',
-            'periquito_descriptor':'https://hndm.iib.unam.mx/consulta/publicacion/verDescripcionDescarga/558ff93a7d1e3252308614f6.pdf',
-            'bound_viewer_guess':'https://hndm.iib.unam.mx/consulta/publicacion/visualizar/558ff9317d1e32523086143f',
-          }
-          results={}
-          def fetch(label,url):
+          urls=[
+            'https://repositorio.unam.mx/contenidos/ficha/el-periquito-921573',
+            'https://repositorio.unam.mx/921573',
+            'https://repositorio.unam.mx/contenidos/el-periquito-921573',
+          ]
+          responses=[]
+          for i,url in enumerate(urls,1):
               item={'url':url}
               try:
                   req=urllib.request.Request(url,headers=headers)
-                  with urllib.request.urlopen(req,timeout=90) as r: body=r.read(); final=r.geturl(); status=r.status; ctype=r.headers.get('content-type','')
-                  item.update(status=status,final_url=final,content_type=ctype,bytes=len(body))
-                  if body.startswith(b'%PDF'):
-                      (out/f'{label}.pdf').write_bytes(body); item['pdf']=True; return item,''
+                  with urllib.request.urlopen(req,timeout=90) as r: body=r.read(); final=r.geturl(); status=r.status
                   text=html.unescape(body.decode('utf-8',errors='replace'))
-                  (out/f'{label}.html').write_text(text,encoding='utf-8')
-                  item['pdf']=False
-                  return item,text
+                  (out/f'unam-{i}.html').write_text(text,encoding='utf-8')
+                  item.update(status=status,final_url=final,bytes=len(body),text=text)
+              except urllib.error.HTTPError as exc:
+                  item.update(status=exc.code,error='HTTPError')
               except Exception as exc:
-                  item['error']=repr(exc); return item,''
-          pages={}
-          for label,url in urls.items():
-              item,text=fetch(label,url); results[label]=item; pages[label]=text
-          # Parse the bound description aggressively but only report evidence actually present.
-          text=pages.get('bound_description','')
-          links=[]
-          for m in re.finditer(r'<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',text,re.I|re.S):
-              href=html.unescape(m.group(1)); label=re.sub(r'<[^>]+>',' ',m.group(2)); label=re.sub(r'\s+',' ',html.unescape(label)).strip()
-              full=urllib.parse.urljoin(urls['bound_description'],href)
-              if any(k in full.lower() or k in label.lower() for k in ['visualizar','descripcion','descarga','tomo','volumen','pdf','escuela','periquito']):
-                  links.append({'label':label,'href':href,'url':full})
-          # Unique preserving order.
-          uniq=[]; seen=set()
-          for x in links:
-              key=(x['label'],x['url'])
-              if key not in seen: seen.add(key); uniq.append(x)
-          ids=[]
-          for source,t in pages.items():
-              for mid in re.findall(r'(?<![0-9a-f])([0-9a-f]{24})(?![0-9a-f])',t,re.I):
-                  ids.append({'source':source,'id':mid.lower()})
-          iduniq=[]; seen=set()
-          for x in ids:
-              k=(x['source'],x['id'])
-              if k not in seen: seen.add(k); iduniq.append(x)
-          contexts=[]
-          for source,t in pages.items():
-              for token in ['El Periquito','Escuela de primeras letras','6 de noviembre','1870-11-06','1870','Tomo I','Tomo II','Ver introducción','información técnica','visualizar/','verDescripcionDescarga','formPaginaSup','anioPS1','name="anio"']:
-                  for m in list(re.finditer(re.escape(token),t,re.I))[:8]:
-                      contexts.append({'source':source,'token':token,'context':re.sub(r'\s+',' ',t[max(0,m.start()-500):m.end()+1000])})
-          report={'fetches':results,'links':uniq[:200],'ids':iduniq[:300],'contexts':contexts}
+                  item['error']=repr(exc)
+              responses.append(item)
+          def vals(text,pattern): return list(dict.fromkeys(re.findall(pattern,text,re.I|re.S)))
+          parsed=[]
+          for r in responses:
+              t=r.get('text','')
+              if not t: parsed.append({k:v for k,v in r.items() if k!='text'}); continue
+              p={k:v for k,v in r.items() if k!='text'}
+              p.update({
+                'title_hits':t.lower().count('el periquito'),
+                'date_iso_hits':vals(t,r'(1870-11-06(?:T[^"< ,}]*)?)'),
+                'first_page_ids':vals(t,r'item_first_page_id.{0,250}?([0-9a-f]{24})'),
+                'publication_ids':vals(t,r'item_publication_id.{0,250}?([0-9a-f]{24})'),
+                'item_pages':vals(t,r'item_pages.{0,150}?([0-9]{1,4})'),
+                'hndm_urls':vals(t,r'(https?://[^"\' <]*hndm[^"\' <]*)')[:40],
+                'all_24hex':vals(t,r'(?<![0-9a-f])([0-9a-f]{24})(?![0-9a-f])')[:100],
+              })
+              contexts=[]
+              for token in ['item_first_page_id','item_publication_id','item_pages','item_date','1870-11-06','El Periquito','Texto completo','856.4.0.u','Hemeroteca Nacional Digital']:
+                  for m in list(re.finditer(re.escape(token),t,re.I))[:10]:
+                      contexts.append({'token':token,'context':re.sub(r'\s+',' ',t[max(0,m.start()-500):m.end()+1100])})
+              p['contexts']=contexts
+              parsed.append(p)
+          report={'responses':parsed}
           (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
           print(json.dumps(report,ensure_ascii=False,indent=2))
-          if not text or 'Escuela de primeras letras' not in text:
-              raise SystemExit('bound-container identity gate failed: La Escuela de primeras letras not visible')
+          strong=[p for p in parsed if p.get('title_hits',0)>0 and p.get('date_iso_hits') and p.get('first_page_ids')]
+          if not strong:
+              raise SystemExit('UNAM structured identity gate not yet resolved: no response exposes title + 1870-11-06 + item_first_page_id')
+          print('STRONG_HIT',json.dumps(strong[0],ensure_ascii=False))
       - name: Upload probe
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pdhd-el-periquito-1870-bound-probe
-          path: probe-periquito/
+          name: pdhd-el-periquito-1870-unam-probe
+          path: probe-periquito-unam/
           retention-days: 1
