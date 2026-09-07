@@ -1,0 +1,77 @@
+name: Inspect Xd0 primary PDF for exact D074 identity
+
+on:
+  push:
+    branches: [work/d074-canonical-page-recovery]
+    paths: [.github/workflows/retrieve-d074-xd0-primary.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download public PDF and identify internal memory title pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          mkdir -p d074-xd0-review/rendered
+          python - <<'PY'
+          import html, pathlib, re, urllib.request
+          vid='Xd0U5ozjxNgC'
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          req=urllib.request.Request(f'https://books.google.com/books?id={vid}&printsec=frontcover',headers=headers)
+          with urllib.request.urlopen(req,timeout=90) as r: text=html.unescape(r.read().decode('utf-8',errors='replace')).replace('\\/','/').replace('\\u0026','&')
+          links=re.findall(r'https?://books\.google\.[^/]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',text)
+          if not links: raise SystemExit('no public PDF link')
+          req=urllib.request.Request(links[0].replace('&amp;','&'),headers=headers)
+          with urllib.request.urlopen(req,timeout=300) as r: body=r.read()
+          if not body.startswith(b'%PDF') or len(body)<100000: raise SystemExit(f'invalid PDF {len(body)}')
+          pathlib.Path('d074-xd0-review/volume.pdf').write_bytes(body); print('downloaded',len(body))
+          PY
+          pdfinfo d074-xd0-review/volume.pdf | tee d074-xd0-review/pdfinfo.txt
+          pdftotext -layout d074-xd0-review/volume.pdf d074-xd0-review/volume.txt
+          python - <<'PY'
+          import json, pathlib, re, unicodedata
+          p=pathlib.Path('d074-xd0-review')
+          pages=(p/'volume.txt').read_text(encoding='utf-8',errors='replace').split('\f')
+          if pages and not pages[-1].strip(): pages.pop()
+          def norm(s):
+            s=unicodedata.normalize('NFD',s.lower()); s=''.join(c for c in s if unicodedata.category(c)!='Mn')
+            return re.sub(r'\s+',' ',s)
+          keys={
+            'title':'memoria de la secretaria de educacion publica',
+            'sep1936':'septiembre de 1936','aug1937':'agosto de 1937','mex1937':'mexico 1937',
+            'sep1937':'septiembre de 1937','aug1938':'agosto de 1938','mex1938':'mexico 1938',
+            'sep1938':'septiembre de 1938','aug1939':'agosto de 1939','mex1939':'mexico 1939',
+            'A':'educacion integral del alumno','B':'consejo nacional de la educacion superior','D':'distribucion de becas',
+          }
+          hits=[]
+          for i,pg in enumerate(pages,1):
+            n=norm(pg); m=[k for k,v in keys.items() if v in n]
+            if m:
+              lines=[re.sub(r'\s+',' ',x).strip() for x in pg.splitlines() if x.strip()]
+              hits.append({'physical_pdf_page':i,'matched':m,'first_lines':lines[:12],'last_lines':lines[-8:]})
+          print('PHYSICAL_PAGES',len(pages)); print(json.dumps(hits,ensure_ascii=False,indent=2))
+          (p/'hits.json').write_text(json.dumps(hits,ensure_ascii=False,indent=2),encoding='utf-8')
+          sel=set(range(1,min(16,len(pages))+1))
+          for h in hits:
+            if 'title' in h['matched'] or any(k in h['matched'] for k in ['sep1936','aug1937','mex1937']):
+              for q in range(max(1,h['physical_pdf_page']-1),min(len(pages),h['physical_pdf_page']+1)+1): sel.add(q)
+          (p/'render-pages.txt').write_text('\n'.join(map(str,sorted(sel))),encoding='utf-8')
+          PY
+          while read -r n; do
+            [ -n "$n" ] || continue
+            pdftoppm -f "$n" -l "$n" -singlefile -jpeg -r 180 d074-xd0-review/volume.pdf "d074-xd0-review/rendered/physical-$(printf '%04d' "$n")" >/dev/null 2>&1
+          done < d074-xd0-review/render-pages.txt
+      - name: Upload one-day primary review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-xd0-primary-review
+          path: d074-xd0-review/
+          retention-days: 1
+          if-no-files-found: error
