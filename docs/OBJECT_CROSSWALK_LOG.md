@@ -56,6 +56,12 @@ UNAM-RI record `921573` resolves the exact selected issue of *El Periquito* date
 
 Unlike the earlier descriptor-only state, the persistent first-page identifier was directly usable. Traversal by HNDM's explicit `siguienteLink` identifiers recovered four unique page PDFs and every page preserved the expected title, issue date and four-page count. The crosswalk remains object-level provenance; the direct page locators and fixed coder boundaries are recorded separately in the fragment shards.
 
+## 2026-09-06 — El Maestro no. 2 (mayo de 1921), exact Internet Archive issue object
+
+`PDHD-D000051` previously relied on the combined Internet Archive container `n1n3elmaestrorevista01mexi` for its issue-control fragment. A title/year search resolved the separate exact issue object `el-maestro.-revista-de-cultura-nacional-n-2-1921`, whose metadata identifies *El Maestro. Revista de Cultura Nacional, N° 2* (1921) and exposes a 118-page text PDF plus BookReader derivatives. This object is registered as `PDHD-A000008`.
+
+Direct visual inspection maps printed p. 133 to PDF p. 39, p. 145 to PDF p. 51, p. 147 to PDF p. 53 and p. 173 to PDF p. 79. Independent image comparison against neighboring BookReader derivatives proves the corresponding leaves `n38`, `n50`, `n52` and `n78`; the same continuous one-to-one offset places printed p. 135 / PDF p. 41 at `n40`. The crosswalk remains object-level provenance. F000041-F000043 store their page locators and fixed boundaries separately.
+
 ## Integrity decision
 
 `scripts/validate_object_aliases.py` validates document-to-alias crosswalks. `scripts/validate_content_leads.py` enforces the rule that a page-unresolved content lead cannot become eligible for fragment-locator promotion.

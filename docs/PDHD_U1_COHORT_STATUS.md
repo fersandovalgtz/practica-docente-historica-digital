@@ -14,10 +14,10 @@ Reference cut: **2026-09-06**
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
 | Fragment locator rows resolved/candidate | **95 / 96** | 99.0% of reliability slots localized
-| Fully frozen fragments | **77 / 96** | page-resolved conversion phase active |
+| Fully frozen fragments | **80 / 96** | page-resolved conversion phase active |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **95 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Seventy-seven units have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **95 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. Eighty units have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -25,7 +25,7 @@ The first reliability corpus remains frozen in `data/samples/pilot_document_sele
 
 ## Frozen-fragment evidence
 
-Eighteen selected documents now have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
+Nineteen selected documents now have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
 
 `PDHD-D000064`, *El Instructor* of 1 January 1889, now contributes a complete A–D batch from the exact HNDM issue cross-walked from UNAM-RI `750865`. The recovery exposes a second HNDM interface hazard: supplying anio/mes/dia in the viewer URL silently returned the 1 May 1888 issue, so that first artifact was rejected after masthead inspection. UNAM's structured record supplied persistent `item_first_page_id` `558a3e407d1ed64f17176fc2`; entering through that ID and enforcing an `1889-01-01` identity gate recovered exactly eight unique primary pages. Direct inspection fixes F000005 on p. 5 as a learner-directed grammatical prescription, confirms F000006 on p. 8 as an institutional prize-distribution span, fixes a distinct p. 8 source-critical representation of women's education for F000007, and uses the p. 1 publication-conditions block as F000008 control.
 
@@ -40,6 +40,9 @@ Eighteen selected documents now have complete four-slot batches. `PDHD-D000002`,
 `PDHD-D000031`, *La Enseñanza Moderna*, tomo I, segunda época, núm. 1, now contributes a complete four-slot batch. `PDHD-F000038`–`PDHD-F000040` remain fixed from direct BVMC first-page inspection. A dedicated recovery workflow subsequently downloaded and rendered the exact nine-page BVMC PDF. Direct inspection of printed p. 6 resolves `PDHD-F000037` from the *Clase de colores* lesson plan: the coder span begins at `Principio`, includes the contiguous `Medio`, `Fin`, `Método` and `Procedimiento` lines, and ends before `Ilustraciones`. The subsequent demonstration dialogue is deliberately excluded.
 
 `PDHD-D000011`, the inaugural *La Enseñanza Normal* issue of 15 September 1904, contributes a complete four-slot batch from the exact BVMC primary PDF. `PDHD-F000033` fixes an explicit pedagogical-act paragraph on printed p. 12 in Leopoldo Kiel's *Conferencias Pedagógicas*. `PDHD-F000034` fixes the professional/editorial block on p. 1. `PDHD-F000035` fixes the opening of *15 de Septiembre — Fecha grata* on p. 4 as a source-critical political-educational framing of school, education, liberty and progress, ending before the article shifts toward military commemoration. `PDHD-F000036` fixes the publication-cadence control on p. 1. All four boundaries come from direct inspection of the primary PDF.
+
+
+`PDHD-D000051`, *El Maestro. Revista de Cultura Nacional*, núm. 2 (mayo de 1921), now contributes a complete A–D batch. The separate Internet Archive issue object exposes a 118-page primary PDF. Visual review maps printed p. 147 to PDF p. 53 for F000041, p. 135 to PDF p. 41 for F000042 and p. 173 to PDF p. 79 for F000043. Four independent PDF-to-BookReader image comparisons prove the zero-based leaf mapping across the issue, yielding `n52`, `n40` and `n78` for the selected spans. F000044 remains the previously frozen bibliographic control. The batch preserves the difference between explicit pedagogical action, institutional/network organization and source-critical representation.
 
 Internet Archive contributes four additional image-verified controls plus the institutional region of *El Maestro*. `PDHD-F000050` and `PDHD-F000052` are fixed from BookReader leaves `n237` and `n236` in tomo II, núm. 3. `PDHD-F000044` uses the issue-II cover cartouche at `n104`; `PDHD-F000048` uses the issue-IV cover cartouche at `n4`. These conversions preserve `reader_page_target != analytical_span`: the reader route supported retrieval, while the final boundary came only from visual inspection of the primary image.
 
@@ -70,7 +73,7 @@ The `PDHD-F000033` recovery established the post-sprint exact-pointer workflow: 
 
 ## Remaining localization work
 
-The union of all `fragment_locator_progress*.csv` shards contains **95/96** pilot slots. Seventy-seven are frozen. The remaining **18** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **1 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **95/96** pilot slots. Eighty are frozen. The remaining **15** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **1 slots remain without a locator.**
 
 The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. The active phase now converts strong page-resolved candidates through direct historical-object inspection and opportunistically fills missing deterministic slots when the same inspected page provides structurally distinct evidence.
 

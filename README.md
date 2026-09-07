@@ -28,7 +28,7 @@ Corte de referencia: **6 de septiembre de 2026**.
 | Documentos congelados para el primer piloto | **24** |
 | Fragmentos fijos previstos | **96** |
 | Slots con localizador candidato/resuelto | **95 / 96** |
-| Fragmentos completamente congelados | **77 / 96** |
+| Fragmentos completamente congelados | **80 / 96** |
 | Fragmentos pedagógicos validados por humanos | **0** |
 
 Los 75 objetos forman una **cohorte de estabilización y preparación metodológica**, no una muestra nacional representativa. El tablero vigente está en [`docs/PDHD_U1_COHORT_STATUS.md`](docs/PDHD_U1_COHORT_STATUS.md).
@@ -46,6 +46,9 @@ El proyecto cuenta ya con múltiples lotes completos de **fragment freezing**. `
 El número inaugural de *La Enseñanza Normal*, 15 de septiembre de 1904, aporta cuatro unidades congeladas desde el PDF primario de BVMC. `PDHD-F000033` fija en la p. 12 un párrafo de *Conferencias Pedagógicas* de Leopoldo Kiel; `PDHD-F000034` fija el bloque profesional/editorial de primera página; `PDHD-F000035` fija en la p. 4 la apertura político-educativa de *15 de Septiembre — Fecha grata*; y `PDHD-F000036` fija la línea autónoma de periodicidad como control administrativo. Cada span fue fijado después de inspección primaria directa.
 
 *El Maestro* suma ahora cuatro congelamientos adicionales a su primer lote completo. En tomo II, núm. 3, `PDHD-F000050` fija en `n237` el bloque institucional de la Secretaría de Educación Pública y Talleres Gráficos de la Nación, mientras `PDHD-F000052` fija en `n236` el cartucho bibliográfico de portada como control. La portada identifica explícitamente tomo II, número III, diciembre de 1921 y la imprenta independiente confirma México, diciembre de 1921. Para los números 2 y 4 de 1921, `PDHD-F000044` y `PDHD-F000048` quedan congelados como controles mediante los cartuchos bibliográficos de las portadas primarias `n104` y `n4`, respectivamente.
+
+
+`PDHD-D000051`, *El Maestro. Revista de Cultura Nacional*, núm. 2 de mayo de 1921, completa ahora A–D. Internet Archive ofrece un objeto separado del número (`el-maestro.-revista-de-cultura-nacional-n-2-1921`) y un PDF primario de 118 páginas. La inspección visual fija `PDHD-F000041` en p. 147 como acto pedagógico explícito dentro de *Orientación obrera*; `PDHD-F000042` en p. 135 como bloque de organización, subordinación y federación del Grupo Claridad; y `PDHD-F000043` en p. 173 como unidad de crítica de fuentes sobre la representación y organización de las llamadas Tribus Indígenas Mexicanas. Una comparación independiente entre el PDF y hojas vecinas de BookReader prueba los locators `n52`, `n40` y `n78`; `PDHD-F000044` conserva su control bibliográfico ya congelado. No se incorpora el facsímil ni su transcripción.
 
 `PDHD-F000060`, control de *El esfuerzo educativo en México* (1928), cruza ahora el mismo gate de imagen primaria. Google Books expone `PR5`; un workflow de recuperación resolvió el PDF público vigente desde el HTML de la página seleccionada y renderizó las primeras hojas. La correspondencia `PR5` → orden 6 del libro → imagen PDF 009 se verificó antes de fijar el núcleo bibliográfico de la portada como control. La cola de conversión directa queda vacía; esto no equivale a completar el paquete de 96 fragmentos.
 
@@ -172,7 +175,7 @@ El protocolo está en [`docs/FRAGMENT_FREEZE_PROTOCOL.md`](docs/FRAGMENT_FREEZE_
 python scripts/build_fragment_manifest.py --output fragment_manifest.csv
 ```
 
-La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **95/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **77/96** fragmentos.
+La cola de trabajo está organizada en shards auditables `data/samples/fragment_locator_progress*.csv`. En el corte actual su unión contiene **95/96** slots con una página o sección candidata, resuelta o congelada. Los fragmentos que ya cruzaron el gate completo se registran en `data/samples/frozen_fragments*.csv`; su unión contiene **80/96** fragmentos.
 
 La fase reciente ha reforzado especialmente la revista *El Maestro*. Además del lote congelado del primer número, el tomo II, núm. 3 ya aporta dos regiones congeladas y los números 2 y 4 de 1921 aportan controles de portada directamente inspeccionados. Entre los targets analíticos pendientes figuran José U. Escobar, *Las tribus indígenas mexicanas*; Abel Ayala, *Mejores maestros*; Rafael Ramos Pedrueza, *Historia de México*; Gabriela Mistral, *Lecturas escolares. El cardo*; Rufino Blanco-Fombona, *Democracia Criolla*; José Suirob, *Orientación obrera*; y el manifiesto *La internacional de los intelectuales* del Grupo Claridad. Los punteros secundarios permanecen como `locator_candidate` hasta cotejar directamente las páginas del objeto histórico.
 
@@ -228,7 +231,7 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 ## Siguiente puerta metodológica
 
-La selección documental ya está lista. **95/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **18 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **77/96** congelados demuestran el pipeline a través de HNDM, BVMC, Internet Archive y Google Books y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
+La selección documental ya está lista. **95/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **15 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **77/96** congelados demuestran el pipeline a través de HNDM, BVMC, Internet Archive y Google Books y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
 
 La cola dedicada de conversión directa continúa vacía; después de `PDHD-F000060`, el lote `PDHD-F000077`–`PDHD-F000080` demuestra la siguiente ruta: recuperar el objeto primario completo, corregir los page labels de agregadores cuando sea necesario y fijar límites sólo después de inspección visual. Quedan **1 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **95/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles. `PDHD-F000060` ya fue inspeccionado en la página primaria `PR5`, congelado y retirado de cualquier cola pendiente.
 
