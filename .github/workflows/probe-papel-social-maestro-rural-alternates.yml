@@ -1,0 +1,84 @@
+name: Probe alternate primary routes for El papel social del maestro rural
+
+on:
+  push:
+    branches: [freeze-papel-social-maestro-rural-control]
+    paths:
+      - ".github/workflows/probe-papel-social-maestro-rural-alternates.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Query public bibliographic and scan interfaces
+        shell: python
+        run: |
+          import json, pathlib, urllib.parse, urllib.request, urllib.error
+          out=pathlib.Path('probe-papel-social'); out.mkdir()
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.7'}
+          title='El papel social del maestro rural'
+          urls={
+            'hathi_full':'https://catalog.hathitrust.org/api/volumes/full/recordnumber/101391797.json',
+            'hathi_brief':'https://catalog.hathitrust.org/api/volumes/brief/recordnumber/101391797.json',
+            'google_title':'https://www.googleapis.com/books/v1/volumes?'+urllib.parse.urlencode({'q':'intitle:"'+title+'"','maxResults':'40'}),
+            'google_exact':'https://www.googleapis.com/books/v1/volumes?'+urllib.parse.urlencode({'q':'"'+title+'"','maxResults':'40'}),
+            'ia_exact':'https://archive.org/advancedsearch.php?'+urllib.parse.urlencode({'q':'title:"'+title+'"','fl[]':['identifier','title','creator','date','year','description','collection'],'rows':'50','page':'1','output':'json'}),
+            'ia_sep':'https://archive.org/advancedsearch.php?'+urllib.parse.urlencode({'q':'title:(papel social maestro rural) AND (creator:(Secretaria Educacion Publica) OR creator:(Mexico))','fl[]':['identifier','title','creator','date','year','description','collection'],'rows':'50','page':'1','output':'json'}),
+          }
+          report={}
+          for label,url in urls.items():
+              item={'url':url}
+              try:
+                  req=urllib.request.Request(url,headers=headers)
+                  with urllib.request.urlopen(req,timeout=90) as r:
+                      body=r.read(); item.update(status=r.status,final_url=r.geturl(),content_type=r.headers.get('content-type',''),bytes=len(body))
+                  (out/f'{label}.bin').write_bytes(body)
+                  try:
+                      obj=json.loads(body.decode('utf-8'))
+                      (out/f'{label}.json').write_text(json.dumps(obj,ensure_ascii=False,indent=2),encoding='utf-8')
+                      item['json']=obj
+                  except Exception:
+                      text=body.decode('utf-8',errors='replace')
+                      (out/f'{label}.txt').write_text(text,encoding='utf-8')
+                      item['sample']=text[:5000]
+              except Exception as exc:
+                  item['error']=repr(exc)
+              report[label]=item
+          # Compact interesting fields for logs.
+          compact={}
+          for label,item in report.items():
+              c={k:v for k,v in item.items() if k not in {'json','sample'}}
+              obj=item.get('json')
+              if label.startswith('hathi') and isinstance(obj,dict):
+                  c['records']=obj.get('records'); c['items']=obj.get('items')
+              elif label.startswith('google') and isinstance(obj,dict):
+                  c['totalItems']=obj.get('totalItems')
+                  c['items']=[{
+                    'id':x.get('id'),
+                    'title':x.get('volumeInfo',{}).get('title'),
+                    'publisher':x.get('volumeInfo',{}).get('publisher'),
+                    'publishedDate':x.get('volumeInfo',{}).get('publishedDate'),
+                    'pageCount':x.get('volumeInfo',{}).get('pageCount'),
+                    'industryIdentifiers':x.get('volumeInfo',{}).get('industryIdentifiers'),
+                    'viewability':x.get('accessInfo',{}).get('viewability'),
+                    'publicDomain':x.get('accessInfo',{}).get('publicDomain'),
+                    'pdf':x.get('accessInfo',{}).get('pdf'),
+                    'webReaderLink':x.get('accessInfo',{}).get('webReaderLink'),
+                  } for x in obj.get('items',[])[:20]]
+              elif label.startswith('ia') and isinstance(obj,dict):
+                  c['numFound']=obj.get('response',{}).get('numFound')
+                  c['docs']=obj.get('response',{}).get('docs',[])[:50]
+              compact[label]=c
+          (out/'report.json').write_text(json.dumps(compact,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(compact,ensure_ascii=False,indent=2))
+      - name: Upload probe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-papel-social-maestro-rural-alternate-probe
+          path: probe-papel-social/
+          retention-days: 1
