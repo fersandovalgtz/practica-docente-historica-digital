@@ -1,0 +1,82 @@
+name: Probe D072 hidden editions
+
+on:
+  push:
+    branches:
+      - work/d072-primary-recovery-20260907
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe hidden editions and page-image routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d072_hidden
+          python3 - <<'PY'
+          import re,json,urllib.request,urllib.parse,html,pathlib,time
+          UA='Mozilla/5.0 PDHD-research/0.1'
+          def get(u):
+              try:
+                  req=urllib.request.Request(u,headers={'User-Agent':UA,'Accept-Language':'es-MX,es;q=0.9,en;q=0.7'})
+                  with urllib.request.urlopen(req,timeout=45) as r:
+                      return {'status':r.status,'ctype':r.headers.get('content-type',''),'final':r.geturl(),'body':r.read()}
+              except Exception as e: return {'status':None,'ctype':'','final':'','body':repr(e).encode(),'error':repr(e)}
+          vids={'1933_v1':'JFRLAAAAYAAJ','1933_v2':'VFRLAAAAYAAJ','1934_v1':'e_M8bhjM9N0C'}
+          queries=['misiones culturales escuelas normales','misiones culturales','escuelas normales rurales','maestros rurales preparación','inspección rural maestros','educación rural','psicopedagogía higiene','revalidación estudios']
+          report={}
+          for label,vid in vids.items():
+              rec={'id':vid,'searches':{},'pages':{}}
+              front=get(f'https://books.google.com/books?id={vid}&printsec=frontcover&hl=es')
+              s=front['body'].decode('utf-8','replace')
+              plain=re.sub(r'<script.*?</script>|<style.*?</style>',' ',s,flags=re.I|re.S); plain=re.sub(r'<[^>]+>',' ',plain); plain=re.sub(r'\s+',' ',html.unescape(plain))
+              rec['front']={'status':front['status'],'ctype':front['ctype'],'bytes':len(front['body']),'final':front['final'],'sample':plain[:2200],'has_pdf':'.pdf' in s.lower(),'has_books_content':'books/content' in s,'has_download':'download' in s.lower()}
+              pids=[]
+              for q in queries:
+                  u='https://books.google.com/books?'+urllib.parse.urlencode({'jscmd':'SearchWithinVolume2','q':q,'vid':vid,'hl':'es'})
+                  rr=get(u); txt=rr['body'].decode('utf-8','replace')
+                  try: obj=json.loads(txt)
+                  except Exception: obj={}
+                  rows=[]
+                  for x in obj.get('search_results',[]):
+                      pid=x.get('page_id'); pnum=x.get('page_number'); sn=x.get('snippet_text','')
+                      if pid: pids.append(pid)
+                      rows.append({'page_id':pid,'page_number':pnum,'snippet':sn[:800],'page_url':x.get('page_url')})
+                  rec['searches'][q]={'status':rr['status'],'ctype':rr['ctype'],'bytes':len(rr['body']),'number':obj.get('number_of_results'),'results':rows[:20]}
+              # Probe a bounded set of discovered pages plus likely title/front leaves.
+              candidates=list(dict.fromkeys(pids))[:24] + ['PP1','PP3','PP5','PP7','PR1','PR3','PR5','PR7']
+              for pid in list(dict.fromkeys(candidates)):
+                  u=f'https://books.google.com/books?id={vid}&pg={urllib.parse.quote(pid)}&hl=es'
+                  rr=get(u); ss=rr['body'].decode('utf-8','replace')
+                  urls=[]
+                  # Capture ordinary public image/content/download URLs embedded by Google.
+                  for pat in [r'https?[^\"\'<> ]*books/content[^\"\'<> ]+',r'https?[^\"\'<> ]*googleusercontent[^\"\'<> ]+',r'https?[^\"\'<> ]*(?:download|jscmd=BookPage)[^\"\'<> ]+']:
+                      urls += re.findall(pat,ss)
+                  urls=[html.unescape(x.replace('\\u0026','&').replace('\\x26','&')) for x in urls]
+                  urls=list(dict.fromkeys(urls))[:60]
+                  rec['pages'][pid]={'status':rr['status'],'ctype':rr['ctype'],'bytes':len(rr['body']),'final':rr['final'],'has_sig':'sig=' in ss,'has_pageImage':'pageImage' in ss,'has_books_content':'books/content' in ss,'urls':urls}
+                  time.sleep(.05)
+              report[label]=rec
+          pathlib.Path('d072_hidden/report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          for label,r in report.items():
+              print('\n###',label,r['id'])
+              print('FRONT',r['front'])
+              for q,v in r['searches'].items():
+                  print('SEARCH',q,'n=',v.get('number'))
+                  for x in v.get('results',[])[:8]: print(' ',x)
+              print('PAGE ROUTES WITH CONTENT')
+              for pid,x in r['pages'].items():
+                  if x.get('has_sig') or x.get('has_pageImage') or x.get('has_books_content') or x.get('urls'):
+                      print(pid,{k:x.get(k) for k in ['status','ctype','bytes','has_sig','has_pageImage','has_books_content']})
+                      for u in x.get('urls',[])[:8]: print(' ',u[:700])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: d072-hidden-edition-diagnostics
+          path: d072_hidden/report.json
+          retention-days: 1
