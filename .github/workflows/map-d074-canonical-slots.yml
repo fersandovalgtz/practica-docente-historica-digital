@@ -1,0 +1,236 @@
+name: Map and recover D074 canonical slot evidence
+
+on:
+  push:
+    branches:
+      - "work/d074-primary-freeze"
+    paths:
+      - ".github/workflows/map-d074-canonical-slots.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  map-recover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query canonical OCR index and test signed page-image routes
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import urllib.parse
+          import urllib.request
+
+          volume_id = "KRV2_jMW8-wC"
+          out = pathlib.Path("d074-canonical-slot-map")
+          imgdir = out / "page-images"
+          out.mkdir(exist_ok=True)
+          imgdir.mkdir(exist_ok=True)
+
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
+              "Accept": "text/html,application/xhtml+xml,application/json,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+          }
+
+          queries = {
+              "A": [
+                  "geometria forma intuitiva practica",
+                  "forma intuitiva",
+                  "problemas de medicion",
+                  "medicion geometria",
+                  "trabajo manual alumno gusto artistico",
+              ],
+              "B": [
+                  "organo de consulta necesaria Gobierno Federal",
+                  "Articulo 2 Consejo tendra",
+                  "Consejo Nacional Educacion Superior Investigacion Cientifica",
+                  "creacion Consejo Nacional Educacion Superior",
+              ],
+              "C": [
+                  "bibliotecas escolares",
+                  "bibliotecas publicas",
+                  "organizacion funcionamiento bibliotecas",
+                  "fomento lectura bibliotecas",
+                  "lectura cultura bibliotecas",
+              ],
+              "D": [
+                  "becas entidades federativas clases trabajadores",
+                  "distribucion becas Republica",
+                  "censos industrial ejidal becas",
+                  "becas correspondiente cada Entidad Federativa",
+              ],
+          }
+
+          def fetch(url, timeout=60, accept=None, referer=None):
+              h = dict(headers)
+              if accept:
+                  h["Accept"] = accept
+              if referer:
+                  h["Referer"] = referer
+              req = urllib.request.Request(url, headers=h)
+              with urllib.request.urlopen(req, timeout=timeout) as response:
+                  return response.status, response.headers.get("Content-Type", ""), response.geturl(), response.read()
+
+          report = {"volume_id": volume_id, "slots": {}, "pages": {}}
+          page_sources = {}
+
+          for slot, qs in queries.items():
+              slot_rows = []
+              for q in qs:
+                  url = (
+                      f"https://books.google.com/books?id={volume_id}"
+                      f"&jscmd=SearchWithinVolume2&q={urllib.parse.quote(q)}"
+                  )
+                  row = {"query": q, "url": url}
+                  try:
+                      status, ctype, final_url, body = fetch(url, accept="application/json,*/*;q=0.8")
+                      text = body.decode("utf-8", errors="replace")
+                      data = json.loads(text)
+                      row.update({
+                          "status": status,
+                          "content_type": ctype,
+                          "number_of_results": data.get("number_of_results"),
+                          "results": data.get("search_results", []),
+                      })
+                      for result in row["results"]:
+                          pid = result.get("page_id")
+                          if pid:
+                              page_sources.setdefault(pid, []).append({
+                                  "slot": slot,
+                                  "query": q,
+                                  "page_number": result.get("page_number"),
+                                  "snippet_text": result.get("snippet_text"),
+                              })
+                  except Exception as exc:
+                      row["error"] = f"{type(exc).__name__}: {exc}"
+                  slot_rows.append(row)
+              report["slots"][slot] = slot_rows
+
+          # Recover a current per-page signature from the canonical page HTML,
+          # then test several signed image URL shapes. These are normal Google
+          # Books page routes; no authentication, CAPTCHA or access bypass is used.
+          for pid, sources in sorted(page_sources.items()):
+              page_url = f"https://books.google.com/books?id={volume_id}&pg={pid}"
+              prow = {"page_id": pid, "sources": sources, "page_url": page_url, "image_attempts": []}
+              try:
+                  status, ctype, final_url, body = fetch(page_url)
+                  page_html = html.unescape(body.decode("utf-8", errors="replace")).replace("\\/", "/").replace("\\u0026", "&")
+                  prow.update({"page_status": status, "page_content_type": ctype, "page_bytes": len(body)})
+
+                  sig = None
+                  # Prefer the hidden search form signature bound to the requested page.
+                  form_pat = rf'name=["\']pg["\']\s+value=["\']{re.escape(pid)}["\'].*?name=["\']sig["\']\s+value=["\']([^"\']+)'
+                  m = re.search(form_pat, page_html, flags=re.I | re.S)
+                  if not m:
+                      # Attribute order can vary; search a local window around the page id.
+                      pos = page_html.find(f'value="{pid}"')
+                      if pos >= 0:
+                          window = page_html[max(0, pos - 400):pos + 1200]
+                          sm = re.search(r'name=["\']sig["\']\s+value=["\']([^"\']+)', window, flags=re.I | re.S)
+                          if sm:
+                              sig = sm.group(1)
+                  else:
+                      sig = m.group(1)
+                  prow["sig_found"] = bool(sig)
+                  if sig:
+                      prow["sig_prefix"] = sig[:12]
+
+                  # Accessible mode can expose exact-page text even where a scan
+                  # image is unavailable. Store only a normalized preview and size.
+                  accessible = f"https://books.google.com/books?id={volume_id}&pg={pid}&hl=es&output=html_text"
+                  try:
+                      astatus, actype, afinal, abody = fetch(accessible, referer=page_url)
+                      atext = html.unescape(abody.decode("utf-8", errors="replace"))
+                      stripped = re.sub(r"<script\b.*?</script>", " ", atext, flags=re.I | re.S)
+                      stripped = re.sub(r"<style\b.*?</style>", " ", stripped, flags=re.I | re.S)
+                      stripped = re.sub(r"<[^>]+>", " ", stripped)
+                      stripped = re.sub(r"\s+", " ", stripped).strip()
+                      prow["accessible"] = {
+                          "status": astatus,
+                          "content_type": actype,
+                          "bytes": len(abody),
+                          "text_chars": len(stripped),
+                          "text_preview": stripped[:1800],
+                      }
+                  except Exception as exc:
+                      prow["accessible"] = {"error": f"{type(exc).__name__}: {exc}"}
+
+                  if sig:
+                      candidates = [
+                          f"https://books.google.com/books/content?id={volume_id}&pg={pid}&img=1&zoom=2&hl=es&sig={urllib.parse.quote(sig)}",
+                          f"https://books.google.com/books/content?id={volume_id}&pg={pid}&img=1&zoom=3&hl=es&sig={urllib.parse.quote(sig)}",
+                          f"https://books.google.com/books/content?id={volume_id}&pg={pid}&jscmd=SearchWithinVolume2&img=1&zoom=2&hl=es&sig={urllib.parse.quote(sig)}",
+                      ]
+                      for idx, image_url in enumerate(candidates, start=1):
+                          attempt = {"url": image_url}
+                          try:
+                              istatus, ictype, ifinal, ibody = fetch(
+                                  image_url,
+                                  accept="image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                                  referer=page_url,
+                              )
+                              attempt.update({
+                                  "status": istatus,
+                                  "content_type": ictype,
+                                  "bytes": len(ibody),
+                                  "final_url": ifinal,
+                              })
+                              if istatus == 200 and ictype.startswith("image/") and len(ibody) > 10000:
+                                  suffix = ".jpg" if "jpeg" in ictype else ".img"
+                                  dest = imgdir / f"{pid}-{idx}{suffix}"
+                                  dest.write_bytes(ibody)
+                                  attempt["saved"] = dest.name
+                                  prow["image_attempts"].append(attempt)
+                                  break
+                          except Exception as exc:
+                              attempt["error"] = f"{type(exc).__name__}: {exc}"
+                          prow["image_attempts"].append(attempt)
+              except Exception as exc:
+                  prow["page_error"] = f"{type(exc).__name__}: {exc}"
+              report["pages"][pid] = prow
+
+          # Concise machine-readable slot summary, useful for deciding whether
+          # registered locators are stable, shifted, or unsupported.
+          summary = {}
+          for slot, rows in report["slots"].items():
+              pages = {}
+              for row in rows:
+                  for result in row.get("results", []):
+                      key = (result.get("page_id"), result.get("page_number"))
+                      if key[0]:
+                          pages.setdefault(key, 0)
+                          pages[key] += 1
+              summary[slot] = [
+                  {"page_id": pid, "page_number": pnum, "query_hits": count}
+                  for (pid, pnum), count in sorted(pages.items(), key=lambda x: (-x[1], str(x[0][1])))
+              ]
+          report["slot_page_summary"] = summary
+
+          (out / "canonical-slot-map.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+          print(json.dumps({
+              "slot_page_summary": summary,
+              "page_recovery": {
+                  pid: {
+                      "sig_found": row.get("sig_found"),
+                      "accessible": row.get("accessible"),
+                      "saved_images": [a.get("saved") for a in row.get("image_attempts", []) if a.get("saved")],
+                  }
+                  for pid, row in report["pages"].items()
+              },
+          }, ensure_ascii=False, indent=2))
+
+      - name: Upload one-day canonical slot evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-canonical-slot-map
+          path: d074-canonical-slot-map/
+          retention-days: 1
+          if-no-files-found: error
