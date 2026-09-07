@@ -44,9 +44,6 @@ jobs:
               vout = out / volume_id
               vout.mkdir(exist_ok=True)
               row = {"volume_id": volume_id, "pages": {}, "pdf_candidates": []}
-
-              # Public Books API metadata establishes whether this exact object is
-              # the 1937 volume 2 and whether Google currently exposes a PDF route.
               api_url = f"https://www.googleapis.com/books/v1/volumes/{volume_id}"
               try:
                   status, ctype, final_url, body = fetch_bytes(api_url)
@@ -78,8 +75,6 @@ jobs:
               except Exception as exc:
                   row["api_error"] = f"{type(exc).__name__}: {exc}"
 
-              # Selected-page HTML sometimes contains a current signed PDF link even
-              # when the API does not. Capture only route metadata, not source text.
               for page_id in target_pages:
                   page_url = (
                       f"https://books.google.com/books?cad=1&id={volume_id}&pg={page_id}"
@@ -105,18 +100,10 @@ jobs:
                           ]
                       prow["pdf_candidate_count"] = len(pdfs)
                       row["pdf_candidates"].extend(pdfs)
-
-                      # Capture search-within-volume endpoint clues if present.
-                      search_endpoints = re.findall(
-                          r'https?://books\.google\.[^"\'<> ]+jscmd=SearchWithinVolume2[^"\'<> ]*',
-                          decoded,
-                      )
-                      prow["search_endpoint_count"] = len(search_endpoints)
                   except Exception as exc:
                       prow["error"] = f"{type(exc).__name__}: {exc}"
                   row["pages"][page_id] = prow
 
-              # De-duplicate and attempt candidate PDFs in order.
               unique = []
               seen = set()
               for candidate in row["pdf_candidates"]:
@@ -126,7 +113,7 @@ jobs:
                       unique.append(candidate)
               row["pdf_candidates"] = unique[:20]
               row["pdf_saved"] = False
-              for idx, pdf_url in enumerate(unique[:8], start=1):
+              for pdf_url in unique[:8]:
                   try:
                       status, ctype, final_url, body = fetch_bytes(pdf_url, timeout=180)
                       attempt = {
@@ -157,35 +144,99 @@ jobs:
               json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
           )
 
-      - name: Render target neighborhoods from any recovered primary PDF
+      - name: Locate target content by physical PDF page without assuming printed-page offset
         shell: bash
         run: |
-          set -u
+          set -euo pipefail
           out="d074-googlebooks-review"
-          if ! command -v pdftoppm >/dev/null 2>&1; then
+          if ! command -v pdftotext >/dev/null 2>&1; then
             sudo apt-get update -qq
             sudo apt-get install -y -qq poppler-utils
           fi
-          recovered=0
-          for volume in KRV2_jMW8-wC 08ygAAAAMAAJ; do
-            pdf="$out/$volume/volume.pdf"
-            if [ ! -f "$pdf" ]; then
-              echo "$volume: no PDF recovered"
-              continue
-            fi
-            recovered=$((recovered+1))
-            pdfinfo "$pdf" | tee "$out/$volume/pdfinfo.txt"
-            mkdir -p "$out/$volume/rendered"
-            # Deliberately broad windows. Printed-page identity must be visually
-            # established before any locator is promoted; no fixed front-matter
-            # offset is assumed here.
-            for spec in "28 58 p40-p41" "355 390 p371" "428 463 p444"; do
-              set -- $spec
-              first="$1"; last="$2"; label="$3"
-              pdftoppm -f "$first" -l "$last" -jpeg -r 135 "$pdf" "$out/$volume/rendered/$label" || true
-            done
-          done
-          echo "Recovered PDF objects: $recovered"
+          pdf="$out/08ygAAAAMAAJ/volume.pdf"
+          if [ ! -f "$pdf" ]; then
+            echo "No alternate primary PDF recovered"
+            exit 0
+          fi
+          pdfinfo "$pdf" | tee "$out/08ygAAAAMAAJ/pdfinfo.txt"
+          pdftotext -layout "$pdf" "$out/08ygAAAAMAAJ/volume-ocr.txt"
+
+          python - <<'PY'
+          import json
+          import pathlib
+          import re
+          import subprocess
+          import unicodedata
+
+          pdf = pathlib.Path("d074-googlebooks-review/08ygAAAAMAAJ/volume.pdf")
+          out = pdf.parent
+          info = subprocess.check_output(["pdfinfo", str(pdf)], text=True, errors="replace")
+          pages = int(re.search(r"^Pages:\s+(\d+)", info, flags=re.M).group(1))
+
+          patterns = {
+              "slot_D_becas": ["distribucion de becas en la republica", "distribución de becas en la república"],
+              "slot_B_consejo": ["consejo nacional de la educacion superior", "consejo nacional de educación superior"],
+              "slot_A_trabajo_manual": ["trabajo manual"],
+              "slot_A_aplicacion_conocimientos": ["aplicacion de los conocimientos", "aplicación de los conocimientos"],
+              "slot_A_desarrollo_intelectual": ["desarrollo intelectual"],
+              "slot_C_bibliotecas": ["bibliotecas"],
+          }
+
+          def norm(s):
+              s = unicodedata.normalize("NFD", s.lower())
+              s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+              return re.sub(r"\s+", " ", s)
+
+          normalized_patterns = {k: [norm(v) for v in vals] for k, vals in patterns.items()}
+          hits = []
+          page_texts = {}
+          for page in range(1, pages + 1):
+              text = subprocess.check_output(
+                  ["pdftotext", "-f", str(page), "-l", str(page), "-layout", str(pdf), "-"],
+                  text=True,
+                  errors="replace",
+              )
+              page_texts[page] = text
+              nt = norm(text)
+              matched = [key for key, vals in normalized_patterns.items() if any(v in nt for v in vals)]
+              if matched:
+                  lines = [re.sub(r"\s+", " ", line).strip() for line in text.splitlines() if line.strip()]
+                  hits.append({
+                      "physical_pdf_page": page,
+                      "matched_patterns": matched,
+                      "first_nonblank_lines": lines[:8],
+                      "last_nonblank_lines": lines[-5:],
+                  })
+
+          (out / "target-content-hits.json").write_text(
+              json.dumps(hits, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+          print(json.dumps(hits, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Render only OCR-located primary pages for visual review
+        shell: python
+        run: |
+          import json
+          import pathlib
+          import subprocess
+
+          root = pathlib.Path("d074-googlebooks-review/08ygAAAAMAAJ")
+          pdf = root / "volume.pdf"
+          hits_path = root / "target-content-hits.json"
+          if not pdf.exists() or not hits_path.exists():
+              raise SystemExit(0)
+          hits = json.loads(hits_path.read_text(encoding="utf-8"))
+          pages = sorted({int(h["physical_pdf_page"]) for h in hits})
+          rendered = root / "rendered-targets"
+          rendered.mkdir(exist_ok=True)
+          for page in pages:
+              prefix = rendered / f"physical-{page:03d}"
+              subprocess.run(
+                  ["pdftoppm", "-f", str(page), "-l", str(page), "-singlefile", "-jpeg", "-r", "180", str(pdf), str(prefix)],
+                  check=True,
+              )
+          print("Rendered target physical pages:", pages)
 
       - name: Upload one-day D074 primary-review artifact
         if: always()
