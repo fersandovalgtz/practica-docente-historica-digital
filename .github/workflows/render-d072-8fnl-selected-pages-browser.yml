@@ -1,0 +1,114 @@
+name: Render D072 8FNL selected pages in public browser
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/d072-primary-surrogate-20260907
+    paths:
+      - .github/workflows/render-d072-8fnl-selected-pages-browser.yml
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Prepare Selenium
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d072-browser/full d072-browser/elements
+          python3 -m pip install -q selenium
+          which google-chrome
+          which chromedriver
+
+      - name: Render public selected-page URLs
+        shell: python
+        run: |
+          import json, pathlib, time
+          from selenium import webdriver
+          from selenium.webdriver.chrome.options import Options
+
+          out=pathlib.Path('d072-browser')
+          pages=['PP7','PA113','PA303','PA467','PA487']
+          results={}
+          for pg in pages:
+              opts=Options()
+              opts.add_argument('--headless=new')
+              opts.add_argument('--no-sandbox')
+              opts.add_argument('--disable-gpu')
+              opts.add_argument('--disable-dev-shm-usage')
+              opts.add_argument('--window-size=1600,2200')
+              opts.add_argument('--lang=es-MX')
+              opts.set_capability('goog:loggingPrefs', {'browser':'ALL','performance':'ALL'})
+              d=webdriver.Chrome(options=opts)
+              try:
+                  url=f'https://books.google.com/books?id=8FNLAAAAYAAJ&pg={pg}&source=gbs_selected_pages&cad=1'
+                  d.get(url)
+                  time.sleep(12)
+                  d.save_screenshot(str(out/'full'/f'{pg}.png'))
+                  imgs=d.find_elements('tag name','img')
+                  info=[]
+                  ranked=[]
+                  for i,el in enumerate(imgs):
+                      try:
+                          r=el.rect
+                          src=el.get_attribute('src') or ''
+                          natural=d.execute_script('return [arguments[0].naturalWidth||0,arguments[0].naturalHeight||0]',el)
+                          row={'index':i,'src':src[:1200],'rect':r,'natural':natural,'alt':(el.get_attribute('alt') or '')[:300]}
+                          info.append(row)
+                          area=max(0,r.get('width',0))*max(0,r.get('height',0))
+                          if area>20000 and r.get('height',0)>150:
+                              ranked.append((area,i,el,row))
+                      except Exception:
+                          pass
+                  ranked.sort(reverse=True,key=lambda x:x[0])
+                  saved=[]
+                  for rank,(_,i,el,row) in enumerate(ranked[:8],start=1):
+                      try:
+                          p=out/'elements'/f'{pg}-rank{rank:02d}-img{i}.png'
+                          el.screenshot(str(p)); saved.append({'file':p.name,'row':row})
+                      except Exception:
+                          pass
+                  body_text=(d.find_element('tag name','body').text or '')[:8000]
+                  perf=d.get_log('performance')
+                  image_responses=[]
+                  import json as _json
+                  for ev in perf:
+                      try:
+                          msg=_json.loads(ev['message'])['message']
+                          if msg.get('method')=='Network.responseReceived':
+                              p=msg.get('params',{})
+                              resp=p.get('response',{})
+                              mime=resp.get('mimeType','')
+                              u=resp.get('url','')
+                              if mime.startswith('image/') or '/books/content' in u:
+                                  image_responses.append({'url':u[:1600],'status':resp.get('status'),'mime':mime,'fromDiskCache':resp.get('fromDiskCache'),'fromServiceWorker':resp.get('fromServiceWorker')})
+                      except Exception:
+                          pass
+                  results[pg]={
+                      'url':d.current_url,
+                      'title':d.title,
+                      'body_text':body_text,
+                      'images':info[:100],
+                      'saved_elements':saved,
+                      'image_responses':image_responses[-100:],
+                      'browser_logs':d.get_log('browser')[-50:],
+                  }
+                  print('\nPAGE',pg,'title',d.title,'imgs',len(info),'large',len(ranked),'saved',[x['file'] for x in saved])
+                  print('BODY',body_text[:1500].replace('\n',' | '))
+                  print('IMAGE_RESPONSES',[(x['status'],x['mime'],x['url'][:180]) for x in image_responses[-20:]])
+              finally:
+                  d.quit()
+          (out/'report.json').write_text(json.dumps(results,ensure_ascii=False,indent=2),encoding='utf-8')
+
+      - name: Upload one-day browser evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d072-8fnl-public-browser-review
+          path: d072-browser/
+          retention-days: 1
+          if-no-files-found: error
