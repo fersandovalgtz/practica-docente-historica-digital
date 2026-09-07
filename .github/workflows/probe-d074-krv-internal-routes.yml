@@ -1,0 +1,133 @@
+name: Probe D074 canonical Google Books internal routes
+
+on:
+  push:
+    branches:
+      - "work/d074-primary-freeze"
+    paths:
+      - ".github/workflows/probe-d074-krv-internal-routes.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe SearchWithinVolume2 and selected-page internals
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import urllib.parse
+          import urllib.request
+
+          volume_id = "KRV2_jMW8-wC"
+          queries = {
+              "slot_D_becas": "Distribucion de becas en la Republica",
+              "slot_B_consejo": "Consejo Nacional de la Educacion Superior y de la Investigacion",
+              "slot_A_trabajo_manual": "trabajo manual",
+              "slot_A_aplicacion": "aplicacion de los conocimientos",
+              "slot_A_geometria": "geometria",
+              "slot_C_bibliotecas": "bibliotecas",
+          }
+          page_ids = ["PA40", "PA41", "PA371", "PA444"]
+          out = pathlib.Path("d074-krv-route-probe")
+          out.mkdir(exist_ok=True)
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+          }
+
+          def fetch(url, timeout=60):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=timeout) as response:
+                  return response.status, response.headers.get("Content-Type", ""), response.geturl(), response.read()
+
+          report = {"volume_id": volume_id, "searches": {}, "selected_pages": {}}
+
+          for key, query in queries.items():
+              encoded = urllib.parse.quote(query)
+              candidates = [
+                  f"https://www.google.com/books?id={volume_id}&jscmd=SearchWithinVolume2&q={encoded}",
+                  f"https://books.google.com/books?id={volume_id}&jscmd=SearchWithinVolume2&q={encoded}",
+                  f"https://books.google.com/books?vid={volume_id}&jscmd=SearchWithinVolume2&q={encoded}",
+              ]
+              attempts = []
+              for url in candidates:
+                  row = {"url": url}
+                  try:
+                      status, ctype, final_url, body = fetch(url)
+                      text = body.decode("utf-8", errors="replace")
+                      row.update({
+                          "status": status,
+                          "content_type": ctype,
+                          "bytes": len(body),
+                          "final_url": final_url,
+                          "prefix": text[:500],
+                      })
+                      try:
+                          data = json.loads(text)
+                          row["json_type"] = type(data).__name__
+                          row["json"] = data
+                      except Exception:
+                          pass
+                  except Exception as exc:
+                      row["error"] = f"{type(exc).__name__}: {exc}"
+                  attempts.append(row)
+              report["searches"][key] = attempts
+
+          for page_id in page_ids:
+              url = f"https://books.google.com/books?id={volume_id}&pg={page_id}&jscmd=EmbeddedSearchWithinVolume2"
+              base_url = f"https://books.google.com/books?id={volume_id}&pg={page_id}"
+              prow = {"requested_page": page_id, "attempts": []}
+              for candidate in [base_url, url]:
+                  row = {"url": candidate}
+                  try:
+                      status, ctype, final_url, body = fetch(candidate)
+                      text = body.decode("utf-8", errors="replace")
+                      decoded = html.unescape(text).replace("\\/", "/").replace("\\u0026", "&")
+                      row.update({"status": status, "content_type": ctype, "bytes": len(body), "final_url": final_url})
+
+                      # Extract only route-like or page-map material, never the full HTML.
+                      patterns = {
+                          "books_content_urls": r'https?://books\.google\.[^"\'<> ]+/books/content\?[^"\'<> ]+',
+                          "googleusercontent_urls": r'https?://books\.googleusercontent\.com/[^"\'<> ]+',
+                          "searchwithin_urls": r'https?://[^"\'<> ]+SearchWithinVolume2[^"\'<> ]*',
+                          "page_tokens": rf'.{{0,140}}{re.escape(page_id)}.{{0,260}}',
+                          "sig_tokens": r'.{0,120}(?:sig|w=|pageImage|page_id|pageId|pageOrder|order|src)\s*[:=].{0,260}',
+                      }
+                      extracted = {}
+                      for name, pattern in patterns.items():
+                          vals = re.findall(pattern, decoded, flags=re.I|re.S)
+                          if isinstance(vals, list):
+                              dedup = []
+                              seen = set()
+                              for v in vals:
+                                  if isinstance(v, tuple):
+                                      v = " ".join(v)
+                                  v = re.sub(r"\s+", " ", v).strip()
+                                  if v not in seen:
+                                      seen.add(v)
+                                      dedup.append(v[:1200])
+                              extracted[name] = dedup[:50]
+                      row["extracted"] = extracted
+                  except Exception as exc:
+                      row["error"] = f"{type(exc).__name__}: {exc}"
+                  prow["attempts"].append(row)
+              report["selected_pages"][page_id] = prow
+
+          (out / "route-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+
+      - name: Upload one-day route diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-krv-route-probe
+          path: d074-krv-route-probe/
+          retention-days: 1
+          if-no-files-found: error
