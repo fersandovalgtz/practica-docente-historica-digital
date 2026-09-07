@@ -1,0 +1,46 @@
+name: Validate D074 research branch
+
+on:
+  push:
+    branches:
+      - "work/d074-primary-freeze"
+    paths:
+      - ".github/workflows/validate-d074-research.yml"
+      - "data/samples/**"
+      - "docs/**"
+      - "scripts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate public research data
+        run: python scripts/validate_repository.py
+      - name: Validate object alias crosswalk
+        run: python scripts/validate_object_aliases.py
+      - name: Validate unresolved pilot content leads
+        run: python scripts/validate_content_leads.py
+      - name: Validate structured retrieval attempts
+        run: python scripts/validate_retrieval_attempts.py
+      - name: Validate locator and frozen fragment shards
+        run: python scripts/validate_fragment_shards.py
+      - name: Validate direct-primary freeze-conversion queue
+        run: python scripts/validate_freeze_conversion_queue.py
+      - name: Check deterministic freeze-review preparation
+        run: python scripts/prepare_freeze_review.py --check
+      - name: Validate public pilot status counts
+        run: python scripts/validate_status_counts.py
+      - name: Self-test annotation agreement calculator
+        run: python scripts/annotation_agreement.py --self-test
+      - name: Check fixed-fragment manifest generator
+        run: python scripts/build_fragment_manifest.py --check
