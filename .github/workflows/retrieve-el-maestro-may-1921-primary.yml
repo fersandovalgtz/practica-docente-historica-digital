@@ -1,0 +1,99 @@
+name: Retrieve El Maestro May 1921 primary pages
+
+on:
+  push:
+    branches: [freeze-el-maestro-may-1921]
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve scan map and retrieve exact primary page images
+        shell: python
+        run: |
+          import json, pathlib, urllib.parse, urllib.request, xml.etree.ElementTree as ET, re, time
+          out=pathlib.Path('el-maestro-may-1921-primary'); out.mkdir()
+          ident='el-maestro.-revista-de-cultura-nacional-n-2-1921'
+          headers={'User-Agent':'Mozilla/5.0 PDHD-source-verification/0.1'}
+
+          def get(url):
+              req=urllib.request.Request(url,headers=headers)
+              with urllib.request.urlopen(req,timeout=120) as r:
+                  return r.read(), r.headers.get('content-type',''), r.status, r.geturl()
+
+          # Exact item metadata and identity gate.
+          b,ct,status,final=get(f'https://archive.org/metadata/{urllib.parse.quote(ident)}')
+          meta=json.loads(b.decode())
+          md=meta.get('metadata',{})
+          identity={k:md.get(k) for k in ['identifier','title','creator','date','description','mediatype','collection']}
+          print('IDENTITY',json.dumps(identity,ensure_ascii=False,indent=2))
+          hay=' '.join(str(identity.get(k,'') or '') for k in identity).lower()
+          if 'maestro' not in hay or '1921' not in hay or ('n° 2' not in hay and 'nº 2' not in hay and 'n 2' not in hay and 'n° 2' not in str(md.get('title','')).lower()):
+              raise SystemExit('exact issue identity gate failed')
+
+          files=meta.get('files',[])
+          scandata=next((f['name'] for f in files if f.get('name','').endswith('_scandata.xml')),None)
+          textpdf=next((f['name'] for f in files if f.get('name','').endswith('_text.pdf')),None)
+          djvuxml=next((f['name'] for f in files if f.get('name','').endswith('_djvu.xml')),None)
+          if not scandata: raise SystemExit('no scandata')
+          for name,label in [(scandata,'scandata.xml'),(djvuxml,'djvu.xml')]:
+              if name:
+                  bb,_,_,_=get('https://archive.org/download/'+ident+'/'+urllib.parse.quote(name))
+                  (out/label).write_bytes(bb)
+          if textpdf:
+              bb,cct,_,_=get('https://archive.org/download/'+ident+'/'+urllib.parse.quote(textpdf))
+              (out/'issue_text.pdf').write_bytes(bb)
+              print('TEXT_PDF_BYTES',len(bb),cct)
+
+          root=ET.fromstring((out/'scandata.xml').read_bytes())
+          mapping={}
+          leaves=[]
+          for pd in root.findall('.//pageData/page'):
+              leaf=pd.findtext('leafNum')
+              pnum=pd.findtext('./pageNumber')
+              ptype=pd.findtext('./pageType')
+              add=pd.findtext('./addToAccessFormats')
+              rec={'leaf':int(leaf) if leaf and leaf.isdigit() else leaf,'pageNumber':pnum,'pageType':ptype,'addToAccessFormats':add}
+              leaves.append(rec)
+              if pnum: mapping.setdefault(pnum,[]).append(rec)
+          targets=['133','134','135','145','146','147','173','174','175','176']
+          target_map={p:mapping.get(p,[]) for p in targets}
+          print('TARGET_MAP',json.dumps(target_map,ensure_ascii=False,indent=2))
+          if any(not target_map[p] for p in targets):
+              raise SystemExit('missing one or more printed target pages in scandata')
+
+          # Download exact page images through IA public page derivative endpoint; include cover and windows.
+          target_leaves=sorted({rec['leaf'] for p in targets for rec in target_map[p] if isinstance(rec['leaf'],int)})
+          # Add one leaf before/after each article window to check boundaries.
+          wanted=set(target_leaves)
+          for x in list(target_leaves):
+              wanted.update([max(0,x-1),x+1])
+          report={'identity':identity,'target_map':target_map,'images':{}}
+          for leaf in sorted(wanted):
+              candidates=[
+                  f'https://archive.org/download/{ident}/page/n{leaf}.jpg',
+                  f'https://archive.org/download/{ident}/page/n{leaf}_w1600.jpg',
+              ]
+              item={'candidates':candidates}
+              for url in candidates:
+                  try:
+                      bb,cct,st,fin=get(url)
+                      item.update(url=url,status=st,final_url=fin,content_type=cct,bytes=len(bb))
+                      if st==200 and cct.lower().startswith('image/') and len(bb)>20000:
+                          ext='.jpg' if 'jpeg' in cct.lower() or 'jpg' in cct.lower() else '.png'
+                          fn=f'n{leaf}{ext}'; (out/fn).write_bytes(bb); item['saved_as']=fn; break
+                  except Exception as exc: item.setdefault('errors',[]).append(repr(exc))
+              report['images'][str(leaf)]=item
+              time.sleep(0.15)
+          saved=[k for k,v in report['images'].items() if v.get('saved_as')]
+          print('SAVED_LEAVES',saved)
+          if len(saved)<len(target_leaves):
+              raise SystemExit('insufficient target page images')
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+      - name: Upload primary-review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-el-maestro-may-1921-primary
+          path: el-maestro-may-1921-primary/
+          retention-days: 1
