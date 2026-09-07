@@ -101,3 +101,5 @@ jobs:
           name: d072-google-viewer-render
           path: d072_viewer
           retention-days: 1
+
+# retrigger CDP capture after workflow-dispatch mismatch
