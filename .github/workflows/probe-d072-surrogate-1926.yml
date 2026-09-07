@@ -16,7 +16,7 @@ jobs:
       - name: Retrieve candidate primary volume
         shell: python
         run: |
-          import html, json, pathlib, re, urllib.request
+          import html, json, pathlib, re, urllib.parse, urllib.request
           out = pathlib.Path('d072-surrogate-probe')
           out.mkdir()
           book_id = 'yvMEAQAAIAAJ'
@@ -31,9 +31,17 @@ jobs:
                 raw=r.read(); final=r.geturl(); ct=r.headers.get('Content-Type','')
               text=html.unescape(raw.decode('utf-8',errors='replace'))
               (out/f'page-{len(report["attempts"])+1}.html').write_bytes(raw)
-              cands=re.findall(r'https?://books\.google\.com/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',text)
-              if not cands:
-                cands=['https://books.google.com'+m for m in re.findall(r'href=["\']([^"\']*?/books/download/[^"\']+?\.pdf\?[^"\']+)["\']',text)]
+              raw_cands=re.findall(r'href=["\']([^"\']*?/books/download/[^"\']+?\.pdf\?[^"\']+)["\']',text)
+              raw_cands += re.findall(r'(https?://[^"\'<> ]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+)',text)
+              cands=[]
+              for m in raw_cands:
+                if m.startswith('http://') or m.startswith('https://'):
+                  u=m
+                elif m.startswith('//'):
+                  u='https:'+m
+                else:
+                  u=urllib.parse.urljoin(final,m)
+                if u not in cands: cands.append(u)
               report['attempts'].append({'url':page_url,'final':final,'content_type':ct,'pdf_candidates':cands[:10]})
               for u in cands:
                 if 'output=pdf' not in u: continue
@@ -43,6 +51,7 @@ jobs:
                     body=r.read(); pct=r.headers.get('Content-Type','')
                   if body.startswith(b'%PDF') and len(body)>100000:
                     pdf=body; report['pdf_url']=u; report['pdf_bytes']=len(body); report['pdf_content_type']=pct; break
+                  report.setdefault('pdf_rejected',[]).append({'url':u,'bytes':len(body),'content_type':pct})
                 except Exception as exc:
                   report.setdefault('pdf_errors',[]).append(f'{type(exc).__name__}: {exc}')
               if pdf: break
