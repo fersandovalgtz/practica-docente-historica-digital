@@ -19,24 +19,39 @@ jobs:
         run: |
           import csv,html,json,pathlib,re,urllib.request
           out=pathlib.Path('probe'); out.mkdir()
-          url='https://repositorio.unam.mx/contenidos/la-escuela-moderna-924534'
-          req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0','Accept-Language':'es-MX,es;q=0.9'})
-          with urllib.request.urlopen(req,timeout=90) as r:
-              body=r.read(); final=r.geturl(); status=r.status
-          text=body.decode('utf-8',errors='replace'); dec=html.unescape(text)
-          (out/'unam.html').write_text(text,encoding='utf-8')
-          def matches(pattern):
-              return list(dict.fromkeys(re.findall(pattern,dec,re.I|re.S)))
+          urls=[
+            'https://repositorio.unam.mx/contenidos/ficha/la-escuela-moderna-924534',
+            'https://repositorio.unam.mx/924534',
+          ]
+          pages=[]
+          for i,url in enumerate(urls,1):
+              req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9'})
+              with urllib.request.urlopen(req,timeout=90) as r:
+                  body=r.read(); final=r.geturl(); status=r.status
+              text=body.decode('utf-8',errors='replace'); dec=html.unescape(text)
+              (out/f'unam-{i}.html').write_text(text,encoding='utf-8')
+              pages.append({'url':url,'final_url':final,'status':status,'bytes':len(body),'text':dec})
+          # Prefer the response that visibly identifies the requested object, not a generic search page.
+          selected=None
+          for p in pages:
+              if ('La Escuela moderna' in p['text'] or 'La Escuela Moderna' in p['text']) and ('1889-10-31' in p['text'] or '31 de octubre de 1889' in p['text'].lower()):
+                  selected=p; break
+          if selected is None:
+              # Keep structured diagnostics in stdout before failing.
+              diag=[{'url':p['url'],'final_url':p['final_url'],'status':p['status'],'bytes':p['bytes'],'title_hits':p['text'].lower().count('la escuela moderna'),'date_iso_hit':'1889-10-31' in p['text'],'date_es_hit':'31 de octubre de 1889' in p['text'].lower()} for p in pages]
+              print(json.dumps({'diagnostics':diag},ensure_ascii=False,indent=2))
+              raise SystemExit('UNAM identity gate failed: canonical object/date not visible in either route')
+          dec=selected['text']
+          def matches(pattern): return list(dict.fromkeys(re.findall(pattern,dec,re.I|re.S)))
           report={
-            'status':status,'final_url':final,'bytes':len(body),
-            'publication_ids':matches(r'item_publication_id[^0-9a-f]{0,100}([0-9a-f]{24})'),
-            'first_page_ids':matches(r'item_first_page_id[^0-9a-f]{0,100}([0-9a-f]{24})'),
-            'item_dates':matches(r'item_date[^0-9]{0,100}(1889-10-31(?:T[^"< ]+)?)'),
-            'item_pages':matches(r'item_pages[^0-9]{0,100}([0-9]{1,4})'),
+            'status':selected['status'],'final_url':selected['final_url'],'bytes':selected['bytes'],
+            'publication_ids':matches(r'item_publication_id[^0-9a-f]{0,150}([0-9a-f]{24})'),
+            'first_page_ids':matches(r'item_first_page_id[^0-9a-f]{0,150}([0-9a-f]{24})'),
+            'item_dates':matches(r'item_date[^0-9]{0,150}(1889-10-31(?:T[^"< ,}]+)?)'),
+            'item_pages':matches(r'item_pages[^0-9]{0,150}([0-9]{1,4})'),
             'hndm_serial_links':matches(r'(?:visualizar|publicacion)/(5580[0-9a-f]{20,})'),
-            'page_ids_any':matches(r'([0-9a-f]{24})'),
+            'page_ids_any':matches(r'([0-9a-f]{24})')[:100],
           }
-          # Preserve F21-F24 canonical pre-state.
           loc=[]
           for p in sorted(pathlib.Path('data/samples').glob('fragment_locator_progress*.csv')):
               with p.open(encoding='utf-8',newline='') as f:
@@ -46,19 +61,17 @@ jobs:
           with (pathlib.Path('data/samples')/'fragment_gap_queue_0_1.csv').open(encoding='utf-8',newline='') as f:
               gaps=[r for r in csv.DictReader(f) if r.get('fragment_id') in {'PDHD-F000021','PDHD-F000022','PDHD-F000023','PDHD-F000024'}]
           report['locators']=loc; report['gaps']=gaps
-          # context around structured fields and full-text link
           contexts=[]
-          for token in ['item_first_page_id','item_publication_id','item_pages','item_date','Texto completo','Hemeroteca Nacional Digital','1889-10-31']:
+          for token in ['item_first_page_id','item_publication_id','item_pages','item_date','Texto completo','Hemeroteca Nacional Digital','1889-10-31','31 de octubre de 1889']:
               for m in list(re.finditer(re.escape(token),dec,re.I))[:10]:
-                  contexts.append({'token':token,'context':re.sub(r'\s+',' ',dec[max(0,m.start()-450):m.end()+850])})
+                  contexts.append({'token':token,'context':re.sub(r'\s+',' ',dec[max(0,m.start()-500):m.end()+900])})
           report['contexts']=contexts
           (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
           print(json.dumps(report,ensure_ascii=False,indent=2))
-          if '1889-10-31' not in dec:
-              raise SystemExit('UNAM identity gate failed: target date not visible')
       - name: Upload probe
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pdhd-la-escuela-moderna-1889-probe
+          name: pdhd-la-escuela-moderna-1889-probe-v2
           path: probe/
           retention-days: 1
