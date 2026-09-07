@@ -106,6 +106,15 @@ def validate_readme(text: str, located: int, frozen: int, gaps: int) -> None:
     expect(
         extract_one(
             text,
+            r"Los \*\*(\d+)/96\*\* congelados demuestran el pipeline",
+            "README frozen pipeline prose",
+        ),
+        frozen,
+        "README frozen pipeline prose",
+    )
+    expect(
+        extract_one(
+            text,
             r"Quedan \*\*(\d+) slots sin localizador\*\*",
             "README gap prose",
         ),
