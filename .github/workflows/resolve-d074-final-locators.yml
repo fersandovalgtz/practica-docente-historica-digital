@@ -1,0 +1,84 @@
+name: Resolve D074 final candidate locators
+
+on:
+  push:
+    branches:
+      - "work/d074-primary-freeze"
+    paths:
+      - ".github/workflows/resolve-d074-final-locators.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve exact candidate passages in canonical volume
+        shell: python
+        run: |
+          import json
+          import pathlib
+          import urllib.parse
+          import urllib.request
+
+          volume_id = "KRV2_jMW8-wC"
+          queries = {
+              "A1": "trabajo manual debe ser esencialmente practico factor esencial educacion integral alumno",
+              "A2": "trabajo manual medio alumno manifieste gusto artistico finalidad esencial",
+              "B1": "Consejo Nacional Educacion Superior Investigacion Cientifica organo consulta necesaria",
+              "B2": "Consejo tendra mision estudiar condiciones necesidades pais cultura superior",
+              "C1": "1,015,239",
+              "C2": "1015239",
+              "C3": "seis primeros meses 1937 asistencia",
+              "C4": "incremento asistencia usuarios 1937",
+              "D1": "distribucion becas entidades federativas clases trabajadores",
+              "D2": "censos industrial ejidal 10 abril 1935 distribucion becas",
+          }
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
+          }
+          def fetch(url):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  return response.status, response.headers.get("Content-Type", ""), response.read()
+
+          report = {}
+          for key, query in queries.items():
+              url = f"https://books.google.com/books?id={volume_id}&jscmd=SearchWithinVolume2&q={urllib.parse.quote(query)}"
+              row = {"query": query, "url": url}
+              try:
+                  status, ctype, body = fetch(url)
+                  data = json.loads(body.decode("utf-8", errors="replace"))
+                  row["status"] = status
+                  row["results"] = [
+                      {
+                          "page_id": r.get("page_id"),
+                          "page_number": r.get("page_number"),
+                          "snippet_text": r.get("snippet_text"),
+                      }
+                      for r in data.get("search_results", [])[:10]
+                  ]
+              except Exception as exc:
+                  row["error"] = f"{type(exc).__name__}: {exc}"
+              report[key] = row
+              print("QUERY", key, query)
+              if row.get("error"):
+                  print(" ERROR", row["error"])
+              for r in row.get("results", []):
+                  print(" ", r["page_id"], "p.", r["page_number"], "::", r["snippet_text"])
+
+          out = pathlib.Path("d074-final-locators")
+          out.mkdir(exist_ok=True)
+          (out / "locator-resolution.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+      - name: Upload one-day locator-resolution artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-final-locator-resolution
+          path: d074-final-locators/
+          retention-days: 1
+          if-no-files-found: error
