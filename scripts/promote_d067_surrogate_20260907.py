@@ -1,0 +1,245 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import csv
+import io
+import re
+
+ROOT = Path(__file__).resolve().parents[1]
+S = ROOT / "data" / "samples"
+C = ROOT / "data" / "catalog"
+NEW_DOC = "PDHD-D000076"
+OLD_DOC = "PDHD-D000067"
+SOURCE_URL = "https://archive.org/details/cmodartodomxicou00ramr"
+PDF_URL = "https://archive.org/download/cmodartodomxicou00ramr/cmodartodomxicou00ramr.pdf"
+TODAY = "2026-09-07"
+
+
+def read_csv(path: Path):
+    text = path.read_text(encoding="utf-8")
+    reader = csv.DictReader(io.StringIO(text))
+    return list(reader), list(reader.fieldnames or [])
+
+
+def write_csv(path: Path, rows, fieldnames):
+    with path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
+
+
+# Register replacement as a distinct object.
+p = C / "documents_balancing_w1.csv"
+rows, fields = read_csv(p)
+if any(r["document_id"] == NEW_DOC for r in rows):
+    raise SystemExit(f"{NEW_DOC} already exists")
+rows.append({
+    "document_id": NEW_DOC,
+    "source_id": "INTERNET-ARCHIVE",
+    "title": "Cómo dar a todo México un idioma",
+    "author": "Ramírez, Rafael, 1885-1959, compiler",
+    "publication": "Cómo dar a todo México un idioma",
+    "publication_date": "1928",
+    "volume": "IV",
+    "issue": "",
+    "page_start": "",
+    "page_end": "59",
+    "place": "México",
+    "publisher": "Talleres Gráficos de la Nación",
+    "source_url": SOURCE_URL,
+    "source_identifier": "IA:cmodartodomxicou00ramr",
+    "accessed_at": TODAY,
+    "rights_status": "review_required",
+    "document_type": "teacher_guidance",
+    "period": "1921-1934",
+    "era_code": "E3",
+    "notes": "Primary 1928 SEP rural-teacher guidance volume in Biblioteca del Maestro Rural Mexicano, vol. IV. Internet Archive exposes an open PDF plus OCR and JP2 derivatives. Direct visual inspection of the title page and printed pp. 13, 15 and 47 supplies a complete A-D pilot batch. Added as the position-16 replacement after HathiTrust record 101391797 for D000067 was rechecked and found limited to search-only access.",
+})
+write_csv(p, rows, fields)
+
+# Substitute only the pilot selection position; keep outgoing object in catalog.
+p = S / "pilot_document_selection_0_1.csv"
+rows, fields = read_csv(p)
+hit = [r for r in rows if r["selection_order"] == "16"]
+assert len(hit) == 1 and hit[0]["document_id"] == OLD_DOC
+hit[0].update({
+    "document_id": NEW_DOC,
+    "publication": "Cómo dar a todo México un idioma",
+    "place": "México",
+    "document_type": "teacher_guidance",
+    "selection_role": "rural_teacher_primary",
+    "status": "selected",
+})
+write_csv(p, rows, fields)
+
+# Freeze F61-F64 from directly inspected primary PDF images.
+loc_path = S / "fragment_locator_progress_0_1.csv"
+locs, loc_fields = read_csv(loc_path)
+new_loc = {
+    "PDHD-F000061": {
+        "fragment_id": "PDHD-F000061", "document_id": NEW_DOC, "slot": "A", "page": "15",
+        "source_locator": "p15-maestro-rural-secuencia-pronunciacion-silabas-frases",
+        "locator_evidence_url": PDF_URL + "#page=21", "boundary_status": "fixed", "public_text_status": "metadata_only", "freeze_status": "frozen",
+        "preparation_note": "Direct inspection of the exact Internet Archive primary PDF fixes printed p. 15 / physical PDF page 21. The bounded unit gives an explicit instructional sequence for the rural teacher: pronunciation and syllable work progresses to words and short phrases, written practice follows, and language work is alternated with drawing, arithmetic and agricultural practice. The span is fixed from the opening methodological instruction on this page through the closing scheduling/alternation prescription; no historical transcription or source image is committed.",
+        "checked_at": TODAY,
+    },
+    "PDHD-F000062": {
+        "fragment_id": "PDHD-F000062", "document_id": NEW_DOC, "slot": "B", "page": "13",
+        "source_locator": "p13-maestro-rural-carga-formacion-misiones-cursos",
+        "locator_evidence_url": PDF_URL + "#page=19", "boundary_status": "fixed", "public_text_status": "metadata_only", "freeze_status": "frozen",
+        "preparation_note": "Direct inspection fixes printed p. 13 / physical PDF page 19. The professional-identity span describes the rural teacher as the sole school teacher in the community, responsible for children and night work with adults, and situates limited initial preparation alongside Cultural Missions and vacation courses. The unit is bounded to the continuous professional-conditions discussion before the text shifts back to methodological recommendations.",
+        "checked_at": TODAY,
+    },
+    "PDHD-F000063": {
+        "fragment_id": "PDHD-F000063", "document_id": NEW_DOC, "slot": "C", "page": "47",
+        "source_locator": "p47-incorporacion-indigena-castellanizacion-discurso-oficial",
+        "locator_evidence_url": PDF_URL + "#page=53", "boundary_status": "fixed", "public_text_status": "metadata_only", "freeze_status": "frozen",
+        "preparation_note": "Direct inspection fixes printed p. 47 / physical PDF page 53 in Rafael Ramírez's section on incorporation through Spanish. The source-critical unit preserves the official assimilatory framing of Indigenous language and schooling as historical evidence rather than neutral description. Its boundary is the coherent argument block on the page before the subsequent methodological development. No source text or image is committed.",
+        "checked_at": TODAY,
+    },
+    "PDHD-F000064": {
+        "fragment_id": "PDHD-F000064", "document_id": NEW_DOC, "slot": "D", "page": "unnumbered",
+        "source_locator": "pdf9-title-page-bibliographic-control",
+        "locator_evidence_url": PDF_URL + "#page=9", "boundary_status": "fixed", "public_text_status": "metadata_only", "freeze_status": "frozen",
+        "preparation_note": "Direct inspection of physical PDF page 9 fixes the bibliographic title-page core identifying Biblioteca del Maestro Rural Mexicano, volume IV, Cómo dar a todo México un idioma, Rafael Ramírez, Publicaciones de la Secretaría de Educación Pública, Talleres Gráficos de la Nación, México and 1928. Exclude library marks and blank margins. This is deliberately a non-analytical control.",
+        "checked_at": TODAY,
+    },
+}
+seen = set()
+out = []
+for row in locs:
+    fid = row["fragment_id"]
+    if fid in new_loc:
+        out.append(new_loc[fid])
+        seen.add(fid)
+        if fid == "PDHD-F000063" and "PDHD-F000064" not in seen:
+            out.append(new_loc["PDHD-F000064"])
+            seen.add("PDHD-F000064")
+    else:
+        out.append(row)
+assert {"PDHD-F000061", "PDHD-F000062", "PDHD-F000063", "PDHD-F000064"} <= seen
+write_csv(loc_path, out, loc_fields)
+
+frozen_path = S / "frozen_fragments_0_1.csv"
+frozen, fr_fields = read_csv(frozen_path)
+assert not any(r["fragment_id"] in new_loc for r in frozen)
+frozen.extend([
+    {
+        "fragment_id": "PDHD-F000061", "document_id": NEW_DOC, "slot": "A", "page": "15", "source_locator": "p15-maestro-rural-secuencia-pronunciacion-silabas-frases", "locator_evidence_url": PDF_URL + "#page=21",
+        "boundary_definition": "Printed p. 15 / physical PDF 21: the continuous methodological instruction that moves from pronunciation and syllables to words and short phrases, then written practice, through the scheduling statement that alternates this language work with drawing, arithmetic and agricultural practice; exclude adjacent material outside that instructional sequence.",
+        "transcription_status": "not_transcribed", "access_basis": "Internet_Archive_exact_primary_pdf_image_inspection", "public_text_status": "metadata_only", "selection_role": "explicit_pedagogical_act", "freeze_status": "frozen",
+        "preparation_note": "Exact 1928 SEP primary PDF and page image inspected directly. The former secondary p. 5 pointer from D000067 is superseded because the outgoing pamphlet is not auditable in the current HathiTrust access mode. No source text or image is committed.", "checked_at": TODAY,
+    },
+    {
+        "fragment_id": "PDHD-F000062", "document_id": NEW_DOC, "slot": "B", "page": "13", "source_locator": "p13-maestro-rural-carga-formacion-misiones-cursos", "locator_evidence_url": PDF_URL + "#page=19",
+        "boundary_definition": "Printed p. 13 / physical PDF 19: the continuous professional-conditions block describing the rural teacher's community school responsibility, work with children and adults, limited preparation, and the role of Cultural Missions and vacation courses; stop before the text returns to detailed methodological recommendations.",
+        "transcription_status": "not_transcribed", "access_basis": "Internet_Archive_exact_primary_pdf_image_inspection", "public_text_status": "metadata_only", "selection_role": "institutional_relation", "freeze_status": "frozen",
+        "preparation_note": "Direct visual inspection fixes a professional identity/organization unit in a source explicitly issued for the rural teacher. No historical transcription or facsimile is committed.", "checked_at": TODAY,
+    },
+    {
+        "fragment_id": "PDHD-F000063", "document_id": NEW_DOC, "slot": "C", "page": "47", "source_locator": "p47-incorporacion-indigena-castellanizacion-discurso-oficial", "locator_evidence_url": PDF_URL + "#page=53",
+        "boundary_definition": "Printed p. 47 / physical PDF 53: the coherent argument block in Rafael Ramírez's discussion of incorporation through Spanish, retained as source-critical evidence of the official assimilatory and linguistic hierarchy of the period; stop before the following methodological development.",
+        "transcription_status": "not_transcribed", "access_basis": "Internet_Archive_exact_primary_pdf_image_inspection", "public_text_status": "metadata_only", "selection_role": "source_criticism_salient", "freeze_status": "frozen",
+        "preparation_note": "The unit is selected precisely to historicize the source's language and policy assumptions rather than reproduce them as neutral description. Direct primary image inspection completed; no source text or image is committed.", "checked_at": TODAY,
+    },
+    {
+        "fragment_id": "PDHD-F000064", "document_id": NEW_DOC, "slot": "D", "page": "unnumbered", "source_locator": "pdf9-title-page-bibliographic-control", "locator_evidence_url": PDF_URL + "#page=9",
+        "boundary_definition": "Physical PDF page 9: textual bibliographic core from Biblioteca del Maestro Rural Mexicano / volume IV through the title, Rafael Ramírez attribution, Publicaciones de la Secretaría de Educación Pública, Talleres Gráficos de la Nación, México and 1928; exclude library marks, blank margins and digitization artifacts.",
+        "transcription_status": "not_transcribed", "access_basis": "Internet_Archive_exact_primary_pdf_image_inspection", "public_text_status": "metadata_only", "selection_role": "control", "freeze_status": "frozen",
+        "preparation_note": "Direct visual inspection verifies the edition identity and supplies a deliberately low-pedagogical-content control. No source image or historical transcription is committed.", "checked_at": TODAY,
+    },
+])
+write_csv(frozen_path, frozen, fr_fields)
+
+# Resolve the last absolute gap.
+gap_path = S / "fragment_gap_queue_0_1.csv"
+gaps, gap_fields = read_csv(gap_path)
+assert len(gaps) == 1 and gaps[0]["fragment_id"] == "PDHD-F000064"
+write_csv(gap_path, [], gap_fields)
+
+# Version the substitution decision.
+sub_path = S / "pilot_document_substitutions_0_1.csv"
+subs, sub_fields = read_csv(sub_path)
+assert not any(r["substitution_id"] == "PDHD-PS000002" for r in subs)
+subs.append({
+    "substitution_id": "PDHD-PS000002", "selection_order": "16", "outgoing_document_id": OLD_DOC, "replacement_document_id": NEW_DOC,
+    "reason": "HathiTrust record 101391797 for El papel social del maestro rural was rechecked on 2026-09-07 and is Limited (search only), so its page-5 secondary pointers cannot satisfy the direct-primary freeze gate. A search for exact/open alternatives identified Rafael Ramírez's 1928 SEP volume Cómo dar a todo México un idioma, Biblioteca del Maestro Rural Mexicano vol. IV. Internet Archive exposes the complete primary PDF and page images, and direct inspection supplies all four deterministic slots without weakening the protocol.",
+    "era_effect": "none; both documents are E3 (1921-1934)", "geography_effect": "none; both are México", "document_type_effect": "none; replacement remains teacher_guidance", "publication_concentration_effect": "none; the replacement is a single SEP guidance object and no publication exceeds the pilot cap",
+    "primary_evidence_basis": "Internet Archive cmodartodomxicou00ramr: title page at physical PDF 9 identifies Biblioteca del Maestro Rural Mexicano vol. IV / SEP / México 1928; printed p. 15 / physical 21 supplies explicit instructional action; printed p. 13 / physical 19 supplies professional conditions; printed p. 47 / physical 53 supplies source-critical policy discourse.", "decided_at": TODAY,
+})
+write_csv(sub_path, subs, sub_fields)
+
+# Document both substitutions.
+(ROOT / "docs" / "PILOT_DOCUMENT_SUBSTITUTION_0_1.md").write_text("""# PDHD pilot document substitution 0.1
+
+Decision date: **2026-09-07**
+
+This file versions pilot substitutions made only after the outgoing object fails a deterministic freeze requirement and a replacement preserves the sampling design. Fragment IDs remain tied to pilot selection position rather than to the retired object.
+
+## PDHD-PS000001 — position 13
+
+Pilot selection position 13 changes from `PDHD-D000053` (*El Maestro*, tomo II, núm. 3, December 1921) to `PDHD-D000056` (*El Maestro*, tomo II, núm. 1, October 1921).
+
+The outgoing issue was directly inspected. Its candidate *El Cardo* and the remaining OCR-assisted lexical survivors failed deterministic slot A because they did not contain a defensible explicit pedagogical action or instructional prescription. The replacement was selected only after direct primary inspection: BookReader `n4`/`n5` establish the October 1921 issue and imprint; printed p. 83 / `n86` supplies an explicit instructional sequence; printed p. 57 / `n60` supplies source-critical evidence. Era, place, documentary type and publication concentration remain unchanged.
+
+## PDHD-PS000002 — position 16
+
+Pilot selection position 16 changes from `PDHD-D000067` (*El papel social del maestro rural*, SEP, 1925) to `PDHD-D000076` (*Cómo dar a todo México un idioma: resultado de una encuesta*, Rafael Ramírez, SEP, 1928).
+
+The outgoing pamphlet remains a valid historical object and stays in the catalog, but its HathiTrust record `101391797` was rechecked on 7 September 2026 and is currently **Limited (search only)**. The existing page-5 candidates therefore remained secondary pointers and could not cross PDHD's direct-primary inspection gate. Internet Archive item `cmodartodomxicou00ramr` exposes an open 1928 primary PDF plus OCR and JP2 derivatives for *Biblioteca del Maestro Rural Mexicano*, vol. IV. Direct visual inspection fixes slot A at printed p. 15 / physical PDF 21, slot B at printed p. 13 / physical 19, slot C at printed p. 47 / physical 53, and the bibliographic control at physical 9.
+
+The second substitution preserves E3, México and `teacher_guidance`, while retaining the rural-teacher/SEP function of the sampling position. It resolves the final unlocalized slot without treating secondary scholarship as primary evidence.
+
+Machine-readable decisions are stored in `data/samples/pilot_document_substitutions_0_1.csv`.
+""", encoding="utf-8")
+
+# Correct the original selection rationale.
+sel_doc = ROOT / "docs" / "PILOT_DOCUMENT_SELECTION_0_1.md"
+text = sel_doc.read_text(encoding="utf-8")
+old = "- `PDHD-D000067` — *El papel social del maestro rural* (SEP, 1925), cataloged by HathiTrust with full view;"
+new = "- `PDHD-D000076` — *Cómo dar a todo México un idioma* (SEP, 1928), an openly inspectable Internet Archive primary scan in the *Biblioteca del Maestro Rural Mexicano*; it replaces `PDHD-D000067` after the HathiTrust object was rechecked as search-only;"
+assert old in text
+sel_doc.write_text(text.replace(old, new), encoding="utf-8")
+
+# Synchronize README status and scientific prose.
+readme = ROOT / "README.md"
+t = readme.read_text(encoding="utf-8")
+t = t.replace("| Objetos documentales con identidad y localizador | **75** |", "| Objetos documentales con identidad y localizador | **76** |")
+t = t.replace("Los 75 objetos forman una **cohorte", "Los 76 objetos forman una **cohorte")
+t = t.replace("| Slots con localizador candidato/resuelto | **95 / 96** |", "| Slots con localizador candidato/resuelto | **96 / 96** |")
+t = t.replace("| Fragmentos completamente congelados | **84 / 96** |", "| Fragmentos completamente congelados | **88 / 96** |")
+t = t.replace("su unión contiene **95/96** slots", "su unión contiene **96/96** slots")
+t = t.replace("su unión contiene **84/96** fragmentos", "su unión contiene **88/96** fragmentos")
+t = re.sub(r"\*\*95/96 slots tienen ya un localizador documentado\.\*\*", "**96/96 slots tienen ya un localizador documentado.**", t)
+t = re.sub(r"\*\*11 localizadores todavía no congelados\*\*", "**8 localizadores todavía no congelados**", t)
+t = t.replace("Los **84/96** congelados demuestran el pipeline", "Los **88/96** congelados demuestran el pipeline")
+t = re.sub(r"Quedan \*\*1 slots sin localizador\*\*", "Quedan **0 slots sin localizador**", t)
+stale = "Los candidatos no congelados se concentran ahora en `PDHD-D000067`, `PDHD-D000072` y `PDHD-D000074`, todos sujetos al mismo gate de inspección primaria."
+replacement = "La posición 16 sustituye ahora `PDHD-D000067` por `PDHD-D000076`, *Cómo dar a todo México un idioma* (1928), después de comprobar que HathiTrust limita el folleto de 1925 a búsqueda y de inspeccionar directamente el facsímil completo del reemplazo. `PDHD-F000061`–`PDHD-F000064` quedan congelados y el piloto alcanza 96/96 localizadores. Los candidatos no congelados se concentran ahora en otros documentos, especialmente `PDHD-D000072` y `PDHD-D000074`, siempre sujetos al mismo gate primario."
+assert stale in t
+t = t.replace(stale, replacement)
+anchor = "El mismo PDF primario permite completar ahora los tres slots analíticos de `PDHD-D000066`."
+para = "`PDHD-D000076`, *Cómo dar a todo México un idioma* (1928), completa A–D como reemplazo de la posición 16. Internet Archive expone el PDF primario completo de *Biblioteca del Maestro Rural Mexicano*, vol. IV. La inspección directa fija `PDHD-F000061` en p. 15 como secuencia instruccional explícita; `PDHD-F000062` en p. 13 como unidad sobre condiciones y formación profesional del maestro rural; `PDHD-F000063` en p. 47 como pasaje de crítica de fuentes sobre la política de castellanización e incorporación indígena; y `PDHD-F000064` en la portada física 9 como control bibliográfico. El objeto saliente `PDHD-D000067` permanece catalogado, pero sus antiguos punteros secundarios no se promovieron a evidencia primaria.\n\n"
+assert anchor in t
+t = t.replace(anchor, para + anchor)
+readme.write_text(t, encoding="utf-8")
+
+# Synchronize cohort status.
+cohort = ROOT / "docs" / "PDHD_U1_COHORT_STATUS.md"
+t = cohort.read_text(encoding="utf-8")
+t = t.replace("Reference cut: **2026-09-06**", "Reference cut: **2026-09-07**")
+t = t.replace("| Object-level documents | 75 |", "| Object-level documents | 76 |")
+t = t.replace("The 75-object cohort", "The 76-object cohort")
+t = t.replace("| Fragment locator rows resolved/candidate | **95 / 96** | 99.0% of reliability slots localized", "| Fragment locator rows resolved/candidate | **96 / 96** | 100% of reliability slots localized")
+t = t.replace("| Fully frozen fragments | **84 / 96** |", "| Fully frozen fragments | **88 / 96** |")
+t = t.replace("**95 of the 96 deterministic reliability slots**", "**96 of the 96 deterministic reliability slots**")
+t = t.replace("**84 units** have crossed", "**88 units** have crossed")
+t = t.replace("**21 selected documents** now have complete four-slot batches.", "**22 selected documents** now have complete four-slot batches.")
+t = t.replace("The union of all `fragment_locator_progress*.csv` shards contains **95/96** pilot slots. Eighty-four are frozen. The remaining **11** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **1 slots remain without a locator.**", "The union of all `fragment_locator_progress*.csv` shards contains **96/96** pilot slots. Eighty-eight are frozen. The remaining **8** located rows include page- or snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **0 slots remain without a locator.**")
+t = t.replace("the unresolved control for *El papel social del maestro rural*.", "the remaining primary-image conversions in the 1932 and 1937 SEP memory clusters.")
+insert_before = "`PDHD-D000073`, the 1934 SEP memory, now contributes a complete four-slot batch"
+para = "`PDHD-D000076`, *Cómo dar a todo México un idioma* (1928), now contributes a complete four-slot batch as the versioned replacement at pilot position 16. The outgoing `PDHD-D000067` remains in the catalog, but its HathiTrust access was rechecked as search-only and its secondary page-5 candidates were never promoted. Internet Archive item `cmodartodomxicou00ramr` exposes the exact 1928 primary PDF. Direct visual inspection fixes F000061 on printed p. 15 / physical 21 as an instructional sequence, F000062 on p. 13 / physical 19 as professional conditions and training, F000063 on p. 47 / physical 53 as source-critical assimilatory language-policy evidence, and F000064 on physical 9 as the bibliographic control.\n\n"
+assert insert_before in t
+t = t.replace(insert_before, para + insert_before)
+cohort.write_text(t, encoding="utf-8")
+
+print("Canonical replacement prepared: D000076; F61-F64 frozen; gap queue empty.")
