@@ -23,6 +23,7 @@ jobs:
         run: |
           python scripts/promote_d067_surrogate_20260907.py
           python scripts/fix_d067_substitution_provenance_20260907.py
+          python scripts/fix_d067_status_prose_20260907.py
 
       - name: Validate repository
         run: |
