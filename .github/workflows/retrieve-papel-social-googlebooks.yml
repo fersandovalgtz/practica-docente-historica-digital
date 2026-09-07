@@ -34,7 +34,7 @@ jobs:
             'title':'El papel social del maestro rural' in text,
             'publisher_year':('La Secretaría' in text or 'La Secretar' in text) and '1925' in text,
             'texas':'Universidad de Texas' in text or 'University of Texas' in text,
-            'eight_pages':'8 páginas' in text or '8 pages' in text,
+            'eight_pages_catalog':'8 páginas' in text or '8 pages' in text,
             'public_domain':bool(re.search(r'is_public_domain.{0,30}true',text,re.I)),
             'downloadable':bool(re.search(r'can_download_pdf.{0,30}true',text,re.I)),
           }
@@ -51,7 +51,7 @@ jobs:
           print('PDF_FETCH',pstatus,ctype,len(pdf),pfinal)
           if not pdf.startswith(b'%PDF') or len(pdf)<100000: raise SystemExit('invalid Google Books PDF payload')
           (out/'el-papel-social-del-maestro-rural-1925.pdf').write_bytes(pdf)
-          (out/'metadata.json').write_text(json.dumps({'google_books_id':gid,'oclc':oclc,'about_url':about,'pdf_url':pdf_url,'bytes':len(pdf)},ensure_ascii=False,indent=2),encoding='utf-8')
+          (out/'metadata.json').write_text(json.dumps({'google_books_id':gid,'oclc':oclc,'about_url':about,'pdf_url':pdf_url,'bytes':len(pdf),'catalog_extent':'8 pages; do not infer PDF-image-to-printed-page mapping'},ensure_ascii=False,indent=2),encoding='utf-8')
       - name: Render complete primary object
         shell: bash
         run: |
@@ -60,12 +60,15 @@ jobs:
           sudo apt-get install -y -qq poppler-utils
           pdfinfo papel-social-primary/el-papel-social-del-maestro-rural-1925.pdf | tee papel-social-primary/pdfinfo.txt
           pages=$(pdfinfo papel-social-primary/el-papel-social-del-maestro-rural-1925.pdf | awk '/^Pages:/ {print $2}')
-          echo "PDF_PHYSICAL_PAGES=$pages"
-          if [ -z "$pages" ] || [ "$pages" -lt 8 ] || [ "$pages" -gt 30 ]; then
-            echo "Unexpected PDF physical page count: $pages"; exit 1
+          echo "PDF_PHYSICAL_IMAGES=$pages"
+          if [ -z "$pages" ] || [ "$pages" -lt 4 ] || [ "$pages" -gt 12 ]; then
+            echo "Unexpected PDF image count: $pages"; exit 1
           fi
           mkdir -p papel-social-primary/rendered
-          pdftoppm -jpeg -r 220 papel-social-primary/el-papel-social-del-maestro-rural-1925.pdf papel-social-primary/rendered/page >/dev/null 2>&1
+          pdftoppm -jpeg -r 240 papel-social-primary/el-papel-social-del-maestro-rural-1925.pdf papel-social-primary/rendered/page >/dev/null 2>&1
+          count=$(find papel-social-primary/rendered -name 'page-*.jpg' | wc -l)
+          echo "RENDERED_IMAGES=$count"
+          if [ "$count" -ne "$pages" ]; then echo "render count mismatch"; exit 1; fi
           ls -lh papel-social-primary/rendered
           pdftotext -layout papel-social-primary/el-papel-social-del-maestro-rural-1925.pdf papel-social-primary/embedded-text.txt || true
       - name: Upload primary review artifact
