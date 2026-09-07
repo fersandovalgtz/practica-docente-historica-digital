@@ -1,0 +1,61 @@
+name: Probe El Instructor 1889 HNDM date routing
+
+on:
+  push:
+    branches: [freeze-el-instructor-1889]
+    paths:
+      - ".github/workflows/probe-el-instructor-1889-date.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe viewer date-selection routes
+        shell: python
+        run: |
+          import html,json,pathlib,re,urllib.parse,urllib.request,urllib.error
+          out=pathlib.Path('probe'); out.mkdir()
+          serial='558075be7d1e63c9fea1a307'
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.7'}
+          urls=[
+            ('www_alias','https://www.hndm.unam.mx/consulta/publicacion/visualizar/'+serial+'?anio=1889&dia=1&intPagina=1&mes=1&tipo=publicacion'),
+            ('www_alias_but','https://www.hndm.unam.mx/consulta/publicacion/visualizar/'+serial+'?anio=1889&dia=1&intPagina=1&mes=1&tipo=publicacion&butIr=Ir'),
+            ('iib_alias','https://hndm.iib.unam.mx/consulta/publicacion/visualizar/'+serial+'?anio=1889&dia=1&intPagina=1&mes=1&tipo=publicacion'),
+            ('iib_alias_but','https://hndm.iib.unam.mx/consulta/publicacion/visualizar/'+serial+'?anio=1889&dia=1&intPagina=1&mes=1&tipo=publicacion&butIr=Ir'),
+            ('repository','https://repositorio.unam.mx/contenidos/ficha/el-instructor-750865'),
+          ]
+          report=[]
+          for name,url in urls:
+              item={'name':name,'url':url}
+              try:
+                  req=urllib.request.Request(url,headers=headers)
+                  with urllib.request.urlopen(req,timeout=90) as r:
+                      body=r.read(); final=r.geturl(); status=r.status
+                  text=body.decode('utf-8',errors='replace'); dec=html.unescape(text)
+                  (out/f'{name}.html').write_text(text,encoding='utf-8')
+                  item.update(status=status,final_url=final,bytes=len(body))
+                  item['pdf_ids']=list(dict.fromkeys(re.findall(r'/consulta/publicacion/pdf/([0-9a-f]{24})\.pdf',dec,re.I)))[:10]
+                  item['hndm_links']=list(dict.fromkeys(re.findall(r'href=["\']([^"\']*(?:hndm|visualizar)[^"\']*)["\']',dec,re.I)))[:50]
+                  item['forms']=re.findall(r'<form[^>]*action=["\']([^"\']*)["\'][^>]*>',dec,re.I)[:20]
+                  item['inputs']=re.findall(r'<(?:input|select)[^>]*(?:name|id)=["\']([^"\']+)["\'][^>]*>',dec,re.I)[:80]
+                  # Context around target/current years and date-routing tokens.
+                  contexts=[]
+                  for pat in ['1889','1888','anio','mes','dia','butIr','intPagina','fecha','Fecha','1 de Enero','1 de Mayo','Mayo','Enero']:
+                      for m in list(re.finditer(re.escape(pat),dec,re.I))[:8]:
+                          contexts.append({'pattern':pat,'context':re.sub(r'\s+',' ',dec[max(0,m.start()-350):m.end()+500])})
+                  item['contexts']=contexts[:120]
+              except Exception as exc:
+                  item['error']=repr(exc)
+              report.append(item)
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+
+      - name: Upload probe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-el-instructor-1889-date-probe
+          path: probe/
+          retention-days: 1
