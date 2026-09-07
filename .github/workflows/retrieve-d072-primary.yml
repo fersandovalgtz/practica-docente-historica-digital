@@ -1,0 +1,145 @@
+name: Recover D072 primary source
+
+on:
+  push:
+    branches:
+      - work/d072-primary-recovery-20260907
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe Internet Archive, Google Books, and ITESO
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d072_probe
+          python3 - <<'PY'
+          import json, re, urllib.parse, urllib.request, pathlib, html
+          out = pathlib.Path('d072_probe')
+          UA = 'Mozilla/5.0 PDHD-research/0.1'
+
+          def get(url, timeout=45):
+              req = urllib.request.Request(url, headers={'User-Agent': UA, 'Accept-Language':'es-MX,es;q=0.9,en;q=0.7'})
+              try:
+                  with urllib.request.urlopen(req, timeout=timeout) as r:
+                      b = r.read()
+                      return {'url':url,'status':r.status,'ctype':r.headers.get('content-type',''),'final':r.geturl(),'bytes':len(b),'body':b}
+              except Exception as e:
+                  return {'url':url,'status':None,'ctype':'','final':'','bytes':0,'error':repr(e),'body':b''}
+
+          report = {'google':{}, 'ia':{}, 'iteso':{}}
+
+          # Google Books metadata/API and selected-page diagnostics.
+          vid='ypWS82YskN4C'
+          api = get(f'https://www.googleapis.com/books/v1/volumes/{vid}')
+          if api.get('body'):
+              try: report['google']['api']=json.loads(api['body'])
+              except Exception: report['google']['api_raw']=api['body'][:4000].decode('utf-8','replace')
+          report['google']['api_http']={k:v for k,v in api.items() if k!='body'}
+
+          for pg in ['PA111','PA307','PA465','PA487']:
+              u=f'https://books.google.com/books?id={vid}&pg={pg}&jscmd=SearchWithinVolume2&hl=es'
+              r=get(u)
+              txt=r['body'].decode('utf-8','replace') if r.get('body') else ''
+              # preserve only route diagnostics, never the complete HTML
+              urls=sorted(set(html.unescape(x.replace('\\u0026','&')) for x in re.findall(r'https?[^\"\'<> ]+', txt)))
+              interesting=[x for x in urls if any(t in x for t in ['books/content','googleusercontent','download','jscmd','pg='])][:80]
+              report['google'][pg]={**{k:v for k,v in r.items() if k!='body'},'interesting_urls':interesting,
+                'has_sig':'sig=' in txt,'has_pageimage':'pageImage' in txt,'has_books_content':'books/content' in txt,
+                'has_download':'download' in txt.lower()}
+
+          for q in ['misiones culturales escuelas normales','psicopedagogia higiene','revalidacion estudios','enseñanza técnica']:
+              u='https://books.google.com/books?'+urllib.parse.urlencode({'jscmd':'SearchWithinVolume2','q':q,'vid':vid})
+              r=get(u)
+              txt=r['body'].decode('utf-8','replace') if r.get('body') else ''
+              report['google']['search_'+q]={**{k:v for k,v in r.items() if k!='body'}, 'sample':txt[:5000]}
+
+          # IA advanced search: exact and relaxed queries.
+          ia_queries=[
+            'title:"Memoria relativa al estado que guarda el ramo de educación pública" AND year:1932',
+            'title:("Memoria relativa" "educación pública") AND year:1932',
+            'creator:("Secretaría de Educación Pública") AND year:1932 AND title:(Memoria)'
+          ]
+          docs=[]
+          for i,q in enumerate(ia_queries,1):
+              params=urllib.parse.urlencode({'q':q,'fl[]':['identifier','title','creator','year'],'rows':50,'page':1,'output':'json'}, doseq=True)
+              r=get('https://archive.org/advancedsearch.php?'+params)
+              obj=None
+              if r.get('body'):
+                  try: obj=json.loads(r['body'])
+                  except Exception: pass
+              ds=(obj or {}).get('response',{}).get('docs',[])
+              report['ia'][f'query{i}']={'http':{k:v for k,v in r.items() if k!='body'},'docs':ds}
+              docs.extend(ds)
+
+          seen=set()
+          for d in docs:
+              ident=d.get('identifier')
+              if not ident or ident in seen: continue
+              seen.add(ident)
+              mr=get(f'https://archive.org/metadata/{urllib.parse.quote(ident)}')
+              try: mo=json.loads(mr['body']) if mr.get('body') else {}
+              except Exception: mo={}
+              files=[]
+              for f in mo.get('files',[]):
+                  n=f.get('name','')
+                  if n.lower().endswith(('.pdf','.jp2.zip','_djvu.xml','.txt')):
+                      files.append({k:f.get(k) for k in ['name','size','format','md5','source']})
+              report['ia']['item_'+ident]={'metadata':mo.get('metadata',{}),'files':files[:200]}
+
+          # ITESO VuFind search; capture record links and image/thumbnail routes only.
+          query='Memoria relativa al estado que guarda el ramo de educación pública el 31 de agosto de 1932'
+          su='https://opac.biblio.iteso.mx/vufind/Search/Results?'+urllib.parse.urlencode({'lookfor':query,'type':'AllFields'})
+          r=get(su)
+          txt=r['body'].decode('utf-8','replace') if r.get('body') else ''
+          hrefs=sorted(set(html.unescape(x) for x in re.findall(r'href=[\"\']([^\"\']+)',txt)))
+          recs=[urllib.parse.urljoin(su,x) for x in hrefs if '/Record/' in x or 'Record/' in x]
+          imgs=sorted(set(urllib.parse.urljoin(su,x) for x in re.findall(r'(?:src|data-src)=[\"\']([^\"\']+)',txt)))
+          report['iteso']['search']={**{k:v for k,v in r.items() if k!='body'},'records':recs[:50],'images':imgs[:80]}
+          for j,u in enumerate(recs[:12],1):
+              rr=get(u)
+              tt=rr['body'].decode('utf-8','replace') if rr.get('body') else ''
+              links=sorted(set(urllib.parse.urljoin(u,html.unescape(x)) for x in re.findall(r'href=[\"\']([^\"\']+)',tt)))
+              image_links=sorted(set(urllib.parse.urljoin(u,html.unescape(x)) for x in re.findall(r'(?:src|data-src)=[\"\']([^\"\']+)',tt)))
+              report['iteso'][f'record{j}']={**{k:v for k,v in rr.items() if k!='body'},'url':u,
+                 'links':[x for x in links if any(t in x.lower() for t in ['download','image','iiif','digital','viewer','record'])][:120],
+                 'images':image_links[:120], 'title_match':'1932' in tt and 'Memoria relativa' in tt}
+
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps({
+            'google_access': report.get('google',{}).get('api',{}).get('accessInfo',{}),
+            'ia_docs': [d for k,v in report['ia'].items() if k.startswith('query') for d in v.get('docs',[])],
+            'iteso_records': report['iteso'].get('search',{}).get('records',[])
+          },ensure_ascii=False,indent=2))
+          PY
+
+      - name: Summarize diagnostics
+        run: |
+          python3 - <<'PY'
+          import json
+          r=json.load(open('d072_probe/report.json'))
+          print('GOOGLE accessInfo:', json.dumps(r.get('google',{}).get('api',{}).get('accessInfo',{}), ensure_ascii=False, indent=2))
+          for pg in ['PA111','PA307','PA465','PA487']:
+              x=r['google'].get(pg,{})
+              print(pg, {k:x.get(k) for k in ['status','ctype','bytes','has_sig','has_pageimage','has_books_content','has_download']})
+              for u in x.get('interesting_urls',[])[:10]: print(' ',u[:500])
+          for k,v in r.get('ia',{}).items():
+              if k.startswith('query'): print('IA',k,'docs=',v.get('docs',[]))
+          print('ITESO records:',r.get('iteso',{}).get('search',{}).get('records',[]))
+          for k,v in r.get('iteso',{}).items():
+              if k.startswith('record'):
+                  print(k, 'match=',v.get('title_match'), 'url=',v.get('url'))
+                  for u in v.get('links',[])[:20]: print(' ',u[:500])
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: d072-primary-route-diagnostics
+          path: d072_probe/report.json
+          retention-days: 1
