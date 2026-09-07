@@ -1,4 +1,4 @@
-name: Retrieve PDHD signed Google Books primary pages
+name: Enumerate PDHD alternate Google Books editions
 
 on:
   push:
@@ -10,110 +10,82 @@ permissions:
   contents: read
 
 jobs:
-  retrieve:
+  enumerate:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve page signatures and retrieve signed page images
+      - name: Query Google Books API and test candidate editions
         shell: python
         run: |
-          import html
           import json
           import pathlib
-          import re
           import urllib.parse
           import urllib.request
 
-          root = pathlib.Path("signed-primary-pages")
-          root.mkdir()
-          headers = {
-              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
-              "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
-          }
-          targets = [
-              ("PDHD-D000072", "ypWS82YskN4C", [
-                  ("F000081", "111", "misiones culturales escuelas normales"),
-                  ("F000082", "307", "psicopedagogia higiene"),
-                  ("F000083", "487", "educacion tecnica rural"),
-                  ("F000084", "465", "revalidacion estudios"),
-              ]),
-              ("PDHD-D000074", "KRV2_jMW8-wC", [
-                  ("F000089", "372", "trabajo manual educacion integral"),
-                  ("F000090", "21", "Consejo Nacional Educacion Superior Investigacion Cientifica"),
-                  ("F000091", "444", "bibliotecas asistencia usuarios"),
-                  ("F000092", "35", "distribucion becas"),
-              ]),
+          out = pathlib.Path("alternate-editions")
+          out.mkdir()
+          headers = {"User-Agent": "Mozilla/5.0"}
+          queries = [
+              ("D072", 'intitle:"Memoria relativa al estado que guarda el ramo de educación pública" inauthor:"Secretaría de Educación Pública"'),
+              ("D074", 'intitle:"Memoria de la Secretaría de Educación Pública" inauthor:"Secretaría de Educación Pública"'),
           ]
 
-          def get(url, timeout=60):
+          def get_json(url):
               req = urllib.request.Request(url, headers=headers)
-              with urllib.request.urlopen(req, timeout=timeout) as r:
-                  return r.read(), r.status, r.headers.get("Content-Type", ""), r.geturl()
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  return json.loads(r.read().decode("utf-8", errors="replace"))
 
-          report = []
-          recovered = 0
-          for doc, book_id, frags in targets:
-              for frag, page, query in frags:
-                  fd = root / doc / frag
-                  fd.mkdir(parents=True)
-                  item = {"document_id": doc, "fragment_id": frag, "book_id": book_id, "page": page}
-
-                  search_url = "https://www.google.com/books?id=" + urllib.parse.quote(book_id) + "&jscmd=SearchWithinVolume2&q=" + urllib.parse.quote(query)
+          rows = []
+          for label, q in queries:
+              seen = set()
+              for start in range(0, 120, 40):
+                  url = "https://www.googleapis.com/books/v1/volumes?q=" + urllib.parse.quote(q) + f"&maxResults=40&startIndex={start}"
                   try:
-                      raw, st, ct, final = get(search_url)
-                      (fd / "search-within-volume.json").write_bytes(raw)
-                      item["search_status"] = st
-                      try:
-                          item["search_json"] = json.loads(raw.decode("utf-8", errors="replace"))
-                      except Exception:
-                          pass
+                      data = get_json(url)
                   except Exception as exc:
-                      item["search_error"] = f"{type(exc).__name__}: {exc}"
+                      rows.append({"label": label, "query_error": f"{type(exc).__name__}: {exc}", "start": start})
+                      continue
+                  items = data.get("items", [])
+                  if not items:
+                      break
+                  for item in items:
+                      vid = item.get("id")
+                      if not vid or vid in seen:
+                          continue
+                      seen.add(vid)
+                      vi = item.get("volumeInfo", {})
+                      ai = item.get("accessInfo", {})
+                      sale = item.get("saleInfo", {})
+                      rows.append({
+                          "label": label,
+                          "id": vid,
+                          "title": vi.get("title"),
+                          "subtitle": vi.get("subtitle"),
+                          "authors": vi.get("authors"),
+                          "publisher": vi.get("publisher"),
+                          "publishedDate": vi.get("publishedDate"),
+                          "pageCount": vi.get("pageCount"),
+                          "printType": vi.get("printType"),
+                          "viewability": ai.get("viewability"),
+                          "embeddable": ai.get("embeddable"),
+                          "publicDomain": ai.get("publicDomain"),
+                          "textToSpeechPermission": ai.get("textToSpeechPermission"),
+                          "pdfAvailable": ai.get("pdf", {}).get("isAvailable"),
+                          "pdfDownloadLink": ai.get("pdf", {}).get("downloadLink"),
+                          "epubAvailable": ai.get("epub", {}).get("isAvailable"),
+                          "epubDownloadLink": ai.get("epub", {}).get("downloadLink"),
+                          "webReaderLink": ai.get("webReaderLink"),
+                          "saleability": sale.get("saleability"),
+                          "isEbook": sale.get("isEbook"),
+                      })
 
-                  selected_url = f"https://books.google.com/books?id={urllib.parse.quote(book_id)}&pg=PA{page}&hl=es&source=gbs_selected_pages&cad=1"
-                  try:
-                      raw, st, ct, final = get(selected_url)
-                      text = html.unescape(raw.decode("utf-8", errors="replace"))
-                      (fd / "selected-page.html").write_bytes(raw)
-                      sig_match = re.search(r'name=["\']sig["\']\s+value=["\']([^"\']+)', text)
-                      if not sig_match:
-                          sig_match = re.search(r'value=["\']([^"\']+)["\']\s+name=["\']sig["\']', text)
-                      sig = sig_match.group(1) if sig_match else None
-                      item["sig"] = sig
-                      if sig:
-                          for zoom in [5, 4, 3, 2, 1]:
-                              candidates = [
-                                  f"https://books.google.com/books?id={urllib.parse.quote(book_id)}&pg=PA{page}&img=1&zoom={zoom}&hl=es&sig={urllib.parse.quote(sig)}",
-                                  f"https://books.google.com/books/content?id={urllib.parse.quote(book_id)}&pg=PA{page}&img=1&zoom={zoom}&hl=es&sig={urllib.parse.quote(sig)}",
-                              ]
-                              for n, image_url in enumerate(candidates, start=1):
-                                  attempt = {"zoom": zoom, "variant": n, "url": image_url}
-                                  try:
-                                      body, ist, ict, ifinal = get(image_url, timeout=60)
-                                      attempt.update({"status": ist, "content_type": ict, "bytes": len(body), "final_url": ifinal})
-                                      if ict.startswith("image/") and len(body) > 10000:
-                                          ext = ".png" if "png" in ict else ".jpg"
-                                          out = fd / f"PA{page}-z{zoom}-v{n}{ext}"
-                                          out.write_bytes(body)
-                                          attempt["saved"] = out.name
-                                          recovered += 1
-                                  except Exception as exc:
-                                      attempt["error"] = f"{type(exc).__name__}: {exc}"
-                                  item.setdefault("image_attempts", []).append(attempt)
-                  except Exception as exc:
-                      item["selected_page_error"] = f"{type(exc).__name__}: {exc}"
-                  report.append(item)
+          (out / "editions.json").write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+          for r in rows:
+              if r.get("id"):
+                  print(json.dumps(r, ensure_ascii=False))
 
-          (root / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-          print(json.dumps(report, ensure_ascii=False, indent=2)[:40000])
-          print(f"RECOVERED_SIGNED_IMAGES={recovered}")
-          if recovered == 0:
-              raise SystemExit("No signed page image was recovered")
-
-      - name: Upload one-day signed-page review artifact
-        if: always()
+      - name: Upload one-day enumeration artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pdhd-final-signed-primary-pages
-          path: signed-primary-pages/
+          name: pdhd-alternate-editions
+          path: alternate-editions/
           retention-days: 1
-          if-no-files-found: error
