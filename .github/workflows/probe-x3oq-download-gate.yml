@@ -1,0 +1,133 @@
+name: Probe X3oQ Google Books download gate
+
+on:
+  push:
+    branches:
+      - "work/d074-primary-freeze"
+    paths:
+      - ".github/workflows/probe-x3oq-download-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect download gate without bypassing human verification
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import urllib.request
+          from urllib.parse import urljoin
+
+          volume_id = "X3oQAAAAYAAJ"
+          selected = f"https://books.google.com/books?cad=1&id={volume_id}&pg=PA40&source=gbs_selected_pages"
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+          }
+
+          def fetch(url):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=90) as response:
+                  return response.status, response.headers.get("Content-Type", ""), response.geturl(), response.read()
+
+          status, ctype, final_url, raw = fetch(selected)
+          text = raw.decode("utf-8", errors="replace")
+          decoded = html.unescape(text).replace("\\/", "/").replace("\\u0026", "&")
+          pdfs = re.findall(
+              r'https?://books\.google\.[^/]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',
+              decoded,
+          )
+          if not pdfs:
+              raise SystemExit("No signed PDF candidate found in selected-page HTML")
+          pdf_url = pdfs[0]
+
+          status, ctype, final_url, body = fetch(pdf_url)
+          report = {
+              "selected_page_status": status,
+              "pdf_candidate": pdf_url,
+              "gate_status": status,
+              "gate_content_type": ctype,
+              "gate_final_url": final_url,
+              "gate_bytes": len(body),
+          }
+
+          if ctype.startswith("application/pdf") and body.startswith(b"%PDF"):
+              report["classification"] = "direct_pdf"
+          else:
+              gate = body.decode("utf-8", errors="replace")
+              clean = html.unescape(gate).replace("\\/", "/").replace("\\u0026", "&")
+              title = re.search(r"<title[^>]*>(.*?)</title>", clean, flags=re.I|re.S)
+              report["html_title"] = re.sub(r"\s+", " ", title.group(1)).strip() if title else None
+
+              forms = []
+              for m in re.finditer(r"<form\b([^>]*)>(.*?)</form>", clean, flags=re.I|re.S):
+                  attrs, inner = m.group(1), m.group(2)
+                  action_m = re.search(r"action=[\"']([^\"']*)", attrs, flags=re.I)
+                  method_m = re.search(r"method=[\"']([^\"']*)", attrs, flags=re.I)
+                  inputs = []
+                  for im in re.finditer(r"<input\b([^>]*)>", inner, flags=re.I|re.S):
+                      ia = im.group(1)
+                      name_m = re.search(r"name=[\"']([^\"']*)", ia, flags=re.I)
+                      type_m = re.search(r"type=[\"']([^\"']*)", ia, flags=re.I)
+                      value_m = re.search(r"value=[\"']([^\"']*)", ia, flags=re.I)
+                      inputs.append({
+                          "name": name_m.group(1) if name_m else None,
+                          "type": type_m.group(1) if type_m else None,
+                          "value_prefix": (value_m.group(1)[:120] if value_m else None),
+                      })
+                  forms.append({
+                      "action": urljoin(final_url, action_m.group(1)) if action_m else None,
+                      "method": method_m.group(1).upper() if method_m else "GET",
+                      "inputs": inputs,
+                  })
+              report["forms"] = forms
+
+              lowered = clean.lower()
+              markers = {
+                  "captcha": ["captcha", "recaptcha", "i'm not a robot", "no soy un robot"],
+                  "human_verification": ["verify you are human", "verify that you are human", "verifica que eres humano"],
+                  "terms_confirmation": ["terms of service", "términos del servicio", "terms and conditions"],
+                  "download_confirmation": ["download", "descargar", "continue", "continuar"],
+                  "cookie_notice": ["cookie", "cookies"],
+              }
+              report["markers"] = {k: [p for p in pats if p in lowered] for k, pats in markers.items()}
+
+              links = []
+              for href in re.findall(r"href=[\"']([^\"']+)", clean, flags=re.I):
+                  u = urljoin(final_url, href)
+                  if any(token in u for token in ["continue=", "capid=", "output=pdf", "download", "googleusercontent"]):
+                      links.append(u)
+              # Deduplicate and truncate; this is diagnostic only.
+              seen = set(); dedup = []
+              for u in links:
+                  if u not in seen:
+                      seen.add(u); dedup.append(u)
+              report["candidate_gate_links"] = dedup[:20]
+
+              if report["markers"]["captcha"] or report["markers"]["human_verification"]:
+                  report["classification"] = "human_verification_required"
+              elif forms or dedup:
+                  report["classification"] = "nonhuman_confirmation_or_continuation_possible"
+              else:
+                  report["classification"] = "opaque_html_gate"
+
+          out = pathlib.Path("x3oq-gate-probe")
+          out.mkdir(exist_ok=True)
+          (out / "gate-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+
+      - name: Upload one-day diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-x3oq-gate-probe
+          path: x3oq-gate-probe/
+          retention-days: 1
+          if-no-files-found: error
