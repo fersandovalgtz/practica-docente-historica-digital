@@ -1,0 +1,81 @@
+name: Probe El Maestro May 1921 primary facsimile
+
+on:
+  push:
+    branches: [freeze-el-maestro-may-1921]
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Locate existing repo references and query Internet Archive
+        shell: python
+        run: |
+          import json, pathlib, re, urllib.parse, urllib.request
+          out=pathlib.Path('el-maestro-may-1921-probe'); out.mkdir()
+          headers={'User-Agent':'Mozilla/5.0 PDHD-source-verification/0.1'}
+
+          # Repo-side references first.
+          hits=[]
+          for p in pathlib.Path('.').rglob('*'):
+              if not p.is_file() or '.git' in p.parts or p.stat().st_size>5_000_000:
+                  continue
+              try: text=p.read_text(encoding='utf-8',errors='replace')
+              except Exception: continue
+              if any(x in text for x in ['PDHD-D000051','PDHD-F000041','PDHD-F000042','PDHD-F000043']):
+                  lines=[]
+                  for i,line in enumerate(text.splitlines(),1):
+                      if any(x in line for x in ['PDHD-D000051','PDHD-F000041','PDHD-F000042','PDHD-F000043']):
+                          lines.append({'line':i,'text':line[:5000]})
+                  hits.append({'path':str(p),'matches':lines})
+          (out/'repo-hits.json').write_text(json.dumps(hits,ensure_ascii=False,indent=2),encoding='utf-8')
+
+          # IA searches: exact and broad variants.
+          queries=[
+            'title:("El Maestro") AND year:1921',
+            'title:("El Maestro revista") AND year:1921',
+            '(title:("El Maestro") OR description:("El Maestro")) AND date:[1921-01-01 TO 1921-12-31]',
+            'creator:("Secretaría de Educación Pública") AND year:1921',
+          ]
+          searches=[]; ids=[]
+          for q in queries:
+              params=urllib.parse.urlencode({'q':q,'fl[]':['identifier','title','creator','date','year','description','volume','issue','external-identifier'],'rows':200,'output':'json'},doseq=True)
+              url='https://archive.org/advancedsearch.php?'+params
+              item={'query':q,'url':url}
+              try:
+                  req=urllib.request.Request(url,headers=headers)
+                  with urllib.request.urlopen(req,timeout=90) as r: obj=json.loads(r.read().decode())
+                  docs=obj.get('response',{}).get('docs',[])
+                  item['numFound']=obj.get('response',{}).get('numFound'); item['docs']=docs
+                  for d in docs:
+                      x=d.get('identifier')
+                      if x and x not in ids: ids.append(x)
+              except Exception as exc: item['error']=repr(exc)
+              searches.append(item)
+          (out/'ia-searches.json').write_text(json.dumps(searches,ensure_ascii=False,indent=2),encoding='utf-8')
+
+          # Probe metadata/files for candidates likely to be the Mexican SEP serial.
+          probes=[]
+          for ident in ids[:100]:
+              try:
+                  req=urllib.request.Request(f'https://archive.org/metadata/{urllib.parse.quote(ident)}',headers=headers)
+                  with urllib.request.urlopen(req,timeout=90) as r: meta=json.loads(r.read().decode())
+                  md=meta.get('metadata',{})
+                  title=str(md.get('title','')); desc=str(md.get('description','')); creator=str(md.get('creator',''))
+                  hay=' '.join([title,desc,creator,str(md.get('date','')),str(md.get('volume',''))]).lower()
+                  if 'maestro' not in hay: continue
+                  files=[f.get('name') for f in meta.get('files',[]) if f.get('name') and any(s in f.get('name','').lower() for s in ['text pdf','_bw.pdf','_text.pdf','_djvu.xml','_djvu.txt','_scandata.xml','_jp2.zip'])]
+                  probes.append({'identifier':ident,'metadata':{k:md.get(k) for k in ['title','creator','date','year','volume','issue','description','identifier-access']},'useful_files':files[:50]})
+              except Exception as exc:
+                  probes.append({'identifier':ident,'error':repr(exc)})
+          (out/'candidate-probes.json').write_text(json.dumps(probes,ensure_ascii=False,indent=2),encoding='utf-8')
+          print('REPO_HITS',json.dumps(hits,ensure_ascii=False,indent=2))
+          print('IA_SEARCH_COUNTS',[(x['query'],x.get('numFound'),x.get('error')) for x in searches])
+          print('CANDIDATES',json.dumps(probes,ensure_ascii=False,indent=2))
+      - name: Upload probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-el-maestro-may-1921-probe
+          path: el-maestro-may-1921-probe/
+          retention-days: 1
