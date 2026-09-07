@@ -123,7 +123,7 @@ def validate_readme(text: str, located: int, frozen: int, gaps: int) -> None:
     )
 
 
-def validate_cohort_status(text: str, located: int, frozen: int, gaps: int) -> None:
+def validate_cohort_status(text: str, located: int, frozen: int, gaps: int, complete_batches: int) -> None:
     not_frozen = located - frozen
     expect(
         extract_one(
@@ -188,12 +188,45 @@ def validate_cohort_status(text: str, located: int, frozen: int, gaps: int) -> N
         located,
         "cohort decision prose",
     )
+    expect(
+        extract_one(
+            text,
+            r"project is now at \*\*\d+/96 localized\*\* and \*\*(\d+)/96 frozen\*\*",
+            "cohort decision frozen prose",
+        ),
+        frozen,
+        "cohort decision frozen prose",
+    )
+    expect(
+        extract_one(
+            text,
+            r"preserving the unlocalized complement at (\d+)\.",
+            "cohort decision gap prose",
+        ),
+        gaps,
+        "cohort decision gap prose",
+    )
+    expect(
+        extract_one(
+            text,
+            r"\*\*(\d+) selected documents\*\* now have complete four-slot batches\.",
+            "cohort complete-batch prose",
+        ),
+        complete_batches,
+        "cohort complete-batch prose",
+    )
 
 
 def main() -> int:
     locators = union_ids("fragment_locator_progress*.csv")
     frozen = union_ids("frozen_fragments*.csv")
     gaps = read_csv(SAMPLES / "fragment_gap_queue_0_1.csv")
+
+    frozen_slots: dict[str, set[str]] = {}
+    for path in sorted(SAMPLES.glob("frozen_fragments*.csv")):
+        for row in read_csv(path):
+            frozen_slots.setdefault(row.get("document_id", "").strip(), set()).add(row.get("slot", "").strip())
+    complete_batches = sum(slots == {"A", "B", "C", "D"} for slots in frozen_slots.values())
 
     located_count = len(locators)
     frozen_count = len(frozen)
@@ -210,7 +243,7 @@ def main() -> int:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     cohort = (ROOT / "docs/PDHD_U1_COHORT_STATUS.md").read_text(encoding="utf-8")
     validate_readme(readme, located_count, frozen_count, gap_count)
-    validate_cohort_status(cohort, located_count, frozen_count, gap_count)
+    validate_cohort_status(cohort, located_count, frozen_count, gap_count, complete_batches)
 
     if ERRORS:
         for error in ERRORS:

@@ -71,3 +71,12 @@ This preserves a three-stage retrieval chain:
 `issue identity -> content lead -> page-level fragment locator`
 
 None of those stages is silently collapsed into the next.
+
+## 2026-09-06 — El Maestro núm. 4, Internet Archive serial container
+
+`PDHD-D000052` is cross-walked to Internet Archive `elmaestrorevista146mexi`, a 1921 primary container identified as volume 1, numbers 4–6. The container relation is preserved explicitly: `serial_container != issue_page_locator`.
+
+The object does not expose the same `_text.pdf` derivative used for the separate May 1921 issue. Its DjVu XML was therefore used only as a discovery index. Direct BookReader images then confirmed the number-four sequence: `n26` = printed p. 341 (*Historia de México*), `n36` = p. 351 (*Mejores maestros*), `n37` = p. 352 and `n48`–`n50` = pp. 363–365 (*La ilustración de las masas*). The existing `n4` cover control independently identifies número IV.
+
+The earlier secondary slot-A target on pp. 363–365 is retained as a documented recovery lead but rejected for deterministic act fit after primary inspection. `PDHD-F000045` instead uses a directly visible, non-overlapping `guide` prescription on p. 352. `PDHD-F000046` fixes numbered item 3 on p. 351 and `PDHD-F000047` fixes the first analytical paragraph on p. 341. No source image or full historical transcription is committed.
+
