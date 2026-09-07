@@ -9,6 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install PDF inspection utilities
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
       - name: Locate target articles in exact issue PDF and render primary pages
         shell: python
         run: |
@@ -69,7 +73,6 @@ jobs:
                   n=norm(text)
                   score=sum(1 for t in terms if norm(t) in n)
                   if score:
-                      # Keep a compact OCR window around the first matching term for audit only.
                       pos=min([n.find(norm(t)) for t in terms if norm(t) in n] or [0])
                       cand.append({'pdf_page':i,'score':score,'snippet':n[max(0,pos-180):pos+700]})
               cand=sorted(cand,key=lambda x:(-x['score'],x['pdf_page']))[:12]
@@ -78,13 +81,11 @@ jobs:
           if any(not hits[fid] for fid in targets):
               raise SystemExit('one or more target articles absent from OCR')
 
-          # Resolve best contiguous article ranges around highest-confidence title hits.
           anchors={fid:hits[fid][0]['pdf_page'] for fid in hits}
           print('ANCHORS',anchors)
           wanted=set()
           for p in anchors.values():
               wanted.update(range(max(1,p-2),min(page_count,p+6)+1))
-          # Render primary facsimile pages. Each PDF page is inspected visually later; OCR is discovery only.
           render_dir=out/'rendered'; render_dir.mkdir()
           for p in sorted(wanted):
               prefix=render_dir/f'pdf-{p:03d}'
@@ -94,7 +95,6 @@ jobs:
           if len(rendered)<len(anchors)*3:
               raise SystemExit('insufficient rendered review pages')
 
-          # Only expose a leaf mapping if scandata proves a one-to-one sequence with the PDF.
           leaf_map=None
           if scandata:
               root=ET.fromstring((out/'scandata.xml').read_bytes())
