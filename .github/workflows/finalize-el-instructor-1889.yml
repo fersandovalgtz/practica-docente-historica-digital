@@ -1,0 +1,230 @@
+name: Finalize El Instructor 1889 primary batch
+
+on:
+  push:
+    branches: [freeze-el-instructor-1889]
+    paths:
+      - ".github/workflows/finalize-el-instructor-1889.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Promote F5-F8 from exact Jan 1889 HNDM inspection
+        shell: python
+        run: |
+          import csv,pathlib,re
+          root=pathlib.Path('.')
+          samples=root/'data/samples'
+          checked='2026-09-06'
+          updates={
+            'PDHD-F000005':{
+              'slot':'A','page':'5',
+              'source_locator':'p5-gramatica-volapuk-preposicion-disciple-aprendizaje',
+              'locator_evidence_url':'https://hndm.iib.unam.mx/consulta/publicacion/pdf/558a3e407d1ed64f17176fc6.pdf?coleccion=&palabras=',
+              'selection_role':'explicit_pedagogical_act',
+              'boundary_definition':"Printed p. 5, right column, within SECCION DE LINGUISTICA / GRAMATICA VOLAPUK / DE LA PREPOSICION: fix the complete paragraph beginning with the grammatical use of the preposition and ending with the instruction to use the most important prepositions in order to fix their grammatical value; stop before the first individual preposition example beginning with AL.",
+              'preparation_note':"UNAM-RI 750865 identifies the selected El Instructor issue as 1 January 1889 and supplies persistent first-page ID 558a3e407d1ed64f17176fc2. Direct HNDM image inspection of the exact eight-page issue fixes p. 5 as an explicit instructional prescription: the didactic text tells the disciple to attend closely to the semantic value of each preposition and explains that selected examples will be used to fix grammatical value. No source text or image is committed.",
+            },
+            'PDHD-F000006':{
+              'slot':'B','page':'8',
+              'source_locator':'p8-distribucion-premios-liceo-ninas-autoridades-instruccion',
+              'locator_evidence_url':'https://hndm.iib.unam.mx/consulta/publicacion/pdf/558a3e407d1ed64f17176fc9.pdf?coleccion=&palabras=',
+              'selection_role':'institutional_relation',
+              'boundary_definition':"Printed p. 8, left column, article LA DISTRIBUCION DE PREMIOS EN EL LICEO DE NIÑAS: fix the article heading and the first three paragraphs, from the notice of the annual prize distribution through the paragraph naming the President of the Junta de Instruccion publica, the speaker Lic. I. Rios y Barrolla and the student literary contributions; stop before the paragraph beginning the musical part of the program.",
+              'preparation_note':"The prior INBAL-hosted scholarship pointer to El Instructor, 1 January 1889, p. 8 is now confirmed against the exact HNDM primary page. The bounded opening of the prize-distribution article documents an institutional evaluation/reward ceremony, the Junta de Instruccion publica and participating pupils without relying on the secondary citation for the final boundary.",
+            },
+            'PDHD-F000007':{
+              'slot':'C','page':'8',
+              'source_locator':'p8-liceo-ninas-educacion-mujer-progreso-representacion',
+              'locator_evidence_url':'https://hndm.iib.unam.mx/consulta/publicacion/pdf/558a3e407d1ed64f17176fc9.pdf?coleccion=&palabras=',
+              'selection_role':'source_criticism_salient',
+              'boundary_definition':"Printed p. 8, right column continuation of LA DISTRIBUCION DE PREMIOS EN EL LICEO DE NIÑAS: fix the two contiguous paragraphs beginning with the moment of prize distribution and ending with the acclamation of the Liceo's founders; the second paragraph explicitly interprets the Liceo's ten-year trajectory in relation to the education of women. Stop before the following paragraph of formal congratulations to government authorities.",
+              'preparation_note':"Direct primary inspection supplies a distinct non-overlapping source-critical unit from the same p. 8 article. The journal moves from the ceremony itself to a public claim about the Liceo de Ninas, its decade of existence and the education of women. The span is retained as evidence of contemporary gendered educational representation, not as a factual endorsement of the journal's evaluative language.",
+            },
+            'PDHD-F000008':{
+              'slot':'D','page':'1',
+              'source_locator':'p1-condiciones-suscripcion-precios-registro-administrativo',
+              'locator_evidence_url':'https://hndm.iib.unam.mx/consulta/publicacion/pdf/558a3e407d1ed64f17176fc2.pdf?coleccion=&palabras=',
+              'selection_role':'control',
+              'boundary_definition':"Printed p. 1, administrative masthead: fix only the CONDICIONES block stating monthly publication cadence, subscription prices, single-issue prices and postal registration; stop before the separate CORRESPONSALES EN EL EXTRANJERO block and exclude the editor/redaction roster below.",
+              'preparation_note':"Direct inspection of the exact 1 January 1889 first page fixes a low-pedagogical administrative control independent of the analytical articles. The control is limited to publication cadence, prices and registration so it can legitimately support none/unclear coding on pedagogical dimensions.",
+            },
+          }
+
+          # Confirm gaps are not silently duplicated in another locator shard.
+          locator_ids={}
+          for path in sorted(samples.glob('fragment_locator_progress*.csv')):
+              with path.open(encoding='utf-8',newline='') as f:
+                  for row in csv.DictReader(f):
+                      fid=row.get('fragment_id','').strip()
+                      if fid:
+                          locator_ids[fid]=path.name
+          for fid in ('PDHD-F000005','PDHD-F000007','PDHD-F000008'):
+              if fid in locator_ids:
+                  raise SystemExit(f'{fid} unexpectedly already exists in {locator_ids[fid]}')
+          if locator_ids.get('PDHD-F000006')!='fragment_locator_progress_crosswalk_w3.csv':
+              raise SystemExit('F000006 canonical shard mismatch')
+
+          # Update existing F6 in place.
+          cross=samples/'fragment_locator_progress_crosswalk_w3.csv'
+          with cross.open(encoding='utf-8',newline='') as f:
+              rows=list(csv.DictReader(f)); fields=list(rows[0].keys())
+          touched=[]
+          for row in rows:
+              if row['fragment_id']=='PDHD-F000006':
+                  u=updates['PDHD-F000006']
+                  for key in ('page','source_locator','locator_evidence_url'):
+                      row[key]=u[key]
+                  row['boundary_status']='fixed'; row['public_text_status']='metadata_only'; row['freeze_status']='frozen'
+                  row['preparation_note']=u['preparation_note']; row['checked_at']=checked; touched.append(row['fragment_id'])
+          if touched!=['PDHD-F000006']: raise SystemExit(f'F6 update mismatch {touched}')
+          with cross.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=fields,lineterminator='\n'); w.writeheader(); w.writerows(rows)
+
+          # New locator shard for the three former gaps.
+          loc_fields=['fragment_id','document_id','slot','page','source_locator','locator_evidence_url','boundary_status','public_text_status','freeze_status','preparation_note','checked_at']
+          loc_path=samples/'fragment_locator_progress_hndm_instructor1889_w23.csv'
+          if loc_path.exists(): raise SystemExit('new locator shard already exists')
+          with loc_path.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=loc_fields,lineterminator='\n'); w.writeheader()
+              for fid in ('PDHD-F000005','PDHD-F000007','PDHD-F000008'):
+                  u=updates[fid]
+                  w.writerow({'fragment_id':fid,'document_id':'PDHD-D000064','slot':u['slot'],'page':u['page'],'source_locator':u['source_locator'],'locator_evidence_url':u['locator_evidence_url'],'boundary_status':'fixed','public_text_status':'metadata_only','freeze_status':'frozen','preparation_note':u['preparation_note'],'checked_at':checked})
+
+          # Frozen A-D shard.
+          frozen_fields=['fragment_id','document_id','slot','page','source_locator','locator_evidence_url','boundary_definition','transcription_status','access_basis','public_text_status','selection_role','freeze_status','preparation_note','checked_at']
+          frozen_path=samples/'frozen_fragments_hndm_instructor1889_w23.csv'
+          if frozen_path.exists(): raise SystemExit('new frozen shard already exists')
+          with frozen_path.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=frozen_fields,lineterminator='\n'); w.writeheader()
+              for fid in ('PDHD-F000005','PDHD-F000006','PDHD-F000007','PDHD-F000008'):
+                  u=updates[fid]
+                  w.writerow({'fragment_id':fid,'document_id':'PDHD-D000064','slot':u['slot'],'page':u['page'],'source_locator':u['source_locator'],'locator_evidence_url':u['locator_evidence_url'],'boundary_definition':u['boundary_definition'],'transcription_status':'not_transcribed','access_basis':'HNDM_public_interface_manual_inspection','public_text_status':'metadata_only','selection_role':u['selection_role'],'freeze_status':'frozen','preparation_note':u['preparation_note'],'checked_at':checked})
+
+          # Remove exactly the three newly localized gaps.
+          gp=samples/'fragment_gap_queue_0_1.csv'
+          with gp.open(encoding='utf-8',newline='') as f:
+              gaps=list(csv.DictReader(f)); gap_fields=list(gaps[0].keys())
+          remove={'PDHD-F000005','PDHD-F000007','PDHD-F000008'}
+          found={r['fragment_id'] for r in gaps if r['fragment_id'] in remove}
+          if found!=remove: raise SystemExit(f'gap removal mismatch {found}')
+          gaps=[r for r in gaps if r['fragment_id'] not in remove]
+          with gp.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=gap_fields,lineterminator='\n'); w.writeheader(); w.writerows(gaps)
+
+          # Structured retrieval provenance preserves the wrong-date false start.
+          rapath=samples/'retrieval_attempts.csv'
+          with rapath.open(encoding='utf-8',newline='') as f:
+              ra=list(csv.DictReader(f)); ra_fields=list(ra[0].keys())
+          if any(r['attempt_id']=='PDHD-RA000016' for r in ra): raise SystemExit('RA16 already exists')
+          ra.append({
+            'attempt_id':'PDHD-RA000016','document_id':'PDHD-D000064','fragment_ids':'PDHD-F000005;PDHD-F000006;PDHD-F000007;PDHD-F000008','source_id':'HNDM',
+            'object_url':'https://hndm.iib.unam.mx/consulta/publicacion/visualizar/558075be7d1e63c9fea1a307?pagina=558a3e407d1ed64f17176fc2&coleccion=',
+            'target':'all_four_issue_slots','result_status':'superseded_by_locator',
+            'blocker':"UNAM-RI 750865 identifies the selected El Instructor object as 1889-01-01 and exposes persistent item_first_page_id 558a3e407d1ed64f17176fc2. An initial HNDM date-query traversal silently returned the 1 May 1888 issue; visual masthead inspection rejected all eight pages from that artifact. A date-routing probe then showed that simple anio/mes/dia GET parameters do not select the issue reliably. Entering the viewer through UNAM's exact persistent first-page ID passed a strict 1889-01-01 identity gate and recovered eight unique pages. Direct inspection fixes F000005 on p. 5, confirms and bounds F000006 on p. 8, fixes a distinct source-critical F000007 span on p. 8, and fixes F000008 on p. 1.",
+            'next_route':'frozen_registry_gap_queue_and_status_sync_completed','checked_at':checked,
+          })
+          with rapath.open('w',encoding='utf-8',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=ra_fields,lineterminator='\n'); w.writeheader(); w.writerows(ra)
+
+          # Public status surfaces: 89 located, 69 frozen, 20 located-not-frozen, 7 gaps.
+          readme_path=root/'README.md'; readme=readme_path.read_text(encoding='utf-8')
+          readme=readme.replace('| Slots con localizador candidato/resuelto | **86 / 96** |','| Slots con localizador candidato/resuelto | **89 / 96** |')
+          readme=readme.replace('| Fragmentos completamente congelados | **65 / 96** |','| Fragmentos completamente congelados | **69 / 96** |')
+          readme=re.sub(r'su unión contiene \*\*\d+/96\*\* slots','su unión contiene **89/96** slots',readme)
+          readme=re.sub(r'su unión contiene \*\*\d+/96\*\* fragmentos','su unión contiene **69/96** fragmentos',readme)
+          readme=re.sub(r'\*\*\d+/96 slots tienen ya un localizador documentado\.\*\*','**89/96 slots tienen ya un localizador documentado.**',readme)
+          readme=re.sub(r'\*\*\d+ localizadores todavía no congelados\*\*','**20 localizadores todavía no congelados**',readme)
+          readme=re.sub(r'Quedan \*\*\d+ slots sin localizador\*\*','Quedan **7 slots sin localizador**',readme)
+          marker='`PDHD-D000063`, *México intelectual* (1889), completa ahora A–D'
+          para=("`PDHD-D000064`, *El Instructor* del 1 de enero de 1889, completa A–D desde ocho páginas primarias HNDM recuperadas mediante el identificador persistente de primera página publicado por UNAM-RI `750865`. La recuperación conserva un fallo de identidad importante: una primera navegación basada sólo en parámetros de fecha devolvió silenciosamente el número del 1 de mayo de 1888 y fue descartada tras revisar su masthead. El acceso corregido entra por `558a3e407d1ed64f17176fc2` y verifica la fecha antes de recorrer el número. `PDHD-F000005` fija en p. 5 una prescripción de aprendizaje de preposiciones en la *Gramática Volapük*; `PDHD-F000006` confirma en p. 8 la distribución de premios del Liceo de Niñas como relación institucional/evaluativa; `PDHD-F000007` usa un bloque distinto de p. 8 como evidencia crítica del discurso contemporáneo sobre la educación de las mujeres; y `PDHD-F000008` fija las `CONDICIONES` administrativas de p. 1 como control. No se publica facsímil ni transcripción histórica.\n\n")
+          if marker not in readme: raise SystemExit('README insertion marker missing')
+          readme=readme.replace(marker,para+marker,1)
+          readme_path.write_text(readme,encoding='utf-8')
+
+          cohort_path=root/'docs/PDHD_U1_COHORT_STATUS.md'; cohort=cohort_path.read_text(encoding='utf-8')
+          cohort=cohort.replace('| Fragment locator rows resolved/candidate | **86 / 96** |','| Fragment locator rows resolved/candidate | **89 / 96** |')
+          cohort=cohort.replace('| Fully frozen fragments | **65 / 96** |','| Fully frozen fragments | **69 / 96** |')
+          cohort=re.sub(r'PDHD-U1 now has \*\*\d+ of the 96 deterministic reliability slots\*\*','PDHD-U1 now has **89 of the 96 deterministic reliability slots**',cohort)
+          cohort=re.sub(r'(?:Sixty-one|Sixty-five) units have crossed','Sixty-nine units have crossed',cohort)
+          cohort=cohort.replace('Fifteen selected documents now have complete four-slot batches.','Sixteen selected documents now have complete four-slot batches.')
+          cohort=re.sub(r'contains \*\*\d+/96\*\* pilot slots','contains **89/96** pilot slots',cohort)
+          cohort=re.sub(r'The remaining \*\*\d+\*\* located rows','The remaining **20** located rows',cohort)
+          cohort=re.sub(r'\*\*\d+ slots remain without a locator\.\*\*','**7 slots remain without a locator.**',cohort)
+          cohort=re.sub(r'The current \d+ frozen units','The current 69 frozen units',cohort)
+          cohort=re.sub(r'The project is now at \*\*\d+/96 localized\*\* and \*\*\d+/96 frozen\*\*','The project is now at **89/96 localized** and **69/96 frozen**',cohort)
+          cohort=re.sub(r'preserving the unlocalized complement at \d+','preserving the unlocalized complement at 7',cohort)
+          cohort=cohort.replace('The next quantitative localization checkpoint is **88/96**','The next quantitative localization checkpoint is **92/96**')
+          cohort=cohort.replace('Strong candidates include page-resolved *El Maestro* and *La Escuela Moderna* fragments, plus the 37-page *Revista de Instrucción Pública Mexicana* issue whose HNDM object is already resolved.','Strong candidates include page-resolved *El Maestro* and *La Escuela Moderna* fragments, plus the remaining clustered gaps in *El Periquito* and the unresolved control for *El papel social del maestro rural*.')
+          cmarker='`PDHD-D000006`, *Revista de la Instrucción Pública Mexicana* of 15 March 1896'
+          cpara=("`PDHD-D000064`, *El Instructor* of 1 January 1889, now contributes a complete A–D batch from the exact HNDM issue cross-walked from UNAM-RI `750865`. The recovery exposes a second HNDM interface hazard: supplying anio/mes/dia in the viewer URL silently returned the 1 May 1888 issue, so that first artifact was rejected after masthead inspection. UNAM's structured record supplied persistent `item_first_page_id` `558a3e407d1ed64f17176fc2`; entering through that ID and enforcing an `1889-01-01` identity gate recovered exactly eight unique primary pages. Direct inspection fixes F000005 on p. 5 as a learner-directed grammatical prescription, confirms F000006 on p. 8 as an institutional prize-distribution span, fixes a distinct p. 8 source-critical representation of women's education for F000007, and uses the p. 1 publication-conditions block as F000008 control.\n\n")
+          if cmarker not in cohort: raise SystemExit('cohort insertion marker missing')
+          cohort=cohort.replace(cmarker,cpara+cmarker,1)
+          cohort_path.write_text(cohort,encoding='utf-8')
+
+      - name: Remove temporary Instructor workflows
+        shell: bash
+        run: |
+          rm -f .github/workflows/retrieve-el-instructor-1889.yml
+          rm -f .github/workflows/probe-el-instructor-1889-date.yml
+          rm -f .github/workflows/finalize-el-instructor-1889.yml
+
+      - name: Validate scientific state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_repository.py
+          python scripts/validate_object_aliases.py
+          python scripts/validate_content_leads.py
+          python scripts/validate_retrieval_attempts.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_freeze_conversion_queue.py
+          python scripts/prepare_freeze_review.py --check
+          python scripts/validate_status_counts.py
+          python scripts/annotation_agreement.py --self-test
+          python scripts/build_fragment_manifest.py --check
+          git diff --check
+
+      - name: Gate persistent diff
+        shell: python
+        run: |
+          import subprocess
+          expected={
+            'README.md',
+            'docs/PDHD_U1_COHORT_STATUS.md',
+            'data/samples/fragment_locator_progress_crosswalk_w3.csv',
+            'data/samples/fragment_locator_progress_hndm_instructor1889_w23.csv',
+            'data/samples/frozen_fragments_hndm_instructor1889_w23.csv',
+            'data/samples/fragment_gap_queue_0_1.csv',
+            'data/samples/retrieval_attempts.csv',
+            '.github/workflows/retrieve-el-instructor-1889.yml',
+            '.github/workflows/probe-el-instructor-1889-date.yml',
+            '.github/workflows/finalize-el-instructor-1889.yml',
+          }
+          lines=subprocess.check_output(['git','status','--porcelain'],text=True).splitlines()
+          paths={line[3:] for line in lines}
+          unexpected=paths-expected
+          if unexpected: raise SystemExit('unexpected worktree files: '+repr(sorted(unexpected)))
+          for req in [
+            'README.md','docs/PDHD_U1_COHORT_STATUS.md','data/samples/fragment_locator_progress_crosswalk_w3.csv',
+            'data/samples/fragment_locator_progress_hndm_instructor1889_w23.csv','data/samples/frozen_fragments_hndm_instructor1889_w23.csv',
+            'data/samples/fragment_gap_queue_0_1.csv','data/samples/retrieval_attempts.csv']:
+              if req not in paths: raise SystemExit('missing expected scientific diff: '+req)
+
+      - name: Commit and push clean batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Fernando Sandoval'
+          git config user.email 'fernando.sandoval@uacj.mx'
+          git add -A
+          git commit -m 'Freeze El Instructor 1889 primary HNDM batch'
+          git push origin HEAD:freeze-el-instructor-1889
