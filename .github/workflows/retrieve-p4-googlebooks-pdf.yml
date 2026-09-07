@@ -1,4 +1,4 @@
-name: Probe PDHD final Google Books primary pages
+name: Retrieve PDHD signed Google Books primary pages
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
   retrieve:
     runs-on: ubuntu-latest
     steps:
-      - name: Probe SearchWithinVolume2 and selected-page HTML
+      - name: Resolve page signatures and retrieve signed page images
         shell: python
         run: |
           import html
@@ -23,7 +23,7 @@ jobs:
           import urllib.parse
           import urllib.request
 
-          root = pathlib.Path("final-googlebooks-page-probe")
+          root = pathlib.Path("signed-primary-pages")
           root.mkdir()
           headers = {
               "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
@@ -47,99 +47,73 @@ jobs:
           def get(url, timeout=60):
               req = urllib.request.Request(url, headers=headers)
               with urllib.request.urlopen(req, timeout=timeout) as r:
-                  return r.read(), r.status, r.headers.get("Content-Type", "")
+                  return r.read(), r.status, r.headers.get("Content-Type", ""), r.geturl()
 
-          summary = []
-          for doc, book_id, fragments in targets:
-              d = root / doc
-              d.mkdir()
-              for frag, page, query in fragments:
-                  fd = d / frag
-                  fd.mkdir()
-                  item = {"document_id": doc, "fragment_id": frag, "page": page, "query": query}
+          report = []
+          recovered = 0
+          for doc, book_id, frags in targets:
+              for frag, page, query in frags:
+                  fd = root / doc / frag
+                  fd.mkdir(parents=True)
+                  item = {"document_id": doc, "fragment_id": frag, "book_id": book_id, "page": page}
 
                   search_url = "https://www.google.com/books?id=" + urllib.parse.quote(book_id) + "&jscmd=SearchWithinVolume2&q=" + urllib.parse.quote(query)
                   try:
-                      raw, status, ctype = get(search_url)
+                      raw, st, ct, final = get(search_url)
                       (fd / "search-within-volume.json").write_bytes(raw)
-                      item["search_status"] = status
-                      item["search_content_type"] = ctype
+                      item["search_status"] = st
                       try:
                           item["search_json"] = json.loads(raw.decode("utf-8", errors="replace"))
                       except Exception:
-                          item["search_preview"] = raw[:1200].decode("utf-8", errors="replace")
+                          pass
                   except Exception as exc:
                       item["search_error"] = f"{type(exc).__name__}: {exc}"
 
-                  page_url = f"https://books.google.com/books?id={urllib.parse.quote(book_id)}&pg=PA{page}&hl=es&source=gbs_selected_pages&cad=1"
-                  (fd / "page-url.txt").write_text(page_url, encoding="utf-8")
+                  selected_url = f"https://books.google.com/books?id={urllib.parse.quote(book_id)}&pg=PA{page}&hl=es&source=gbs_selected_pages&cad=1"
                   try:
-                      raw, status, ctype = get(page_url)
-                      (fd / "selected-page.html").write_bytes(raw)
-                      item["page_status"] = status
-                      item["page_content_type"] = ctype
+                      raw, st, ct, final = get(selected_url)
                       text = html.unescape(raw.decode("utf-8", errors="replace"))
-                      patterns = [
-                          r'https?://[^"\'<> ]+/books/content\?[^"\'<> ]+',
-                          r'https?://books\.googleusercontent\.com/[^"\'<> ]+',
-                      ]
-                      urls = []
-                      for pattern in patterns:
-                          for u in re.findall(pattern, text):
-                              u = u.replace("\\u0026", "&").replace("\\x26", "&")
-                              if u not in urls:
-                                  urls.append(u)
-                      item["image_url_count"] = len(urls)
-                      for i, u in enumerate(urls[:30], start=1):
-                          try:
-                              body, st, ct = get(u, timeout=45)
-                              if ct.startswith("image/") and len(body) > 5000:
-                                  ext = ".png" if "png" in ct else ".jpg"
-                                  (fd / f"embedded-image-{i:02d}{ext}").write_bytes(body)
-                          except Exception:
-                              pass
+                      (fd / "selected-page.html").write_bytes(raw)
+                      sig_match = re.search(r'name=["\']sig["\']\s+value=["\']([^"\']+)', text)
+                      if not sig_match:
+                          sig_match = re.search(r'value=["\']([^"\']+)["\']\s+name=["\']sig["\']', text)
+                      sig = sig_match.group(1) if sig_match else None
+                      item["sig"] = sig
+                      if sig:
+                          for zoom in [5, 4, 3, 2, 1]:
+                              candidates = [
+                                  f"https://books.google.com/books?id={urllib.parse.quote(book_id)}&pg=PA{page}&img=1&zoom={zoom}&hl=es&sig={urllib.parse.quote(sig)}",
+                                  f"https://books.google.com/books/content?id={urllib.parse.quote(book_id)}&pg=PA{page}&img=1&zoom={zoom}&hl=es&sig={urllib.parse.quote(sig)}",
+                              ]
+                              for n, image_url in enumerate(candidates, start=1):
+                                  attempt = {"zoom": zoom, "variant": n, "url": image_url}
+                                  try:
+                                      body, ist, ict, ifinal = get(image_url, timeout=60)
+                                      attempt.update({"status": ist, "content_type": ict, "bytes": len(body), "final_url": ifinal})
+                                      if ict.startswith("image/") and len(body) > 10000:
+                                          ext = ".png" if "png" in ict else ".jpg"
+                                          out = fd / f"PA{page}-z{zoom}-v{n}{ext}"
+                                          out.write_bytes(body)
+                                          attempt["saved"] = out.name
+                                          recovered += 1
+                                  except Exception as exc:
+                                      attempt["error"] = f"{type(exc).__name__}: {exc}"
+                                  item.setdefault("image_attempts", []).append(attempt)
                   except Exception as exc:
-                      item["page_error"] = f"{type(exc).__name__}: {exc}"
+                      item["selected_page_error"] = f"{type(exc).__name__}: {exc}"
+                  report.append(item)
 
-                  summary.append(item)
+          (root / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+          print(json.dumps(report, ensure_ascii=False, indent=2)[:40000])
+          print(f"RECOVERED_SIGNED_IMAGES={recovered}")
+          if recovered == 0:
+              raise SystemExit("No signed page image was recovered")
 
-          (root / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
-          print(json.dumps(summary, ensure_ascii=False, indent=2)[:30000])
-
-      - name: Render selected Google Books pages in Chrome
-        shell: bash
-        run: |
-          set -u
-          chrome=""
-          for candidate in google-chrome google-chrome-stable chromium chromium-browser; do
-            if command -v "$candidate" >/dev/null 2>&1; then chrome="$candidate"; break; fi
-          done
-          if [ -z "$chrome" ]; then
-            echo "No Chrome/Chromium found"
-            exit 1
-          fi
-          echo "Using $chrome"
-          find final-googlebooks-page-probe -name page-url.txt -print0 | while IFS= read -r -d '' f; do
-            dir=$(dirname "$f")
-            url=$(cat "$f")
-            "$chrome" --headless --disable-gpu --no-sandbox --hide-scrollbars \
-              --virtual-time-budget=12000 --window-size=1800,2400 \
-              --screenshot="$dir/browser-page.png" "$url" || true
-            ls -lh "$dir/browser-page.png" 2>/dev/null || true
-          done
-
-      - name: Upload one-day page-inspection artifact
+      - name: Upload one-day signed-page review artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pdhd-final-googlebooks-page-probe
-          path: final-googlebooks-page-probe/
+          name: pdhd-final-signed-primary-pages
+          path: signed-primary-pages/
           retention-days: 1
           if-no-files-found: error
-
-      - name: Require browser evidence files
-        shell: bash
-        run: |
-          count=$(find final-googlebooks-page-probe -type f \( -name 'browser-page.png' -o -name 'embedded-image-*' \) | wc -l)
-          echo "Recovered $count browser/image evidence files"
-          test "$count" -gt 0
