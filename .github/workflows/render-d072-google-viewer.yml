@@ -14,51 +14,87 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect browser
-        shell: bash
-        run: |
-          set -euo pipefail
-          command -v google-chrome || command -v chromium || command -v chromium-browser
-          google-chrome --version 2>/dev/null || chromium --version 2>/dev/null || true
-
-      - name: Render selected primary pages
+      - name: Start headless Chrome with DevTools
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p d072_viewer
           BROWSER="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          for pg in PA41 PA53 PA59 PA104; do
-            url="https://books.google.com/books?id=JFRLAAAAYAAJ&pg=${pg}&hl=es&jscmd=SearchWithinVolume2"
-            echo "Rendering $pg"
-            timeout 40s "$BROWSER" \
-              --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
-              --window-size=1600,1400 --hide-scrollbars --force-device-scale-factor=1 \
-              --virtual-time-budget=15000 \
-              --screenshot="d072_viewer/${pg}.png" "$url" \
-              >"d072_viewer/${pg}.log" 2>&1 || true
-            if [ -f "d072_viewer/${pg}.png" ]; then
-              file "d072_viewer/${pg}.png"
-              sha256sum "d072_viewer/${pg}.png"
-            else
-              echo "NO_SCREENSHOT $pg"
-            fi
-            tail -20 "d072_viewer/${pg}.log" || true
+          "$BROWSER" --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
+            --window-size=1600,1400 --hide-scrollbars --remote-debugging-port=9222 \
+            --user-data-dir=/tmp/pdhd-chrome about:blank >d072_viewer/chrome.log 2>&1 &
+          echo $! > d072_viewer/chrome.pid
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:9222/json/version >/dev/null; then break; fi
+            sleep 1
           done
+          curl -fsS http://127.0.0.1:9222/json/version | tee d072_viewer/version.json
 
-      - name: Basic image diversity check
+      - name: Capture selected pages without waiting for load completion
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const pages = ['PA41','PA53','PA59','PA104'];
+          const vid = 'JFRLAAAAYAAJ';
+
+          async function main() {
+            const targets = await (await fetch('http://127.0.0.1:9222/json')).json();
+            const target = targets.find(x => x.type === 'page');
+            if (!target) throw new Error('No Chrome page target');
+            const ws = new WebSocket(target.webSocketDebuggerUrl);
+            let seq = 0;
+            const pending = new Map();
+            ws.onmessage = ev => {
+              const msg = JSON.parse(ev.data);
+              if (msg.id && pending.has(msg.id)) {
+                const {resolve,reject} = pending.get(msg.id); pending.delete(msg.id);
+                if (msg.error) reject(new Error(JSON.stringify(msg.error))); else resolve(msg.result || {});
+              }
+            };
+            await new Promise((resolve,reject) => { ws.onopen=resolve; ws.onerror=reject; });
+            const send = (method, params={}) => new Promise((resolve,reject) => {
+              const id=++seq; pending.set(id,{resolve,reject}); ws.send(JSON.stringify({id,method,params}));
+              setTimeout(() => { if (pending.has(id)) { pending.delete(id); reject(new Error('CDP timeout '+method)); } }, 20000);
+            });
+            await send('Page.enable'); await send('Runtime.enable');
+            await send('Emulation.setDeviceMetricsOverride',{width:1600,height:1400,deviceScaleFactor:1,mobile:false});
+            for (const pg of pages) {
+              const url = `https://books.google.com/books?id=${vid}&pg=${pg}&hl=es`;
+              console.log('NAVIGATE',pg,url);
+              await send('Page.navigate',{url});
+              await new Promise(r => setTimeout(r,15000));
+              const diag = await send('Runtime.evaluate',{expression:`JSON.stringify({title:document.title,url:location.href,ready:document.readyState,text:(document.body&&document.body.innerText||'').slice(0,4000),imgs:[...document.images].slice(0,30).map(i=>({src:i.currentSrc||i.src,w:i.naturalWidth,h:i.naturalHeight}))})`,returnByValue:true});
+              fs.writeFileSync(`d072_viewer/${pg}.json`, diag.result.value || '{}');
+              const shot = await send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
+              fs.writeFileSync(`d072_viewer/${pg}.png`, Buffer.from(shot.data,'base64'));
+              console.log(pg,'PNG_BYTES',Buffer.byteLength(shot.data,'base64'));
+            }
+            ws.close();
+          }
+          main().catch(e => { console.error(e); process.exit(1); });
+          NODE
+
+      - name: Report capture diagnostics
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          import hashlib,struct
-          for p in sorted(Path('d072_viewer').glob('*.png')):
-              b=p.read_bytes()
-              w=h=None
+          import hashlib,struct,json
+          for p in sorted(Path('d072_viewer').glob('PA*.png')):
+              b=p.read_bytes(); w=h=None
               if b[:8]==b'\x89PNG\r\n\x1a\n' and len(b)>=24:
                   w,h=struct.unpack('>II',b[16:24])
               print(p.name,'bytes',len(b),'size',w,h,'sha256',hashlib.sha256(b).hexdigest())
+              j=p.with_suffix('.json')
+              if j.exists():
+                  try:
+                      o=json.loads(j.read_text()); print(' title=',o.get('title'),'url=',o.get('url'),'ready=',o.get('ready')); print(' text=',(o.get('text') or '')[:1200]); print(' imgs=',o.get('imgs'))
+                  except Exception as e: print(' diag parse error',e)
           PY
+          kill "$(cat d072_viewer/chrome.pid)" 2>/dev/null || true
 
       - uses: actions/upload-artifact@v4
         with:
