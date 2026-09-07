@@ -1,0 +1,96 @@
+name: Probe legacy Google Books routes for El papel social del maestro rural
+
+on:
+  push:
+    branches: [freeze-papel-social-maestro-rural-control]
+    paths:
+      - ".github/workflows/probe-papel-social-google-legacy.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve Google Books ID from OCLC and title routes
+        shell: python
+        run: |
+          import html,json,pathlib,re,urllib.parse,urllib.request,urllib.error,http.cookiejar
+          out=pathlib.Path('probe-google-legacy'); out.mkdir()
+          cj=http.cookiejar.CookieJar()
+          opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.7'}
+          q='"El papel social del maestro rural"'
+          urls={
+            'vid_plain':'https://books.google.com/books?vid=OCLC4798509',
+            'vid_colon':'https://books.google.com/books?vid=OCLC:4798509',
+            'books_query':'https://books.google.com/books?'+urllib.parse.urlencode({'q':q,'btnG':'Search Books'}),
+            'books_title':'https://books.google.com/books?'+urllib.parse.urlencode({'q':'intitle:'+q}),
+            'google_tbm':'https://www.google.com/search?'+urllib.parse.urlencode({'tbm':'bks','q':q}),
+          }
+          report={}
+          ids=[]
+          for label,url in urls.items():
+              item={'url':url}
+              try:
+                  req=urllib.request.Request(url,headers=headers)
+                  with opener.open(req,timeout=90) as r:
+                      body=r.read(); final=r.geturl(); item.update(status=r.status,final_url=final,content_type=r.headers.get('content-type',''),bytes=len(body))
+                  text=html.unescape(body.decode('utf-8',errors='replace'))
+                  (out/f'{label}.html').write_text(text,encoding='utf-8')
+                  candidates=[]
+                  patterns=[
+                    r'[?&]id=([A-Za-z0-9_-]{8,})',
+                    r'/books/edition/[^"?#]+/([A-Za-z0-9_-]{8,})',
+                    r'books\?id=([A-Za-z0-9_-]{8,})',
+                    r'"volume_id"\s*:\s*"([^"]+)"',
+                  ]
+                  for pat in patterns:
+                      candidates.extend(re.findall(pat,text,re.I))
+                  final_ids=re.findall(r'[?&]id=([A-Za-z0-9_-]{8,})',final)
+                  candidates=final_ids+candidates
+                  uniq=[]
+                  for x in candidates:
+                      if x not in uniq and x not in {'Search','books'}: uniq.append(x)
+                  item['ids']=uniq[:100]
+                  ids.extend(uniq)
+                  contexts=[]
+                  for token in ['El papel social del maestro rural','4798509','1925','Secretaría de Educación','Secretaria de Educacion']:
+                      for m in list(re.finditer(re.escape(token),text,re.I))[:10]:
+                          contexts.append(re.sub(r'\s+',' ',text[max(0,m.start()-300):m.end()+700]))
+                  item['contexts']=contexts[:30]
+              except Exception as exc:
+                  item['error']=repr(exc)
+              report[label]=item
+          # Probe every discovered Google Books id and retain metadata/access hints.
+          details={}
+          for gid in list(dict.fromkeys(ids))[:80]:
+              url='https://books.google.com/books?'+urllib.parse.urlencode({'id':gid,'printsec':'frontcover'})
+              try:
+                  req=urllib.request.Request(url,headers=headers)
+                  with opener.open(req,timeout=90) as r: body=r.read(); final=r.geturl(); status=r.status
+                  text=html.unescape(body.decode('utf-8',errors='replace'))
+                  details[gid]={
+                    'status':status,'final_url':final,'bytes':len(body),
+                    'title_hits':text.lower().count('el papel social del maestro rural'),
+                    'year_hits':text.count('1925'),
+                    'can_download_pdf':bool(re.search(r'can_download_pdf.{0,30}true',text,re.I)),
+                    'is_browsable':bool(re.search(r'is_browsable.{0,30}true',text,re.I)),
+                    'public_domain':bool(re.search(r'is_public_domain.{0,30}true',text,re.I)),
+                    'pdf_links':list(dict.fromkeys(re.findall(r'https?://[^"\' <>]+(?:jscmd=SearchWithinVolume2|output=pdf|download[^"\' <>]*pdf)[^"\' <>]*',text,re.I)))[:20],
+                  }
+                  (out/f'id-{gid}.html').write_text(text,encoding='utf-8')
+              except Exception as exc:
+                  details[gid]={'error':repr(exc)}
+          report['details']=details
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+      - name: Upload probe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-papel-social-google-legacy-probe
+          path: probe-google-legacy/
+          retention-days: 1
