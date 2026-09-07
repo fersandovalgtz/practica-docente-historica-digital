@@ -1,0 +1,119 @@
+name: Target D074 PA444 and classify related HTML copies
+
+on:
+  push:
+    branches: [work/d074-canonical-page-recovery]
+    paths: [.github/workflows/probe-d074-pa444-and-related-html.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe PA444-specific lexical variants and related-volume HTML
+        shell: python
+        run: |
+          import html, json, pathlib, re, urllib.parse, urllib.request, urllib.error
+
+          canonical='KRV2_jMW8-wC'
+          pa444_queries=[
+            'asistencia de usuarios',
+            'asistencia usuarios bibliotecas',
+            'primer semestre de 1937',
+            'primer semestre 1937 bibliotecas',
+            'usuarios durante el primer semestre',
+            'usuarios primer semestre',
+            '1 015 239',
+            '1015239',
+            '1.015.239',
+            'asistencia a las bibliotecas',
+            'movimiento de lectores',
+            'lectores primer semestre',
+            'incremento asistencia bibliotecas',
+          ]
+          related=['03wQAAAAYAAJ','1HsQAAAAYAAJ','3X8QAAAAYAAJ','7OdDbshzWaUC','InoQAAAAYAAJ','KH0QAAAAYAAJ','N3wQAAAAYAAJ','X3oQAAAAYAAJ','Xd0U5ozjxNgC','e3wQAAAAYAAJ']
+          out=pathlib.Path('d074-pa444-related-html'); out.mkdir(exist_ok=True)
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+
+          def fetch(url,timeout=90):
+            req=urllib.request.Request(url,headers=headers)
+            try:
+              with urllib.request.urlopen(req,timeout=timeout) as r:
+                return r.status,r.headers.get('Content-Type',''),r.geturl(),r.read()
+            except urllib.error.HTTPError as e:
+              return e.code,e.headers.get('Content-Type',''),e.geturl(),e.read()
+            except Exception as e:
+              return None,'',url,str(e).encode()
+
+          report={'canonical':canonical,'pa444_queries':[],'related_html':{}}
+          pa444_hits=[]
+          for q in pa444_queries:
+            url='https://books.google.com/books?'+urllib.parse.urlencode({'id':canonical,'jscmd':'SearchWithinVolume2','q':q})
+            st,ct,final,body=fetch(url)
+            row={'query':q,'status':st,'bytes':len(body),'results':[]}
+            try:
+              data=json.loads(body.decode('utf-8'))
+              for x in data.get('search_results') or []:
+                if not isinstance(x,dict): continue
+                item={k:x.get(k) for k in ['page_id','page_number','snippet_text']}
+                row['results'].append(item)
+                if x.get('page_id')=='PA444': pa444_hits.append({'query':q,**item})
+            except Exception as e: row['error']=f'{type(e).__name__}: {e}'
+            report['pa444_queries'].append(row)
+            print('QUERY',q,json.dumps(row,ensure_ascii=False))
+          report['pa444_hits']=pa444_hits
+          print('PA444_HITS',json.dumps(pa444_hits,ensure_ascii=False,indent=2))
+
+          # Classify related IDs with their public selected/front-cover HTML rather than Books API.
+          for vid in related+[canonical]:
+            url=f'https://books.google.com/books?id={vid}&printsec=frontcover'
+            st,ct,final,body=fetch(url)
+            text=html.unescape(body.decode('utf-8',errors='replace')).replace('\\/','/').replace('\\u0026','&')
+            row={'status':st,'bytes':len(body),'final':final}
+            title=re.search(r'<title>(.*?)</title>',text,re.I|re.S)
+            if title: row['html_title']=re.sub(r'\s+',' ',re.sub('<[^>]+>','',title.group(1))).strip()
+            # Collect selected citation/og meta fields.
+            metas={}
+            for m in re.finditer(r'<meta\s+([^>]+)>',text,re.I):
+              attrs=m.group(1)
+              nm=re.search(r'(?:name|property)=["\']([^"\']+)["\']',attrs,re.I)
+              cv=re.search(r'content=["\']([^"\']*)["\']',attrs,re.I)
+              if nm and cv and nm.group(1).lower() in {'citation_title','citation_date','citation_publisher','citation_author','og:title','books:page_count'}:
+                metas[nm.group(1)]=cv.group(1)
+            row['meta']=metas
+            # Small visible-text windows around bibliographic identity terms.
+            plain=re.sub(r'<script.*?</script>|<style.*?</style>',' ',text,flags=re.I|re.S)
+            plain=re.sub(r'<[^>]+>',' ',plain); plain=re.sub(r'\s+',' ',plain)
+            wins=[]
+            for pat in ['1937','1936','1938','1939','Volume 2','Volumen 2','Indiana University','Original from','Memoria de la Secretaría de Educación Pública','Memoria de la Secretaria de Educacion Publica']:
+              m=re.search(re.escape(pat),plain,re.I)
+              if m: wins.append(plain[max(0,m.start()-180):min(len(plain),m.end()+280)])
+            row['identity_windows']=wins[:12]
+            # Find public PDF links exposed in HTML; do not download yet.
+            decoded=text
+            pdfs=re.findall(r'https?://books\.google\.[^/]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',decoded)
+            row['pdf_links']=list(dict.fromkeys(pdfs))[:10]
+            # Count target page IDs if this copy has searchable equivalents.
+            report['related_html'][vid]=row
+            print('\nRELATED',vid,json.dumps(row,ensure_ascii=False,indent=2))
+
+          plausible=[]
+          for vid,row in report['related_html'].items():
+            blob=' '.join([row.get('html_title',''),json.dumps(row.get('meta',{}),ensure_ascii=False),' '.join(row.get('identity_windows',[]))]).lower()
+            if 'memoria' in blob and '1937' in blob:
+              plausible.append(vid)
+          report['plausible_related']=plausible
+          print('PLAUSIBLE_RELATED',plausible)
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+
+      - name: Upload one-day report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-pa444-related-html
+          path: d074-pa444-related-html/
+          retention-days: 1
+          if-no-files-found: error
