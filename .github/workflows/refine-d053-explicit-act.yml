@@ -49,9 +49,10 @@ jobs:
               s = "".join(c for c in s if unicodedata.category(c) != "Mn")
               return re.sub(r"\s+", " ", s).strip()
 
-          actor = re.compile(r"\b(?:maestr[oa]s?|profesor(?:es|a|as)?|alumn[oa]s?|niñ[oa]s?|escolares?|educandos?|escuela(?:s)?)\b")
-          pedagogy = re.compile(r"\b(?:enseñ\w*|educ\w*|instru\w*|lecci\w*|metod\w*|ejercici\w*|aprend\w*|clase(?:s)?|estudi\w*)\b")
-          prescription = re.compile(r"\b(?:debe(?:n|rá|ria|rían)?|conviene|procure(?:n)?|procurar|necesario|preciso|procedimiento|práctica|practicar|realizar|realice(?:n)?|se hará|se debe|habrá de|recomienda)\b")
+          # Regexes are deliberately accent-free because norm() removes accents.
+          actor = re.compile(r"\b(?:maestr[oa]s?|profesor(?:es|a|as)?|alumn[oa]s?|nin[oa]s?|escolares?|educandos?|escuela(?:s)?)\b")
+          pedagogy = re.compile(r"\b(?:ensen\w*|educ\w*|instru\w*|lecci\w*|metod\w*|ejercici\w*|aprend\w*|clase(?:s)?|estudi\w*)\b")
+          prescription = re.compile(r"\b(?:debe(?:n|ra|ria|rian)?|conviene|procure(?:n)?|procurar|necesario|preciso|procedimiento|practica|practicar|realizar|realice(?:n)?|se hara|se debe|habra de|recomienda)\b")
 
           objects = root.findall(".//OBJECT")
           pages = []
@@ -66,7 +67,7 @@ jobs:
           start = 237
           hits = []
           for idx, raw, text in pages[start:]:
-              # windows around actor mentions; require all three semantic groups
+              # Windows around actor mentions; require all three semantic groups
               # within a local 900-character context to avoid page-level false positives.
               for am in actor.finditer(text):
                   lo = max(0, am.start() - 450)
@@ -98,8 +99,8 @@ jobs:
                   best[n] = hit
           ranked = sorted(best.values(), key=lambda h: (-h["score"], h["bookreader_n"]))
 
-          # Exclude known non-pedagogical classes only from automatic promotion,
-          # not from the audit report. The images remain available for human review.
+          # Keep the audit broad; no OCR candidate is promoted without primary
+          # visual inspection of the recovered page image.
           selected = ranked[:15]
           retrieval = []
           for hit in selected:
