@@ -14,64 +14,89 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Resolve UNAM structured object metadata and current fragment state
+      - name: Resolve adjacent 15 Nov 1889 UNAM object and HNDM previous-page route
         shell: python
         run: |
-          import csv,html,json,pathlib,re,urllib.request
+          import csv,html,json,pathlib,re,urllib.parse,urllib.request,urllib.error
           out=pathlib.Path('probe'); out.mkdir()
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.7'}
           urls=[
-            'https://repositorio.unam.mx/contenidos/ficha/la-escuela-moderna-924534',
-            'https://repositorio.unam.mx/924534',
+            'https://repositorio.unam.mx/contenidos/ficha/la-escuela-moderna-924533?as=0&c=4Xk06r&d=true&i=2&q=Tesis_._hist%C3%B3ricas_._pedag%C3%B3gicas&t=search_0&v=1',
+            'https://repositorio.unam.mx/contenidos/ficha/la-escuela-moderna-924533',
           ]
-          pages=[]
+          responses=[]
           for i,url in enumerate(urls,1):
-              req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9'})
-              with urllib.request.urlopen(req,timeout=90) as r:
-                  body=r.read(); final=r.geturl(); status=r.status
-              text=body.decode('utf-8',errors='replace'); dec=html.unescape(text)
-              (out/f'unam-{i}.html').write_text(text,encoding='utf-8')
-              pages.append({'url':url,'final_url':final,'status':status,'bytes':len(body),'text':dec})
-          # Prefer the response that visibly identifies the requested object, not a generic search page.
-          selected=None
-          for p in pages:
-              if ('La Escuela moderna' in p['text'] or 'La Escuela Moderna' in p['text']) and ('1889-10-31' in p['text'] or '31 de octubre de 1889' in p['text'].lower()):
-                  selected=p; break
-          if selected is None:
-              # Keep structured diagnostics in stdout before failing.
-              diag=[{'url':p['url'],'final_url':p['final_url'],'status':p['status'],'bytes':p['bytes'],'title_hits':p['text'].lower().count('la escuela moderna'),'date_iso_hit':'1889-10-31' in p['text'],'date_es_hit':'31 de octubre de 1889' in p['text'].lower()} for p in pages]
+              item={'url':url}
+              try:
+                  req=urllib.request.Request(url,headers=headers)
+                  with urllib.request.urlopen(req,timeout=90) as r: body=r.read(); final=r.geturl(); status=r.status
+                  text=body.decode('utf-8',errors='replace'); dec=html.unescape(text)
+                  (out/f'unam-neighbor-{i}.html').write_text(text,encoding='utf-8')
+                  item.update(status=status,final_url=final,bytes=len(body),text=dec)
+              except urllib.error.HTTPError as exc:
+                  item.update(status=exc.code,error='HTTPError')
+              except Exception as exc:
+                  item['error']=repr(exc)
+              responses.append(item)
+          good=[r for r in responses if 'text' in r and 'La Escuela moderna' in r['text'] and ('1889-11-15' in r['text'] or '15 de noviembre de 1889' in r['text'].lower())]
+          if not good:
+              diag=[{k:v for k,v in r.items() if k!='text'}|({'title_hits':r.get('text','').lower().count('la escuela moderna'),'date_iso':'1889-11-15' in r.get('text','')} if 'text' in r else {}) for r in responses]
               print(json.dumps({'diagnostics':diag},ensure_ascii=False,indent=2))
-              raise SystemExit('UNAM identity gate failed: canonical object/date not visible in either route')
-          dec=selected['text']
-          def matches(pattern): return list(dict.fromkeys(re.findall(pattern,dec,re.I|re.S)))
+              raise SystemExit('adjacent UNAM object identity gate failed')
+          dec=good[0]['text']
+          def vals(pattern): return list(dict.fromkeys(re.findall(pattern,dec,re.I|re.S)))
+          # Structured metadata can appear JSON-escaped or as literal attributes; capture broad 24-hex neighborhoods too.
           report={
-            'status':selected['status'],'final_url':selected['final_url'],'bytes':selected['bytes'],
-            'publication_ids':matches(r'item_publication_id[^0-9a-f]{0,150}([0-9a-f]{24})'),
-            'first_page_ids':matches(r'item_first_page_id[^0-9a-f]{0,150}([0-9a-f]{24})'),
-            'item_dates':matches(r'item_date[^0-9]{0,150}(1889-10-31(?:T[^"< ,}]+)?)'),
-            'item_pages':matches(r'item_pages[^0-9]{0,150}([0-9]{1,4})'),
-            'hndm_serial_links':matches(r'(?:visualizar|publicacion)/(5580[0-9a-f]{20,})'),
-            'page_ids_any':matches(r'([0-9a-f]{24})')[:100],
+            'neighbor_final_url':good[0]['final_url'],
+            'neighbor_first_page_ids':vals(r'item_first_page_id.{0,220}?([0-9a-f]{24})'),
+            'neighbor_publication_ids':vals(r'item_publication_id.{0,220}?([0-9a-f]{24})'),
+            'neighbor_item_pages':vals(r'item_pages.{0,150}?([0-9]{1,4})'),
+            'neighbor_item_dates':vals(r'item_date.{0,180}?(1889-11-15[^"< ,}]*)'),
+            'neighbor_hndm_urls':vals(r'(https?://[^"\' ]*hndm[^"\' ]*)')[:30],
+            'all_24hex':vals(r'([0-9a-f]{24})')[:100],
           }
+          # Extract useful contexts.
+          contexts=[]
+          for token in ['item_first_page_id','item_publication_id','item_pages','item_date','Texto completo','1889-11-15','visualizar','pagina=']:
+              for m in list(re.finditer(re.escape(token),dec,re.I))[:12]:
+                  contexts.append({'token':token,'context':re.sub(r'\s+',' ',dec[max(0,m.start()-500):m.end()+1100])})
+          report['contexts']=contexts
+          # If a persistent neighbor page ID is available, open it and expose anterior/siguiente IDs plus visible date.
+          first=(report['neighbor_first_page_ids'] or report['all_24hex'])[:1]
+          if first:
+              pid=first[0]
+              # Find serial from any HNDM context/link; fallback cannot be fabricated.
+              serials=vals(r'visualizar/(5580[0-9a-f]{20,})')
+              report['serial_candidates']=serials
+              if serials:
+                  serial=serials[0]
+                  vurl=f'https://hndm.iib.unam.mx/consulta/publicacion/visualizar/{serial}?pagina={pid}&coleccion='
+                  req=urllib.request.Request(vurl,headers=headers)
+                  with urllib.request.urlopen(req,timeout=90) as r: vbody=r.read(); vfinal=r.geturl()
+                  vtext=html.unescape(vbody.decode('utf-8',errors='replace'))
+                  (out/'hndm-neighbor.html').write_text(vtext,encoding='utf-8')
+                  d=re.search(r'<dt>Fecha:</dt>\s*<dd>\s*([^<]+?)\s*</dd>',vtext,re.I|re.S)
+                  report['hndm_neighbor']={
+                    'url':vurl,'final_url':vfinal,'visible_date':re.sub(r'\s+',' ',d.group(1)).strip() if d else '',
+                    'pdf_ids':list(dict.fromkeys(re.findall(r'/consulta/publicacion/pdf/([0-9a-f]{24})\.pdf',vtext,re.I))),
+                    'previous_page_ids':list(dict.fromkeys(re.findall(r'<a href="[^"]*\?pagina=([0-9a-f]{24})[^"]*"[^>]*class="anteriorLink"',vtext,re.I))),
+                    'next_page_ids':list(dict.fromkeys(re.findall(r'<a href="[^"]*\?pagina=([0-9a-f]{24})[^"]*"[^>]*class="siguienteLink"',vtext,re.I))),
+                  }
+          # Preserve F21-F24 state.
           loc=[]
           for p in sorted(pathlib.Path('data/samples').glob('fragment_locator_progress*.csv')):
               with p.open(encoding='utf-8',newline='') as f:
                   for row in csv.DictReader(f):
-                      if row.get('fragment_id') in {'PDHD-F000021','PDHD-F000022','PDHD-F000023','PDHD-F000024'}:
-                          loc.append({'shard':p.name,**row})
+                      if row.get('fragment_id') in {'PDHD-F000021','PDHD-F000022','PDHD-F000023','PDHD-F000024'}: loc.append({'shard':p.name,**row})
           with (pathlib.Path('data/samples')/'fragment_gap_queue_0_1.csv').open(encoding='utf-8',newline='') as f:
               gaps=[r for r in csv.DictReader(f) if r.get('fragment_id') in {'PDHD-F000021','PDHD-F000022','PDHD-F000023','PDHD-F000024'}]
           report['locators']=loc; report['gaps']=gaps
-          contexts=[]
-          for token in ['item_first_page_id','item_publication_id','item_pages','item_date','Texto completo','Hemeroteca Nacional Digital','1889-10-31','31 de octubre de 1889']:
-              for m in list(re.finditer(re.escape(token),dec,re.I))[:10]:
-                  contexts.append({'token':token,'context':re.sub(r'\s+',' ',dec[max(0,m.start()-500):m.end()+900])})
-          report['contexts']=contexts
           (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
           print(json.dumps(report,ensure_ascii=False,indent=2))
       - name: Upload probe
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pdhd-la-escuela-moderna-1889-probe-v2
+          name: pdhd-la-escuela-moderna-1889-probe-v3
           path: probe/
           retention-days: 1
