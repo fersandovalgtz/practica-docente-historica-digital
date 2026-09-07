@@ -12,7 +12,7 @@ The selection is stored in `data/samples/pilot_document_selection_0_1.csv` and t
 
 The previous blocking condition was the absence of primary-localized rural-teacher material. That condition is now resolved by several direct source objects, especially:
 
-- `PDHD-D000067` — *El papel social del maestro rural* (SEP, 1925), cataloged by HathiTrust with full view;
+- `PDHD-D000076` — *Cómo dar a todo México un idioma* (SEP, 1928), an openly inspectable Internet Archive primary scan in the *Biblioteca del Maestro Rural Mexicano*; it replaces `PDHD-D000067` after the HathiTrust object was rechecked as search-only;
 - `PDHD-D000068` — *El sistema de escuelas rurales en México* (SEP, 1927), full-view HathiTrust object;
 - `PDHD-D000069` — *Las misiones culturales en 1927: Las escuelas normales rurales* (SEP, 1928), full-view HathiTrust object;
 - `PDHD-D000071` — *Las misiones culturales, 1932-1933* (SEP, 1933), stable Google Books object with searchable internal passages;
