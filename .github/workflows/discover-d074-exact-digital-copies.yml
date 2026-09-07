@@ -1,0 +1,92 @@
+name: Discover exact D074 digital copies across public catalogs
+
+on:
+  push:
+    branches: [work/d074-canonical-page-recovery]
+    paths: [.github/workflows/discover-d074-exact-digital-copies.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query Internet Archive, Google Books API, IUCAT and HathiTrust
+        shell: python
+        run: |
+          import html, json, pathlib, re, urllib.parse, urllib.request, urllib.error
+          out=pathlib.Path('d074-discovery'); out.mkdir(exist_ok=True)
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          title='Memoria de la Secretaría de Educación Pública de septiembre de 1936 a agosto de 1937'
+          def fetch(url,timeout=90):
+            req=urllib.request.Request(url,headers=headers)
+            try:
+              with urllib.request.urlopen(req,timeout=timeout) as r: return {'status':r.status,'final':r.geturl(),'ctype':r.headers.get('Content-Type',''),'body':r.read()}
+            except urllib.error.HTTPError as e: return {'status':e.code,'final':e.geturl(),'ctype':e.headers.get('Content-Type',''),'body':e.read(),'error':str(e)}
+            except Exception as e: return {'status':None,'final':url,'ctype':'','body':b'','error':f'{type(e).__name__}: {e}'}
+          report={}
+          # Internet Archive advanced search.
+          ia_q='title:("Memoria de la Secretaría de Educación Pública") AND (1936 OR 1937)'
+          ia='https://archive.org/advancedsearch.php?'+urllib.parse.urlencode({'q':ia_q,'fl[]':['identifier','title','date','year','creator','description'],'rows':'100','page':'1','output':'json'})
+          r=fetch(ia); row={'url':ia,'status':r['status'],'bytes':len(r['body'])}
+          try:
+            d=json.loads(r['body'].decode('utf-8')); docs=d.get('response',{}).get('docs',[])
+            row['docs']=[x for x in docs if 'memoria' in str(x.get('title','')).lower()][:100]
+          except Exception as e: row['error']=f'{type(e).__name__}: {e}'
+          report['internet_archive']=row; print('\nIA',json.dumps(row,ensure_ascii=False,indent=2))
+          # Google Books API search, several formulations.
+          gqueries=[
+            'intitle:"Memoria de la Secretaría de Educación Pública" 1937',
+            '"septiembre de 1936" "agosto de 1937" "Secretaría de Educación Pública"',
+            'inauthor:"Mexico. Secretaría de Educación Pública" intitle:Memoria 1937',
+          ]
+          grows=[]
+          for q in gqueries:
+            url='https://www.googleapis.com/books/v1/volumes?'+urllib.parse.urlencode({'q':q,'maxResults':'40','startIndex':'0','printType':'books'})
+            rr=fetch(url); rec={'query':q,'status':rr['status'],'bytes':len(rr['body']),'items':[]}
+            try:
+              d=json.loads(rr['body'].decode('utf-8'))
+              for item in d.get('items',[]):
+                vi=item.get('volumeInfo',{}); ai=item.get('accessInfo',{})
+                rec['items'].append({'id':item.get('id'),'title':vi.get('title'),'subtitle':vi.get('subtitle'),'authors':vi.get('authors'),'publisher':vi.get('publisher'),'publishedDate':vi.get('publishedDate'),'pageCount':vi.get('pageCount'),'industryIdentifiers':vi.get('industryIdentifiers'),'viewability':ai.get('viewability'),'publicDomain':ai.get('publicDomain'),'accessViewStatus':ai.get('accessViewStatus'),'pdf':ai.get('pdf'),'webReaderLink':ai.get('webReaderLink')})
+            except Exception as e: rec['error']=f'{type(e).__name__}: {e}'
+            grows.append(rec); print('\nGOOGLE',json.dumps(rec,ensure_ascii=False,indent=2))
+          report['google_books']=grows
+          # IUCAT public search HTML.
+          iu_urls=[
+            'https://iucat.iu.edu/catalog?'+urllib.parse.urlencode({'q':title}),
+            'https://iucat.iu.edu/catalog?'+urllib.parse.urlencode({'search_field':'all_fields','q':'"Memoria de la Secretaría de Educación Pública" 1937'}),
+          ]
+          irows=[]
+          for u in iu_urls:
+            rr=fetch(u); text=html.unescape(rr['body'].decode('utf-8',errors='replace'))
+            links=[]
+            for m in re.finditer(r'href=["\']([^"\']+)["\']',text,re.I):
+              href=urllib.parse.urljoin(rr['final'],m.group(1)); win=re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',text[max(0,m.start()-1000):m.end()+1500]))
+              if ('1936' in win or '1937' in win) and ('Memoria' in win or 'Educación Pública' in win): links.append({'href':href,'context':win[:1000]})
+            rec={'url':u,'status':rr['status'],'bytes':len(rr['body']),'candidate_links':links[:50]}; irows.append(rec); print('\nIUCAT',json.dumps(rec,ensure_ascii=False,indent=2))
+          report['iucat']=irows
+          # HathiTrust catalog public search HTML.
+          hurls=[
+            'https://catalog.hathitrust.org/Search/Home?'+urllib.parse.urlencode({'lookfor':title,'searchtype':'all'}),
+            'https://catalog.hathitrust.org/Search/Home?'+urllib.parse.urlencode({'lookfor':'Memoria Secretaría Educación Pública 1937 Mexico','searchtype':'all'}),
+          ]
+          hrows=[]
+          for u in hurls:
+            rr=fetch(u); text=html.unescape(rr['body'].decode('utf-8',errors='replace'))
+            links=[]
+            for m in re.finditer(r'href=["\']([^"\']+)["\']',text,re.I):
+              href=urllib.parse.urljoin(rr['final'],m.group(1)); win=re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',text[max(0,m.start()-1000):m.end()+1500]))
+              if ('1936' in win or '1937' in win) and ('Memoria' in win or 'Educación Pública' in win): links.append({'href':href,'context':win[:1000]})
+            rec={'url':u,'status':rr['status'],'bytes':len(rr['body']),'candidate_links':links[:50]}; hrows.append(rec); print('\nHATHI',json.dumps(rec,ensure_ascii=False,indent=2))
+          report['hathitrust']=hrows
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+      - name: Upload one-day discovery report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-exact-copy-discovery
+          path: d074-discovery/
+          retention-days: 1
+          if-no-files-found: error
