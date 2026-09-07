@@ -1,0 +1,94 @@
+name: Probe PDHD D072 surrogate 1926
+
+on:
+  push:
+    branches: [work/close-d072-pilot-20260907]
+    paths:
+      - ".github/workflows/probe-d072-surrogate-1926.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Retrieve candidate primary volume
+        shell: python
+        run: |
+          import html, json, pathlib, re, urllib.request
+          out = pathlib.Path('d072-surrogate-probe')
+          out.mkdir()
+          book_id = 'yvMEAQAAIAAJ'
+          headers = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          urls = [f'https://books.google.com/books?id={book_id}&pg=PA1&source=gbs_selected_pages', f'https://books.google.com/books?id={book_id}&printsec=frontcover']
+          report={'book_id':book_id,'attempts':[]}
+          pdf=None
+          for page_url in urls:
+            try:
+              req=urllib.request.Request(page_url,headers=headers)
+              with urllib.request.urlopen(req,timeout=60) as r:
+                raw=r.read(); final=r.geturl(); ct=r.headers.get('Content-Type','')
+              text=html.unescape(raw.decode('utf-8',errors='replace'))
+              (out/f'page-{len(report["attempts"])+1}.html').write_bytes(raw)
+              cands=re.findall(r'https?://books\.google\.com/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',text)
+              if not cands:
+                cands=['https://books.google.com'+m for m in re.findall(r'href=["\']([^"\']*?/books/download/[^"\']+?\.pdf\?[^"\']+)["\']',text)]
+              report['attempts'].append({'url':page_url,'final':final,'content_type':ct,'pdf_candidates':cands[:10]})
+              for u in cands:
+                if 'output=pdf' not in u: continue
+                try:
+                  req=urllib.request.Request(u,headers=headers)
+                  with urllib.request.urlopen(req,timeout=180) as r:
+                    body=r.read(); pct=r.headers.get('Content-Type','')
+                  if body.startswith(b'%PDF') and len(body)>100000:
+                    pdf=body; report['pdf_url']=u; report['pdf_bytes']=len(body); report['pdf_content_type']=pct; break
+                except Exception as exc:
+                  report.setdefault('pdf_errors',[]).append(f'{type(exc).__name__}: {exc}')
+              if pdf: break
+            except Exception as exc:
+              report['attempts'].append({'url':page_url,'error':f'{type(exc).__name__}: {exc}'})
+          if pdf: (out/'candidate.pdf').write_bytes(pdf)
+          (out/'retrieval-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+
+      - name: Extract text and candidate pages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          out=d072-surrogate-probe
+          test -f "$out/candidate.pdf"
+          pdftotext -layout "$out/candidate.pdf" "$out/candidate.txt"
+          pdfinfo "$out/candidate.pdf" > "$out/pdfinfo.txt"
+          python - <<'PY'
+          import pathlib
+          out=pathlib.Path('d072-surrogate-probe')
+          pages=(out/'candidate.txt').read_text(errors='ignore').split('\f')
+          terms=['MISION','MISIONES','NORMAL RURAL','NORMALES RURALES','MAESTRO RURAL','MAESTROS RURALES','ENSEÑANZA','METODO','MÉTODO','DEMOSTRACION','DEMOSTRACIÓN','INSPECTOR','SUPERVISION','SUPERVISIÓN']
+          rows=[]
+          for i,p in enumerate(pages,1):
+            up=p.upper(); hits=[t for t in terms if t in up]
+            if hits: rows.append((i,hits,' '.join(p.split())[:1400]))
+          with open(out/'candidate-pages.txt','w',encoding='utf-8') as f:
+            for i,h,s in rows: f.write(f'PDF_PAGE={i}\tHITS={"|".join(h)}\n{s}\n\n')
+          print('candidate pages',len(rows)); print((out/'candidate-pages.txt').read_text(encoding='utf-8')[:30000])
+          PY
+
+      - name: Render review windows
+        shell: bash
+        run: |
+          set -euxo pipefail
+          out=d072-surrogate-probe
+          mkdir -p "$out/rendered"
+          pdftoppm -f 1 -l 20 -jpeg -r 170 "$out/candidate.pdf" "$out/rendered/front"
+          pages=$(pdfinfo "$out/candidate.pdf" | awk '/^Pages:/ {print $2}')
+          for p in $(seq 25 25 "$pages"); do pdftoppm -f "$p" -l "$p" -singlefile -jpeg -r 130 "$out/candidate.pdf" "$out/rendered/p${p}"; done
+
+      - name: Upload primary review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d072-surrogate-1926
+          path: d072-surrogate-probe/
+          retention-days: 1
+          if-no-files-found: error
