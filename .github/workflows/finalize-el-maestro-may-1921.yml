@@ -1,0 +1,169 @@
+name: Finalize El Maestro May 1921 primary batch
+
+on:
+  push:
+    branches: [freeze-el-maestro-may-1921]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Promote F41-F43 from direct primary inspection
+        shell: python
+        run: |
+          import csv, pathlib, re
+          ROOT=pathlib.Path('.')
+          S=ROOT/'data/samples'
+          checked='2026-09-06'
+          ident='el-maestro.-revista-de-cultura-nacional-n-2-1921'
+
+          def read_csv(path):
+              with path.open(encoding='utf-8-sig',newline='') as f:
+                  return list(csv.DictReader(f))
+          def write_csv(path, rows, fields=None):
+              if fields is None:
+                  fields=list(rows[0].keys()) if rows else []
+              with path.open('w',encoding='utf-8',newline='') as f:
+                  w=csv.DictWriter(f,fieldnames=fields,lineterminator='\n'); w.writeheader(); w.writerows(rows)
+          def union_ids(pattern):
+              out=set()
+              for p in sorted(S.glob(pattern)):
+                  for r in read_csv(p):
+                      fid=(r.get('fragment_id') or '').strip()
+                      if fid: out.add(fid)
+              return out
+          def replace_one(text, pattern, repl, label):
+              text2,n=re.subn(pattern,repl,text,count=1,flags=re.M)
+              if n!=1: raise SystemExit(f'{label}: expected one replacement, got {n}')
+              return text2
+
+          located=union_ids('fragment_locator_progress*.csv')
+          frozen=union_ids('frozen_fragments*.csv')
+          gaps=read_csv(S/'fragment_gap_queue_0_1.csv')
+          if (len(located),len(frozen),len(located-frozen),len(gaps)) != (95,77,18,1):
+              raise SystemExit(f'baseline gate failed: {(len(located),len(frozen),len(located-frozen),len(gaps))}')
+          if any(x in frozen for x in ['PDHD-F000041','PDHD-F000042','PDHD-F000043']):
+              raise SystemExit('target fragment already frozen')
+
+          # Preserve shard ownership for locator rows.
+          p=S/'fragment_locator_progress_threshold64_w8.csv'
+          rows=read_csv(p); fields=list(rows[0].keys())
+          updates={
+            'PDHD-F000041': dict(page='147',source_locator='ia-n52-p147-orientacion-obrera-ensenanza-espanol-cultivo',locator_evidence_url=f'https://archive.org/download/{ident}/page/n52',boundary_status='fixed',public_text_status='metadata_only',freeze_status='frozen',preparation_note='Direct inspection of the exact May 1921 issue fixes a single paragraph in José Suirob, Orientación obrera, printed p. 147 / PDF p. 53 / IA leaf n52. The unit prescribes teaching Spanish and agricultural cultivation within the article\'s assimilationist civilizing program; it begins with that instructional sequence and stops before the following paragraph beginning Y no es que se quiera que vayamos despacio. The historically exclusionary framing is preserved as source context; no page image or transcription is committed.',checked_at=checked),
+            'PDHD-F000042': dict(page='135',source_locator='ia-n40-p135-grupo-claridad-comites-secciones-federacion',locator_evidence_url=f'https://archive.org/download/{ident}/page/n40',boundary_status='fixed',public_text_status='metadata_only',freeze_status='frozen',preparation_note='Direct inspection of the exact May 1921 issue fixes the organizational block on printed p. 135 / PDF p. 41 / IA leaf n40. The unit begins with the formation of Comités de Estudios, continues through the creation of sections dependent on the Comité Central and their federation, and ends with the paragraph naming the INTERNACIONAL DEL PENSAMIENTO; later normative claims and signatures are excluded. No page image or transcription is committed.',checked_at=checked),
+          }
+          seen=set()
+          for r in rows:
+              if r['fragment_id'] in updates:
+                  r.update(updates[r['fragment_id']]); seen.add(r['fragment_id'])
+          if seen!=set(updates): raise SystemExit(f'missing threshold64 targets: {set(updates)-seen}')
+          write_csv(p,rows,fields)
+
+          p2=S/'fragment_locator_progress_el_maestro_secondary_w7.csv'
+          rows2=read_csv(p2); fields2=list(rows2[0].keys())
+          seen=False
+          for r in rows2:
+              if r['fragment_id']=='PDHD-F000043':
+                  r.update(dict(page='173',source_locator='ia-n78-p173-tribus-indigenas-programa-categorias',locator_evidence_url=f'https://archive.org/download/{ident}/page/n78',boundary_status='fixed',public_text_status='metadata_only',freeze_status='frozen',preparation_note='Direct inspection of the exact May 1921 issue fixes one source-critical paragraph in José U. Escobar, Las tribus indígenas mexicanas, printed p. 173 / PDF p. 79 / IA leaf n78. The unit begins with the comparison of the Tribus Indígenas Mexicanas program to Boy Scouts, includes the named tribal categories and the 25-member jefe/cacique organization, and ends with the statement that the program is highly educational; the preceding editorial introduction and following material are excluded. No page image or transcription is committed.',checked_at=checked)); seen=True
+          if not seen: raise SystemExit('missing F43 owner row')
+          write_csv(p2,rows2,fields2)
+
+          # Frozen registry shard: metadata only, boundaries derived from visual primary-page review.
+          frozen_path=S/'frozen_fragments_el_maestro_may1921_w26.csv'
+          if frozen_path.exists(): raise SystemExit('frozen shard already exists')
+          ff=['fragment_id','document_id','slot','page','source_locator','locator_evidence_url','boundary_definition','transcription_status','access_basis','public_text_status','selection_role','freeze_status','preparation_note','checked_at']
+          frozen_rows=[
+            {'fragment_id':'PDHD-F000041','document_id':'PDHD-D000051','slot':'A','page':'147','source_locator':'ia-n52-p147-orientacion-obrera-ensenanza-espanol-cultivo','locator_evidence_url':f'https://archive.org/download/{ident}/page/n52','boundary_definition':'Exact May 1921 issue, IA leaf n52 / printed p. 147: in José Suirob, Orientación obrera, the single paragraph containing the explicit sequence of teaching Spanish and agricultural cultivation; stop before the next paragraph beginning Y no es que se quiera que vayamos despacio.','transcription_status':'not_transcribed','access_basis':'Internet_Archive_direct_primary_image_inspection','public_text_status':'metadata_only','selection_role':'explicit_pedagogical_act','freeze_status':'frozen','preparation_note':'The exact issue PDF has 118 pages. Visual inspection maps PDF p. 53 to printed p. 147, and independent image-RMSE matching proves PDF p. 53 = IA leaf n52. The selected paragraph is explicit instructional action while its assimilationist language remains historically salient context. No source image or full historical wording is committed.','checked_at':checked},
+            {'fragment_id':'PDHD-F000042','document_id':'PDHD-D000051','slot':'B','page':'135','source_locator':'ia-n40-p135-grupo-claridad-comites-secciones-federacion','locator_evidence_url':f'https://archive.org/download/{ident}/page/n40','boundary_definition':'Exact May 1921 issue, IA leaf n40 / printed p. 135: organizational block beginning with the formation of Comités de Estudios, continuing through sections dependent on the Comité Central and their federation, and ending with the paragraph naming the INTERNACIONAL DEL PENSAMIENTO; exclude the following normative paragraph and signature block.','transcription_status':'not_transcribed','access_basis':'Internet_Archive_direct_primary_image_inspection','public_text_status':'metadata_only','selection_role':'institutional_relation','freeze_status':'frozen','preparation_note':'Visual inspection fixes printed p. 135 as PDF p. 41. A four-anchor primary-image comparison independently proves the exact issue uses IA leaf = PDF page - 1 at printed pp. 133, 145, 147 and 173; therefore p. 135 resolves to n40 inside the same continuous scan. The span captures governance, subordination and federation rather than merely the article title.','checked_at':checked},
+            {'fragment_id':'PDHD-F000043','document_id':'PDHD-D000051','slot':'C','page':'173','source_locator':'ia-n78-p173-tribus-indigenas-programa-categorias','locator_evidence_url':f'https://archive.org/download/{ident}/page/n78','boundary_definition':'Exact May 1921 issue, IA leaf n78 / printed p. 173: one paragraph in José U. Escobar, Las tribus indígenas mexicanas, beginning with the Boy Scouts comparison, including the named tribal categories and the 25-member jefe/cacique organization, and ending with the statement that the program is highly educational; exclude preceding editorial introduction and following continuation.','transcription_status':'not_transcribed','access_basis':'Internet_Archive_direct_primary_image_inspection','public_text_status':'metadata_only','selection_role':'source_criticism_salient','freeze_status':'frozen','preparation_note':'Visual inspection maps PDF p. 79 to printed p. 173. Independent RMSE comparison against neighboring IA derivatives proves the matching BookReader leaf is n78. The unit is retained as source-critical evidence of contemporary categorization and organized pedagogical-cultural representation of Indigenous identity, not as an endorsement of those categories.','checked_at':checked},
+          ]
+          write_csv(frozen_path,frozen_rows,ff)
+
+          # Exact per-issue object alias.
+          alias_path=ROOT/'data/catalog/object_aliases.csv'
+          aliases=read_csv(alias_path); af=list(aliases[0].keys())
+          if any(r['alias_id']=='PDHD-A000008' or (r['document_id']=='PDHD-D000051' and r['alias_identifier']==ident) for r in aliases):
+              raise SystemExit('duplicate target alias')
+          aliases.append({'alias_id':'PDHD-A000008','document_id':'PDHD-D000051','alias_system':'INTERNET-ARCHIVE','alias_identifier':ident,'alias_url':f'https://archive.org/details/{ident}','alias_role':'full_text_target','verification_status':'directly_verified','evidence_url':f'https://archive.org/metadata/{ident}','checked_at':checked,'note':'Internet Archive exposes a separate exact object for El Maestro. Revista de Cultura Nacional, N° 2 (1921), including a 118-page text PDF, JP2 derivatives and BookReader pages. Direct image inspection and cross-derivative comparison fix the analytical pages used for F000041-F000043. The alias is object-level provenance; page locators remain in fragment shards.'})
+          write_csv(alias_path,aliases,af)
+
+          # Structured retrieval provenance.
+          ra_path=S/'retrieval_attempts.csv'
+          ras=read_csv(ra_path); rf=list(ras[0].keys())
+          if any(r['attempt_id']=='PDHD-RA000018' for r in ras): raise SystemExit('RA18 exists')
+          ras.append({'attempt_id':'PDHD-RA000018','document_id':'PDHD-D000051','fragment_ids':'PDHD-F000041;PDHD-F000042;PDHD-F000043','source_id':'INTERNET-ARCHIVE','object_url':f'https://archive.org/details/{ident}','target':'analytical_slots_A_B_C','result_status':'superseded_by_locator','blocker':'The original rows were exact secondary page pointers only. A dedicated exact-issue recovery found the separate Internet Archive N° 2 object, downloaded its 118-page primary PDF and rendered the three cited neighborhoods. Direct visual inspection mapped printed pp. 133, 135, 145, 147 and 173; image-RMSE comparison against public BookReader derivatives independently proved the leaf offset at four separated anchors. This permits exact primary locators and fixed coder boundaries for F000041-F000043 without using secondary prose as evidence.','next_route':'frozen_registry_alias_crosswalk_and_status_sync_completed','checked_at':checked})
+          write_csv(ra_path,ras,rf)
+
+          # Object-crosswalk narrative.
+          xwalk=ROOT/'docs/OBJECT_CROSSWALK_LOG.md'
+          xt=xwalk.read_text(encoding='utf-8')
+          section='''\n## 2026-09-06 — El Maestro no. 2 (mayo de 1921), exact Internet Archive issue object\n\n`PDHD-D000051` previously relied on the combined Internet Archive container `n1n3elmaestrorevista01mexi` for its issue-control fragment. A title/year search resolved the separate exact issue object `el-maestro.-revista-de-cultura-nacional-n-2-1921`, whose metadata identifies *El Maestro. Revista de Cultura Nacional, N° 2* (1921) and exposes a 118-page text PDF plus BookReader derivatives. This object is registered as `PDHD-A000008`.\n\nDirect visual inspection maps printed p. 133 to PDF p. 39, p. 145 to PDF p. 51, p. 147 to PDF p. 53 and p. 173 to PDF p. 79. Independent image comparison against neighboring BookReader derivatives proves the corresponding leaves `n38`, `n50`, `n52` and `n78`; the same continuous one-to-one offset places printed p. 135 / PDF p. 41 at `n40`. The crosswalk remains object-level provenance. F000041-F000043 store their page locators and fixed boundaries separately.\n'''
+          marker='\n## Integrity decision\n'
+          if 'PDHD-A000008' in xt: raise SystemExit('crosswalk already updated')
+          if marker not in xt: raise SystemExit('crosswalk insertion marker missing')
+          xt=xt.replace(marker,section+marker,1); xwalk.write_text(xt,encoding='utf-8')
+
+          # Public status synchronization. Located and gap counts stay fixed; frozen rises 77 -> 80.
+          readme=ROOT/'README.md'; rt=readme.read_text(encoding='utf-8')
+          rt=replace_one(rt,r'(\| Fragmentos completamente congelados \| \*\*)77( / 96\*\* \|)',r'\g<1>80\g<2>','README frozen table')
+          rt=replace_one(rt,r'(su unión contiene \*\*)77(/96\*\* fragmentos)',r'\g<1>80\g<2>','README frozen union')
+          rt=replace_one(rt,r'(\*\*)18( localizadores todavía no congelados\*\*)',r'\g<1>15\g<2>','README pending count')
+          paragraph='''\n`PDHD-D000051`, *El Maestro. Revista de Cultura Nacional*, núm. 2 de mayo de 1921, completa ahora A–D. Internet Archive ofrece un objeto separado del número (`el-maestro.-revista-de-cultura-nacional-n-2-1921`) y un PDF primario de 118 páginas. La inspección visual fija `PDHD-F000041` en p. 147 como acto pedagógico explícito dentro de *Orientación obrera*; `PDHD-F000042` en p. 135 como bloque de organización, subordinación y federación del Grupo Claridad; y `PDHD-F000043` en p. 173 como unidad de crítica de fuentes sobre la representación y organización de las llamadas Tribus Indígenas Mexicanas. Una comparación independiente entre el PDF y hojas vecinas de BookReader prueba los locators `n52`, `n40` y `n78`; `PDHD-F000044` conserva su control bibliográfico ya congelado. No se incorpora el facsímil ni su transcripción.\n\n'''
+          rm='`PDHD-F000060`, control de *El esfuerzo educativo en México*'
+          if rm not in rt: raise SystemExit('README narrative insertion marker missing')
+          rt=rt.replace(rm,paragraph+rm,1); readme.write_text(rt,encoding='utf-8')
+
+          cohort=ROOT/'docs/PDHD_U1_COHORT_STATUS.md'; ct=cohort.read_text(encoding='utf-8')
+          ct=replace_one(ct,r'(\| Fully frozen fragments \| \*\*)77( / 96\*\* \|)',r'\g<1>80\g<2>','cohort frozen table')
+          ct=replace_one(ct,r'Seventy-seven units have crossed the stronger frozen-fragment gate\.',r'Eighty units have crossed the stronger frozen-fragment gate.','cohort headline frozen prose')
+          ct=replace_one(ct,r'Eighteen selected documents now have complete four-slot batches\.',r'Nineteen selected documents now have complete four-slot batches.','cohort complete-doc count')
+          ct=replace_one(ct,r'Seventy-seven are frozen\.',r'Eighty are frozen.','cohort remaining frozen prose')
+          ct=replace_one(ct,r'(remaining \*\*)18(\*\* located rows)',r'\g<1>15\g<2>','cohort pending count')
+          cparagraph='''\n`PDHD-D000051`, *El Maestro. Revista de Cultura Nacional*, núm. 2 (mayo de 1921), now contributes a complete A–D batch. The separate Internet Archive issue object exposes a 118-page primary PDF. Visual review maps printed p. 147 to PDF p. 53 for F000041, p. 135 to PDF p. 41 for F000042 and p. 173 to PDF p. 79 for F000043. Four independent PDF-to-BookReader image comparisons prove the zero-based leaf mapping across the issue, yielding `n52`, `n40` and `n78` for the selected spans. F000044 remains the previously frozen bibliographic control. The batch preserves the difference between explicit pedagogical action, institutional/network organization and source-critical representation.\n\n'''
+          cm='Internet Archive contributes four additional image-verified controls plus the institutional region of *El Maestro*.'
+          if cm not in ct: raise SystemExit('cohort insertion marker missing')
+          ct=ct.replace(cm,cparagraph+cm,1); cohort.write_text(ct,encoding='utf-8')
+
+          # Post-mutation source-of-truth gate.
+          located2=union_ids('fragment_locator_progress*.csv')
+          frozen2=union_ids('frozen_fragments*.csv')
+          gaps2=read_csv(S/'fragment_gap_queue_0_1.csv')
+          state=(len(located2),len(frozen2),len(located2-frozen2),len(gaps2))
+          print('POST_STATE',state)
+          if state!=(95,80,15,1): raise SystemExit(f'post-state gate failed: {state}')
+          for fid in ['PDHD-F000041','PDHD-F000042','PDHD-F000043']:
+              if fid not in frozen2: raise SystemExit(f'{fid} not frozen')
+      - name: Validate complete PDHD suite
+        run: |
+          python scripts/validate_repository.py
+          python scripts/validate_object_aliases.py
+          python scripts/validate_content_leads.py
+          python scripts/validate_retrieval_attempts.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_freeze_conversion_queue.py
+          python scripts/prepare_freeze_review.py --check
+          python scripts/validate_status_counts.py
+          python scripts/annotation_agreement.py --self-test
+          python scripts/build_fragment_manifest.py --check
+      - name: Gate persistent diff and commit scientific batch
+        run: |
+          allowed='README.md data/catalog/object_aliases.csv data/samples/fragment_locator_progress_el_maestro_secondary_w7.csv data/samples/fragment_locator_progress_threshold64_w8.csv data/samples/frozen_fragments_el_maestro_may1921_w26.csv data/samples/retrieval_attempts.csv docs/OBJECT_CROSSWALK_LOG.md docs/PDHD_U1_COHORT_STATUS.md'
+          actual=$(git diff --name-only | grep -v '^.github/workflows/finalize-el-maestro-may-1921.yml$' | sort | tr '\n' ' ' | sed 's/ $//')
+          expected=$(printf '%s\n' $allowed | sort | tr '\n' ' ' | sed 's/ $//')
+          echo "ACTUAL=$actual"
+          echo "EXPECTED=$expected"
+          test "$actual" = "$expected"
+          git config user.name 'Fernando Sandoval'
+          git config user.email 'fernando.sandoval@uacj.mx'
+          git add README.md data/catalog/object_aliases.csv data/samples/fragment_locator_progress_el_maestro_secondary_w7.csv data/samples/fragment_locator_progress_threshold64_w8.csv data/samples/frozen_fragments_el_maestro_may1921_w26.csv data/samples/retrieval_attempts.csv docs/OBJECT_CROSSWALK_LOG.md docs/PDHD_U1_COHORT_STATUS.md
+          git commit -m 'Freeze El Maestro May 1921 analytical batch'
+          git push origin HEAD:freeze-el-maestro-may-1921
