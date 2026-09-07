@@ -1,0 +1,67 @@
+name: Fix status-count guard 80
+
+on:
+  push:
+    branches: [fix-status-count-guard-80]
+    paths:
+      - '.github/workflows/fix-status-count-guard-80.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Correct stale README prose and extend validator
+        shell: python
+        run: |
+          from pathlib import Path
+
+          readme=Path('README.md')
+          text=readme.read_text(encoding='utf-8')
+          old='Los **77/96** congelados demuestran el pipeline'
+          new='Los **80/96** congelados demuestran el pipeline'
+          if text.count(old)!=1:
+              raise SystemExit(f'expected exactly one stale README marker; found {text.count(old)}')
+          text=text.replace(old,new,1)
+          readme.write_text(text,encoding='utf-8')
+
+          validator=Path('scripts/validate_status_counts.py')
+          v=validator.read_text(encoding='utf-8')
+          anchor='''    expect(\n        extract_one(\n            text,\n            r"\\*\\*(\\d+) localizadores todavía no congelados\\*\\*",\n            "README located-not-frozen prose",\n        ),\n        not_frozen,\n        "README located-not-frozen prose",\n    )\n'''
+          addition=anchor+'''    expect(\n        extract_one(\n            text,\n            r"Los \\*\\*(\\d+)/96\\*\\* congelados demuestran el pipeline",\n            "README frozen pipeline prose",\n        ),\n        frozen,\n        "README frozen pipeline prose",\n    )\n'''
+          if v.count(anchor)!=1:
+              raise SystemExit(f'validator insertion anchor count={v.count(anchor)}')
+          if 'README frozen pipeline prose' in v:
+              raise SystemExit('guard already exists')
+          v=v.replace(anchor,addition,1)
+          validator.write_text(v,encoding='utf-8')
+      - name: Run full canonical validation
+        run: |
+          python scripts/validate_repository.py
+          python scripts/validate_object_aliases.py
+          python scripts/validate_content_leads.py
+          python scripts/validate_retrieval_attempts.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_freeze_conversion_queue.py
+          python scripts/prepare_freeze_review.py --check
+          python scripts/validate_status_counts.py
+          python scripts/annotation_agreement.py --self-test
+          python scripts/build_fragment_manifest.py --check
+      - name: Gate exact persistent diff and commit
+        run: |
+          actual=$(git diff --name-only | grep -v '^.github/workflows/' | sort | tr '\n' ' ' | sed 's/ $//')
+          expected=$(printf '%s\n' README.md scripts/validate_status_counts.py | sort | tr '\n' ' ' | sed 's/ $//')
+          echo "ACTUAL=$actual"
+          echo "EXPECTED=$expected"
+          test "$actual" = "$expected"
+          git config user.name 'Fernando Sandoval'
+          git config user.email 'fernando.sandoval@uacj.mx'
+          git add README.md scripts/validate_status_counts.py
+          git commit -m 'Guard README frozen-count narrative'
+          git push origin HEAD:fix-status-count-guard-80
