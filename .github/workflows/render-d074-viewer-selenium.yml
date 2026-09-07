@@ -1,0 +1,85 @@
+name: Retry D074 Google Books viewer with real waits
+
+on:
+  push:
+    branches: [work/d074-canonical-page-recovery]
+    paths: [.github/workflows/render-d074-viewer-selenium.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare viewer and Selenium
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d074-selenium/screens
+          python3 -m pip install -q selenium
+          which google-chrome || true
+          which chromedriver || true
+          cat > d074-selenium/viewer.html <<'HTML'
+          <!doctype html><html><head><meta charset="utf-8"><title>D074</title>
+          <script src="https://www.google.com/books/jsapi.js"></script>
+          <style>html,body{margin:0;background:white;font-family:sans-serif}#status{height:60px;padding:10px;box-sizing:border-box}#viewerCanvas{width:1200px;height:1600px;margin:auto}</style>
+          </head><body data-state="boot"><div id="status">boot</div><div id="viewerCanvas"></div>
+          <script>
+          const target=new URLSearchParams(location.search).get('pg')||'PA372'; document.body.dataset.target=target;
+          window.onerror=(m,s,l,c,e)=>{document.body.dataset.onerror=String(m);document.getElementById('status').textContent='error '+m};
+          function mark(s){document.body.dataset.state=s;document.getElementById('status').textContent=s+' target='+target;}
+          try{
+            mark('script-start');
+            google.books.load({language:'es'}); mark('books-load-called');
+            function initialize(){
+              mark('initialize');
+              const v=new google.books.DefaultViewer(document.getElementById('viewerCanvas')); window.v=v;
+              v.load('KRV2_jMW8-wC',function(){mark('not-found')},function(){
+                mark('loaded'); let ok=false; try{ok=v.goToPageId(target)}catch(e){document.body.dataset.gotoerror=String(e)}
+                document.body.dataset.goto=String(ok); mark('goto-'+ok);
+                setTimeout(()=>{try{document.body.dataset.current=v.getPageId()||'';document.body.dataset.number=v.getPageNumber()||'';mark('settled')}catch(e){document.body.dataset.readerror=String(e)}},8000);
+              });
+            }
+            google.books.setOnLoadCallback(initialize);
+          }catch(e){document.body.dataset.catch=String(e);mark('caught')}
+          </script></body></html>
+          HTML
+          (cd d074-selenium && python3 -m http.server 8766 --bind 127.0.0.1 >server.log 2>&1 &)
+          sleep 2
+      - name: Drive viewer with Selenium and inspect browser state
+        shell: python
+        run: |
+          import json,time,pathlib
+          from selenium import webdriver
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.support.ui import WebDriverWait
+          out=pathlib.Path('d074-selenium')
+          results={}
+          for pg in ['PA372','PA21','PA444','PA35']:
+            opts=Options(); opts.add_argument('--headless=new'); opts.add_argument('--no-sandbox'); opts.add_argument('--disable-gpu'); opts.add_argument('--window-size=1400,1800'); opts.add_argument('--disable-dev-shm-usage')
+            opts.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+            d=webdriver.Chrome(options=opts)
+            try:
+              d.get(f'http://127.0.0.1:8766/viewer.html?pg={pg}')
+              states=[]
+              for i in range(40):
+                st=d.execute_script("return {state:document.body.dataset.state,google:typeof google,books:(typeof google!=='undefined'&&google.books)?typeof google.books:'none',target:document.body.dataset.target,current:document.body.dataset.current||'',number:document.body.dataset.number||'',goto:document.body.dataset.goto||'',err:document.body.dataset.onerror||document.body.dataset.catch||document.body.dataset.gotoerror||''}")
+                states.append(st)
+                if st.get('state') in ['settled','not-found','caught']: break
+                time.sleep(1)
+              d.save_screenshot(str(out/'screens'/f'{pg}.png'))
+              logs=d.get_log('browser')
+              results[pg]={'states':states,'final':states[-1] if states else {},'browser_logs':logs,'title':d.title,'url':d.current_url,'page_source_prefix':d.page_source[:2000]}
+              print('\nTARGET',pg,json.dumps(results[pg]['final'],ensure_ascii=False), 'logs', json.dumps(logs[-10:],ensure_ascii=False))
+            finally:
+              d.quit()
+          (out/'results.json').write_text(json.dumps(results,ensure_ascii=False,indent=2),encoding='utf-8')
+      - name: Upload one-day Selenium review
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-selenium-viewer-review
+          path: d074-selenium/
+          retention-days: 1
+          if-no-files-found: error
