@@ -38,3 +38,7 @@ jobs:
         run: python scripts/annotation_agreement.py --self-test
       - name: Check fixed-fragment manifest generator
         run: python scripts/build_fragment_manifest.py --check
+      - name: Check deterministic human calibration package
+        run: python scripts/build_calibration_package.py --check
+      - name: Validate calibration blinding and codebook provenance
+        run: python scripts/validate_calibration_package.py
