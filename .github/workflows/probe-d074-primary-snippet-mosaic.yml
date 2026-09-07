@@ -14,50 +14,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Probe PA444 with expanded lexical neighborhood
+      - name: Check alternate source-criticism candidate on PA438
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p d074-snippet-mosaic
           python3 - <<'PY'
-          import json, pathlib, urllib.parse, urllib.request, time
-          VID='KRV2_jMW8-wC'; target='PA444'
-          queries=[
-            'bibliotecarios','bibliotecario','estadísticas','estadistica de lectores',
-            'movimiento de lectores','número de lectores','numero de lectores',
-            'público lector','publico lector','personas bibliotecas','personas concurrieron',
-            'concurrieron bibliotecas','concurrencia','concurrentes','asistieron bibliotecas',
-            'asistencia del público','asistencia del publico','asistencia a bibliotecas',
-            'asistencia bibliotecas públicas','bibliotecas públicas lectores',
-            'libros consultados','volúmenes consultados','volumenes consultados',
-            'consultas bibliotecas','consulta de libros','servicio al público bibliotecas',
-            'servicio al publico bibliotecas','movimiento bibliotecas','estadística de usuarios',
-            'estadistica usuarios','recuento diario','datos verídicos','datos veridicos',
-            'primer semestre','seis meses de 1937','durante seis meses 1937',
-            'enero febrero marzo abril mayo junio','1015239','1.015.239','1 015 239',
-            'Departamento informó bibliotecas','Departamento informo bibliotecas',
-            'aumento de escolares bibliotecas','población escolar bibliotecas',
-            'poblacion escolar bibliotecas','cuentos preparación clases',
-          ]
-          h={'User-Agent':'Mozilla/5.0','Accept-Language':'es-MX,es;q=0.9'}
-          out=[]
-          for q in queries:
-            u=f'https://books.google.com/books?id={VID}&jscmd=SearchWithinVolume2&q={urllib.parse.quote(q)}'
+          import json,pathlib,urllib.parse,urllib.request,time
+          vid='KRV2_jMW8-wC'; target='PA438'
+          qs=['orientación social','tecnica industrial para obreros','técnica industrial para obreros','pedagogía e higiene','acervos universitarios','adquisición obras orientación social','enriquecimiento de los acervos universitarios']
+          h={'User-Agent':'Mozilla/5.0','Accept-Language':'es-MX,es;q=0.9'}; out=[]
+          for q in qs:
+            u=f'https://books.google.com/books?id={vid}&jscmd=SearchWithinVolume2&q={urllib.parse.quote(q)}'
             row={'q':q,'target_hit':False,'results':[]}
             try:
-              req=urllib.request.Request(u,headers=h)
-              with urllib.request.urlopen(req,timeout=40) as r: data=json.loads(r.read().decode('utf-8','replace'))
-              rs=data.get('search_results') or []
-              row['results']=[{'page_id':x.get('page_id'),'page_number':x.get('page_number'),'snippet_text':x.get('snippet_text')} for x in rs]
-              row['target_hit']=any(x.get('page_id')==target for x in rs)
+              with urllib.request.urlopen(urllib.request.Request(u,headers=h),timeout=40) as r: d=json.loads(r.read().decode('utf-8','replace'))
+              rs=d.get('search_results') or []; row['results']=[{'page_id':x.get('page_id'),'page_number':x.get('page_number'),'snippet_text':x.get('snippet_text')} for x in rs]; row['target_hit']=any(x.get('page_id')==target for x in rs)
             except Exception as e: row['error']=f'{type(e).__name__}: {e}'
-            out.append(row)
-            print('C_QUERY',repr(q),'PA444_HIT',row['target_hit'])
-            if row['target_hit']:
-              for x in row['results']: print(' ',x)
+            out.append(row); print('C438_QUERY',repr(q),'HIT',row['target_hit'])
+            for x in row['results']:
+              if x.get('page_id')==target: print(' ',x)
             time.sleep(.15)
-          pathlib.Path('d074-snippet-mosaic/c-pa444-probe.json').write_text(json.dumps(out,ensure_ascii=False,indent=2),encoding='utf-8')
-          print('PA444 HIT QUERIES', [x['q'] for x in out if x.get('target_hit')])
+          pathlib.Path('d074-snippet-mosaic/c-pa438-probe.json').write_text(json.dumps(out,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
       - name: Start Chrome CDP
@@ -65,66 +43,37 @@ jobs:
         run: |
           set -euo pipefail
           BROWSER="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          "$BROWSER" --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
-            --window-size=1600,1400 --hide-scrollbars --remote-debugging-port=9222 \
-            --user-data-dir=/tmp/pdhd-d074-mosaic about:blank >d074-snippet-mosaic/chrome.log 2>&1 &
+          "$BROWSER" --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage --window-size=1600,1400 --hide-scrollbars --remote-debugging-port=9222 --user-data-dir=/tmp/pdhd-d074-final about:blank >d074-snippet-mosaic/chrome.log 2>&1 &
           echo $! > d074-snippet-mosaic/chrome.pid
-          for i in $(seq 1 30); do
-            curl -fsS http://127.0.0.1:9222/json/version >/dev/null && break || true
-            sleep 1
-          done
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:9222/json/version >/dev/null && break || true; sleep 1; done
 
-      - name: Capture visual primary strips for A B D
+      - name: Capture C438 and D35 primary strips
         shell: bash
         run: |
           set -euo pipefail
           node <<'NODE'
-          const fs=require('fs');
-          const vid='KRV2_jMW8-wC';
+          const fs=require('fs'); const vid='KRV2_jMW8-wC'; const sleep=ms=>new Promise(r=>setTimeout(r,ms));
           const cases=[
-            ['A','PA372','trabajo manual esencialmente práctico'],
-            ['A','PA372','educación integral del alumno'],
-            ['A','PA372','finalidad esencial de estas actividades'],
-            ['A','PA372','realización material de la obra'],
-            ['B','PA21','Consejo Nacional Educación Superior'],
-            ['B','PA21','órgano de consulta necesaria'],
-            ['B','PA21','misión estudiar condiciones necesidades'],
-            ['D','PA35','becas'],
-            ['D','PA35','entidades federativas'],
-            ['D','PA35','clases de trabajadores'],
-            ['D','PA35','hijos de maestros rurales'],
-            ['D','PA35','libre del trabajo asalariado etapa educativa'],
+            ['C','PA438','orientación social'],
+            ['C','PA438','técnica industrial para obreros'],
+            ['C','PA438','pedagogía e higiene'],
+            ['C','PA438','acervos universitarios'],
+            ['D','PA35','distribución por entidades federativas se hizo proporcionalmente'],
+            ['D','PA35','obreros y ejidatarios organizados de la República'],
+            ['D','PA35','censos industrial y ejidal de 10 de abril de 1935'],
+            ['D','PA35','distribución de las becas por entidades federativas y por clases de trabajadores'],
           ];
-          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
           async function main(){
-            const targets=await (await fetch('http://127.0.0.1:9222/json')).json();
-            const target=targets.find(x=>x.type==='page');
-            const ws=new WebSocket(target.webSocketDebuggerUrl); let seq=0; const pend=new Map();
+            const ts=await (await fetch('http://127.0.0.1:9222/json')).json(); const t=ts.find(x=>x.type==='page'); const ws=new WebSocket(t.webSocketDebuggerUrl); let seq=0; const pend=new Map();
             ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id&&pend.has(m.id)){const p=pend.get(m.id);pend.delete(m.id);m.error?p.reject(new Error(JSON.stringify(m.error))):p.resolve(m.result||{});}};
-            await new Promise((res,rej)=>{ws.onopen=res;ws.onerror=rej});
+            await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j});
             const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;pend.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));setTimeout(()=>{if(pend.has(id)){pend.delete(id);reject(new Error('timeout '+method));}},20000)});
-            await send('Page.enable'); await send('Runtime.enable');
-            await send('Emulation.setDeviceMetricsOverride',{width:1600,height:1400,deviceScaleFactor:1,mobile:false});
-            let i=0;
-            for(const [slot,pg,q] of cases){
-              i++; const num=pg.replace('PA','');
-              const url=`https://books.google.com/books?id=${vid}&pg=${pg}&dq=${encodeURIComponent(q)}&hl=es`;
-              console.log('NAV',slot,pg,q); await send('Page.navigate',{url}); await sleep(6500);
-              const ev=await send('Runtime.evaluate',{expression:`(()=>{const imgs=[...document.images].map(im=>{const r=im.getBoundingClientRect();return {src:im.currentSrc||im.src,alt:im.alt||'',nw:im.naturalWidth,nh:im.naturalHeight,x:r.x,y:r.y,w:r.width,h:r.height}});const hits=imgs.filter(x=>(x.src.includes('id=${vid}')&&x.src.includes('pg=${pg}')&&!x.src.includes('frontcover'))||x.alt==='Página ${num}');return {title:document.title,url:location.href,text:(document.body?.innerText||'').slice(0,5000),hits};})()`,returnByValue:true});
-              const info=ev.result.value||{};
-              fs.writeFileSync(`d074-snippet-mosaic/${String(i).padStart(2,'0')}-${slot}-${pg}.json`,JSON.stringify({slot,pg,q,...info},null,2));
-              console.log('HITS',JSON.stringify(info.hits||[]));
-              const hit=(info.hits||[]).find(x=>x.w>100&&x.h>20);
-              if(hit){
-                const clip={x:Math.max(0,hit.x),y:Math.max(0,hit.y),width:Math.min(1600-hit.x,hit.w),height:Math.min(1400-hit.y,hit.h),scale:1};
-                const shot=await send('Page.captureScreenshot',{format:'png',fromSurface:true,clip});
-                fs.writeFileSync(`d074-snippet-mosaic/${String(i).padStart(2,'0')}-${slot}-${pg}-strip.png`,Buffer.from(shot.data,'base64'));
-                console.log('SAVED_STRIP',slot,pg,Buffer.byteLength(shot.data,'base64'),clip);
-              }else{
-                const shot=await send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
-                fs.writeFileSync(`d074-snippet-mosaic/${String(i).padStart(2,'0')}-${slot}-${pg}-full.png`,Buffer.from(shot.data,'base64'));
-                console.log('NO_STRIP_SAVED_FULL',slot,pg);
-              }
+            await send('Page.enable'); await send('Runtime.enable'); await send('Emulation.setDeviceMetricsOverride',{width:1600,height:1400,deviceScaleFactor:1,mobile:false}); let i=0;
+            for(const [slot,pg,q] of cases){ i++; const num=pg.slice(2); const url=`https://books.google.com/books?id=${vid}&pg=${pg}&dq=${encodeURIComponent(q)}&hl=es`; console.log('NAV',slot,pg,q); await send('Page.navigate',{url}); await sleep(6500);
+              const ev=await send('Runtime.evaluate',{expression:`(()=>{const imgs=[...document.images].map(im=>{const r=im.getBoundingClientRect();return {src:im.currentSrc||im.src,alt:im.alt||'',nw:im.naturalWidth,nh:im.naturalHeight,x:r.x,y:r.y,w:r.width,h:r.height}});return {text:(document.body?.innerText||'').slice(0,6000),hits:imgs.filter(x=>(x.src.includes('id=${vid}')&&x.src.includes('pg=${pg}')&&!x.src.includes('frontcover'))||x.alt==='Página ${num}')};})()`,returnByValue:true});
+              const info=ev.result.value||{}; fs.writeFileSync(`d074-snippet-mosaic/${String(i).padStart(2,'0')}-${slot}-${pg}.json`,JSON.stringify({slot,pg,q,...info},null,2)); console.log('HITS',JSON.stringify(info.hits||[])); const hit=(info.hits||[]).find(x=>x.w>100&&x.h>20);
+              if(hit){const clip={x:Math.max(0,hit.x),y:Math.max(0,hit.y),width:Math.min(1600-hit.x,hit.w),height:Math.min(1400-hit.y,hit.h),scale:1}; const s=await send('Page.captureScreenshot',{format:'png',fromSurface:true,clip}); fs.writeFileSync(`d074-snippet-mosaic/${String(i).padStart(2,'0')}-${slot}-${pg}-strip.png`,Buffer.from(s.data,'base64')); console.log('SAVED_STRIP',slot,pg,Buffer.byteLength(s.data,'base64'));}
+              else {const s=await send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false}); fs.writeFileSync(`d074-snippet-mosaic/${String(i).padStart(2,'0')}-${slot}-${pg}-full.png`,Buffer.from(s.data,'base64')); console.log('NO_STRIP',slot,pg);}
             }
             ws.close();
           }
@@ -134,7 +83,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: pdhd-d074-primary-snippet-mosaic
+          name: pdhd-d074-c438-d35-primary-strips
           path: d074-snippet-mosaic/
           retention-days: 1
           if-no-files-found: error
