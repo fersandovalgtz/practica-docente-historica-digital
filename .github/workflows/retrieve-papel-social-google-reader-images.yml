@@ -1,0 +1,75 @@
+name: Retrieve signed Google Books reader images for El papel social del maestro rural
+
+on:
+  push:
+    branches: [freeze-papel-social-maestro-rural-control]
+    paths:
+      - ".github/workflows/retrieve-papel-social-google-reader-images.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve public signed reader-image URLs and download pages
+        shell: python
+        run: |
+          import html,json,pathlib,re,urllib.parse,urllib.request,http.cookiejar
+          out=pathlib.Path('reader-images'); out.mkdir()
+          gid='PhRQAAAAMAAJ'
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.7'}
+          cj=http.cookiejar.CookieJar(); opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+          requested=['PP1','PP2','PP3','PP4','PP5','PP6']
+          report={}
+          for pid in requested:
+              page_url='https://books.google.com/books?'+urllib.parse.urlencode({'id':gid,'pg':pid,'hl':'es','focus':'viewport'})
+              item={'page_url':page_url}
+              try:
+                  req=urllib.request.Request(page_url,headers=headers)
+                  with opener.open(req,timeout=90) as r: body=r.read(); item.update(page_status=r.status,page_final_url=r.geturl(),page_bytes=len(body))
+                  text=html.unescape(body.decode('utf-8',errors='replace'))
+                  (out/f'{pid}.html').write_text(text,encoding='utf-8')
+                  # Require Google to expose the requested page itself in the public page image URL.
+                  urls=list(dict.fromkeys(re.findall(r'https://books\.google\.com/books/content\?[^"\' <>]+',text,re.I)))
+                  exact=[]
+                  for u in urls:
+                      u=u.replace('\\u0026','&').replace('&amp;','&')
+                      qs=urllib.parse.parse_qs(urllib.parse.urlparse(u).query)
+                      if qs.get('id',[''])[0]==gid and qs.get('pg',[''])[0]==pid and qs.get('img',[''])[0]=='1' and qs.get('sig',[''])[0]:
+                          exact.append(u)
+                  exact=list(dict.fromkeys(exact))
+                  item['signed_urls']=exact
+                  if not exact:
+                      item['error']='no exact signed page-image URL exposed'; report[pid]=item; continue
+                  image_url=exact[0]
+                  req=urllib.request.Request(image_url,headers={**headers,'Referer':page_url})
+                  with opener.open(req,timeout=90) as r: img=r.read(); item.update(image_status=r.status,image_final_url=r.geturl(),content_type=r.headers.get('content-type',''),image_bytes=len(img))
+                  if len(img)<10000 or not item['content_type'].lower().startswith('image/'):
+                      item['error']='invalid image payload'; report[pid]=item; continue
+                  ext='.jpg' if 'jpeg' in item['content_type'].lower() else '.png' if 'png' in item['content_type'].lower() else '.img'
+                  (out/f'{pid}{ext}').write_bytes(img)
+                  item['saved_as']=f'{pid}{ext}'
+                  # Record public viewer index, but do not infer printed pagination from order.
+                  m=re.search(r'_OC_Run\(\{"page":(\[.*?\]),"prefix"',text,re.S)
+                  if m:
+                      try: item['viewer_page_index']=json.loads(m.group(1))
+                      except Exception: pass
+              except Exception as exc:
+                  item['error']=repr(exc)
+              report[pid]=item
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          saved=[k for k,v in report.items() if v.get('saved_as')]
+          print('SAVED_PAGES',saved)
+          if len(saved)<4:
+              raise SystemExit('insufficient directly exposed reader images')
+      - name: Upload reader images for primary inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-papel-social-google-reader-images
+          path: reader-images/
+          retention-days: 1
