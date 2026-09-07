@@ -14,17 +14,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Resolve target issue from persistent page IDs and download exact pages
+      - name: Resolve exact issue with HNDM selector and traverse primary page links
         shell: python
         run: |
-          import csv,html,json,pathlib,re,time,urllib.request,urllib.error
+          import csv,html,json,pathlib,re,urllib.parse,urllib.request,http.cookiejar
           out=pathlib.Path('escuela-moderna-primary'); out.mkdir()
           base='https://hndm.iib.unam.mx'
           serial='558075be7d1e63c9fea1a259'
-          neighbor_first='558a33397d1ed64f16922d41'
           target_date='1889-10-31'
+          expected_pages=20
+          neighbor_page='558a33397d1ed64f16922d41'
+          start=f'{base}/consulta/publicacion/visualizar/{serial}?pagina={neighbor_page}&coleccion='
+          action=f'{base}/consulta/publicacion/visualizar/{serial}'
           headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.7'}
-
+          jar=http.cookiejar.CookieJar(); opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+          def get(url,referer=None):
+              h=dict(headers); h['Referer']=referer or start
+              req=urllib.request.Request(url,headers=h)
+              with opener.open(req,timeout=90) as r: return r.read(),r.geturl(),r.status
+          def parse_viewer(body):
+              text=html.unescape(body.decode('utf-8',errors='replace'))
+              dm=re.search(r'<dt>Fecha:</dt>\s*<dd>\s*([^<]+?)\s*</dd>',text,re.I|re.S)
+              visible=re.sub(r'\s+',' ',dm.group(1)).strip() if dm else ''
+              pdfids=list(dict.fromkeys(re.findall(r'/consulta/publicacion/pdf/([0-9a-f]{24})\.pdf',text,re.I)))
+              nextids=list(dict.fromkeys(re.findall(r'<a href="[^"]*[?&]pagina=([0-9a-f]{24})[^"]*"[^>]*class="siguienteLink"',text,re.I)))
+              prevs=list(dict.fromkeys(re.findall(r'<a href="[^"]*[?&]pagina=([0-9a-f]{24})[^"]*"[^>]*class="anteriorLink"',text,re.I)))
+              count_m=re.search(r'\bde\s+([0-9]{1,4})\s*</form>',text,re.I)
+              return text,visible,pdfids,nextids,prevs,int(count_m.group(1)) if count_m else None
           # Preserve canonical F21-F24 state before direct inspection.
           loc=[]
           for p in sorted(pathlib.Path('data/samples').glob('fragment_locator_progress*.csv')):
@@ -34,63 +50,42 @@ jobs:
           with (pathlib.Path('data/samples')/'fragment_gap_queue_0_1.csv').open(encoding='utf-8',newline='') as f:
               gaps=[r for r in csv.DictReader(f) if r.get('fragment_id') in {'PDHD-F000021','PDHD-F000022','PDHD-F000023','PDHD-F000024'}]
           (out/'prior-state.json').write_text(json.dumps({'locators':loc,'gaps':gaps},ensure_ascii=False,indent=2),encoding='utf-8')
-
-          # Discovery only: probe ObjectIds immediately preceding the known first page of the 15 Nov issue.
-          # A numeric adjacency is NOT accepted as evidence. Every retained page must independently show target_date in HNDM.
-          start=int(neighbor_first,16)
-          scan=[]; target=[]
-          for delta in range(1,65):
-              pid=f'{start-delta:024x}'
-              url=f'{base}/consulta/publicacion/visualizar/{serial}?pagina={pid}&coleccion='
-              item={'delta':delta,'candidate_page_id':pid,'url':url}
-              try:
-                  req=urllib.request.Request(url,headers=headers)
-                  with urllib.request.urlopen(req,timeout=45) as r: body=r.read(); final=r.geturl()
-                  text=html.unescape(body.decode('utf-8',errors='replace'))
-                  d=re.search(r'<dt>Fecha:</dt>\s*<dd>\s*([^<]+?)\s*</dd>',text,re.I|re.S)
-                  visible=re.sub(r'\s+',' ',d.group(1)).strip() if d else ''
-                  pdfids=list(dict.fromkeys(re.findall(r'/consulta/publicacion/pdf/([0-9a-f]{24})\.pdf',text,re.I)))
-                  item.update(status=200,final_url=final,visible_date=visible,pdf_ids=pdfids)
-                  if visible==target_date and pdfids and pdfids[0]==pid:
-                      target.append(pid)
-              except urllib.error.HTTPError as exc: item.update(status=exc.code,error='HTTPError')
-              except Exception as exc: item['error']=repr(exc)
-              scan.append(item)
-              time.sleep(0.08)
-          (out/'candidate-scan.json').write_text(json.dumps(scan,ensure_ascii=False,indent=2),encoding='utf-8')
-          print(json.dumps({'target_date':target_date,'target_page_ids':target,'scan':scan},ensure_ascii=False,indent=2))
-          if not target:
-              raise SystemExit('identity gate failed: no preceding persistent page IDs independently resolve to 1889-10-31')
-
-          # Sort exact target pages by persistent ID only after each has passed the independent visible-date gate.
-          target=sorted(set(target),key=lambda x:int(x,16))
-          # Require a plausible issue-size block and contiguous IDs as a consistency check; actual printed pagination is still reviewed visually.
-          if len(target) < 8 or len(target) > 32:
-              raise SystemExit(f'issue-size gate failed: recovered {len(target)} target-date pages')
-          ints=[int(x,16) for x in target]
-          if any(b-a!=1 for a,b in zip(ints,ints[1:])):
-              raise SystemExit('persistent-ID consistency gate failed: target-date pages are not contiguous')
-
-          mapping=[]
-          for seq,pid in enumerate(target,1):
+          # Establish session on known adjacent issue, then submit HNDM's real issue selector.
+          get(start)
+          target_fields={'coleccion':'','pagina':'1','anio':'1889','mes':'10','dia':'31','butIr':'Ir'}
+          data=urllib.parse.urlencode(target_fields).encode()
+          req=urllib.request.Request(action,data=data,headers={**headers,'Referer':start},method='POST')
+          with opener.open(req,timeout=90) as r: first_body=r.read(); first_final=r.geturl(); first_status=r.status
+          first_text,visible,pdfids,nextids,prevs,count=parse_viewer(first_body)
+          (out/'selector-target.html').write_text(first_text,encoding='utf-8')
+          if visible!=target_date: raise SystemExit(f'selector identity gate failed: {visible!r}')
+          if count!=expected_pages: raise SystemExit(f'page-count gate failed: expected {expected_pages}, got {count}')
+          if len(pdfids)!=1: raise SystemExit(f'first-page PDF identity gate failed: {pdfids}')
+          first_pid=pdfids[0]
+          mapping=[]; seen=set(); pid=first_pid
+          for seq in range(1,expected_pages+1):
+              if pid in seen: raise SystemExit(f'page cycle detected at sequence {seq}: {pid}')
+              seen.add(pid)
               vurl=f'{base}/consulta/publicacion/visualizar/{serial}?pagina={pid}&coleccion='
-              req=urllib.request.Request(vurl,headers=headers)
-              with urllib.request.urlopen(req,timeout=60) as r: body=r.read()
-              text=html.unescape(body.decode('utf-8',errors='replace'))
-              d=re.search(r'<dt>Fecha:</dt>\s*<dd>\s*([^<]+?)\s*</dd>',text,re.I|re.S)
-              visible=re.sub(r'\s+',' ',d.group(1)).strip() if d else ''
-              pdfids=list(dict.fromkeys(re.findall(r'/consulta/publicacion/pdf/([0-9a-f]{24})\.pdf',text,re.I)))
-              if visible!=target_date or not pdfids or pdfids[0]!=pid:
-                  raise SystemExit(f'page identity drift seq={seq} pid={pid} date={visible!r} pdf={pdfids[:1]}')
+              body,final,status=get(vurl,referer=action)
+              text,vdate,vpdf,nexts,prevs,vcount=parse_viewer(body)
+              (out/f'viewer-{seq:03d}-{pid}.html').write_text(text,encoding='utf-8')
+              if vdate!=target_date: raise SystemExit(f'date drift seq={seq} pid={pid}: {vdate!r}')
+              if vcount!=expected_pages: raise SystemExit(f'count drift seq={seq} pid={pid}: {vcount}')
+              if len(vpdf)!=1 or vpdf[0]!=pid: raise SystemExit(f'PDF identity drift seq={seq} pid={pid}: {vpdf}')
               pdfurl=f'{base}/consulta/publicacion/pdf/{pid}.pdf?coleccion=&palabras='
-              preq=urllib.request.Request(pdfurl,headers=headers)
-              with urllib.request.urlopen(preq,timeout=90) as pr: pdf=pr.read()
-              if not pdf.startswith(b'%PDF'): raise SystemExit(f'non-PDF payload for {pid}')
-              (out/f'seq-{seq:03d}-{pid}.pdf').write_bytes(pdf)
-              mapping.append({'sequence':seq,'page_id':pid,'visible_date':visible,'pdf_url':pdfurl,'pdf_bytes':len(pdf)})
+              pbody,pfinal,pstatus=get(pdfurl,referer=vurl)
+              if not pbody.startswith(b'%PDF'): raise SystemExit(f'non-PDF payload seq={seq} pid={pid}')
+              (out/f'seq-{seq:03d}-{pid}.pdf').write_bytes(pbody)
+              mapping.append({'sequence':seq,'page_id':pid,'visible_date':vdate,'viewer_url':vurl,'pdf_url':pdfurl,'pdf_bytes':len(pbody),'previous_page_ids':prevs,'next_page_ids':nexts})
+              if seq < expected_pages:
+                  if len(nexts)!=1: raise SystemExit(f'next-link gate failed seq={seq} pid={pid}: {nexts}')
+                  pid=nexts[0]
+              else:
+                  if nexts: raise SystemExit(f'final-page gate failed: unexpected next link {nexts}')
+          if len(mapping)!=expected_pages or len(seen)!=expected_pages: raise SystemExit('issue completeness gate failed')
           (out/'viewer-map.json').write_text(json.dumps(mapping,ensure_ascii=False,indent=2),encoding='utf-8')
-          print(json.dumps({'resolved_target_issue':mapping},ensure_ascii=False,indent=2))
-
+          print(json.dumps({'selector':{'status':first_status,'final_url':first_final,'visible_date':visible,'page_count':count,'first_page_id':first_pid},'resolved_target_issue':mapping},ensure_ascii=False,indent=2))
       - name: Render and index exact issue
         shell: bash
         run: |
@@ -102,12 +97,12 @@ jobs:
           for f in "$out"/seq-*.pdf; do
             stem=$(basename "$f" .pdf)
             pdftotext -layout "$f" "$out/text/$stem.txt" || true
-            pdftoppm -f 1 -l 1 -singlefile -jpeg -r 240 "$f" "$out/rendered/$stem" >/dev/null 2>&1 || true
+            pdftoppm -f 1 -l 1 -singlefile -jpeg -r 220 "$f" "$out/rendered/$stem" >/dev/null 2>&1
           done
           python - <<'PY'
           import json,pathlib,re,unicodedata
           out=pathlib.Path('escuela-moderna-primary')
-          terms=['REBSAMEN','RÉBSAMEN','PEDAGOGIA MODERNA','PEDAGOGÍA MODERNA','METOD','ENSEÑ','MAESTR','PROFES','DIRECTOR','REDACC','ADMINISTR','SUSCRIP','CONDICIONES','ESCUELA','ALUMN','LECCION','LECCIÓN','OBJETIV']
+          terms=['REBSAMEN','RÉBSAMEN','PEDAGOGIA MODERNA','PEDAGOGÍA MODERNA','METODO','MÉTODO','ENSEÑ','MAESTR','PROFES','DIRECTOR','REDACC','ADMINISTR','SUSCRIP','CONDICIONES','ESCUELA','ALUMN','LECCION','LECCIÓN','OBJETIV','DISCIPLIN','INSTRUCCION','INSTRUCCIÓN']
           rows=[]
           for p in sorted((out/'text').glob('*.txt')):
               text=p.read_text(encoding='utf-8',errors='replace')
@@ -117,10 +112,11 @@ jobs:
                   t=unicodedata.normalize('NFD',term.upper()); t=''.join(c for c in t if unicodedata.category(c)!='Mn')
                   if t in norm: found.append(term)
               nums=re.findall(r'(?m)^\s*([0-9]{1,3})\s*$',text)
-              rows.append({'file':p.name,'terms':found,'numeric_lines':nums[:12],'snippet':re.sub(r'\s+',' ',text)[:7000]})
+              rows.append({'file':p.name,'terms':found,'numeric_lines':nums[:12],'snippet':re.sub(r'\s+',' ',text)[:9000]})
           (out/'page-text-summary.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2),encoding='utf-8')
           print(json.dumps(rows,ensure_ascii=False,indent=2))
           PY
+          test "$(find "$out/rendered" -type f -name '*.jpg' | wc -l)" -eq 20
       - name: Upload primary review artifact
         uses: actions/upload-artifact@v4
         with:
