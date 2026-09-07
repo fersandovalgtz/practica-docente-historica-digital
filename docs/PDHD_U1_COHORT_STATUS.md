@@ -75,13 +75,13 @@ The `PDHD-F000033` recovery established the post-sprint exact-pointer workflow: 
 
 `PDHD-F000037` demonstrates the complementary path from a pure gap to a fixed primary span. The exact BVMC issue was already object-resolved, but no page beyond the opening had been inspected. Rendering the complete primary PDF exposed a pedagogically explicit lesson-plan block on p. 6, allowing localization and freezing to occur in the same source-critical step.
 
-## Remaining localization work
+## Remaining freeze-conversion work
 
 The union of all `fragment_locator_progress*.csv` shards contains **96/96** pilot slots. Eighty-eight are frozen. The remaining **8** located rows include page- or snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **0 slots remain without a locator.**
 
 The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. The active phase now converts strong page-resolved candidates through direct historical-object inspection and opportunistically fills missing deterministic slots when the same inspected page provides structurally distinct evidence.
 
-With `PDHD-D000003`, `PDHD-D000011` and `PDHD-D000031` complete, the next high-value work should target clusters where one primary-object recovery can resolve multiple slots. Strong candidates include page-resolved *El Maestro* and *La Escuela Moderna* fragments, plus the remaining clustered gaps in *El Periquito* and the remaining primary-image conversions in the 1932 and 1937 SEP memory clusters.
+With the localization gate complete, the remaining eight non-frozen pilot fragments are concentrated in `PDHD-D000072` and `PDHD-D000074`, four slots in each SEP memory. The next high-value work is therefore direct primary-image recovery for those two clustered objects, where one successful identity-gated retrieval can convert an entire A–D batch.
 
 ## Evidence rules retained
 

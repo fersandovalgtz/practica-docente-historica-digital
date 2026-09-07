@@ -16,7 +16,7 @@ PDHD distingue entre **fuente**, **identidad documental**, **derechos**, **proce
 
 ## Estado científico de PDHD-U1
 
-Corte de referencia: **6 de septiembre de 2026**.
+Corte de referencia: **7 de septiembre de 2026**.
 
 | Capa | Estado |
 |---|---:|
@@ -237,7 +237,7 @@ El repositorio mantiene identificadores estables `PDHD-C`, `PDHD-D`, `PDHD-L`, `
 
 La selección documental ya está lista. **96/96 slots tienen ya un localizador documentado.** La prioridad es convertir la mayor cantidad posible de los **8 localizadores todavía no congelados** en páginas primarias inspeccionadas con límites fijos. Los **88/96** congelados demuestran el pipeline a través de HNDM, BVMC, Internet Archive y Google Books y cubren prensa pedagógica de 1888, 1891, 1904 y 1907, además de *El Maestro* en 1921.
 
-La cola dedicada de conversión directa continúa vacía; después de `PDHD-F000060`, el lote `PDHD-F000077`–`PDHD-F000080` demuestra la siguiente ruta: recuperar el objeto primario completo, corregir los page labels de agregadores cuando sea necesario y fijar límites sólo después de inspección visual. Quedan **0 slots sin localizador**. El umbral operativo 80/96 ya fue alcanzado; el siguiente escalón cuantitativo de seguimiento será **95/96**, pero el indicador científicamente más importante es aumentar los fragmentos `frozen`, no maximizar referencias débiles. `PDHD-F000060` ya fue inspeccionado en la página primaria `PR5`, congelado y retirado de cualquier cola pendiente.
+La cola dedicada de conversión directa continúa vacía; después de `PDHD-F000060`, el lote `PDHD-F000077`–`PDHD-F000080` demuestra la siguiente ruta: recuperar el objeto primario completo, corregir los page labels de agregadores cuando sea necesario y fijar límites sólo después de inspección visual. Quedan **0 slots sin localizador**. El gate cuantitativo de localización está completo en **96/96**; el indicador científicamente más importante es ahora aumentar los fragmentos `frozen`, no maximizar ni conservar referencias débiles. `PDHD-F000060` ya fue inspeccionado en la página primaria `PR5`, congelado y retirado de cualquier cola pendiente.
 
 Solo después de completar el paquete se prepara el set de calibración, se congela la versión del codebook y comienza la codificación humana independiente.
 
