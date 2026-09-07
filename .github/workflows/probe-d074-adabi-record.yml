@@ -1,0 +1,63 @@
+name: Resolve exact ADABI holding for D074
+
+on:
+  push:
+    branches: [work/d074-canonical-page-recovery]
+    paths: [.github/workflows/probe-d074-adabi-record.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Search ADABI public catalog and inspect exact record links
+        shell: python
+        run: |
+          import html, json, pathlib, re, urllib.parse, urllib.request, urllib.error
+          out=pathlib.Path('d074-adabi'); out.mkdir(exist_ok=True)
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          title='Memoria de la Secretaría de Educación Pública de septiembre de 1936 a agosto de 1937'
+          q=urllib.parse.urlencode({'lookfor':title,'type':'AllFields','limit':'50'})
+          url='https://buscador.adabi.org.mx/vufind/Search/Results?'+q
+          def fetch(u):
+            req=urllib.request.Request(u,headers=headers)
+            try:
+              with urllib.request.urlopen(req,timeout=90) as r: return r.status,r.geturl(),r.headers.get('Content-Type',''),r.read()
+            except urllib.error.HTTPError as e: return e.code,e.geturl(),e.headers.get('Content-Type',''),e.read()
+          st,final,ct,body=fetch(url)
+          text=body.decode('utf-8',errors='replace')
+          clean=html.unescape(text)
+          recs=[]
+          for m in re.finditer(r'href=["\']([^"\']*/vufind/Record/[^"\']+)["\']',clean,re.I):
+            href=urllib.parse.urljoin(final,m.group(1))
+            window=re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',clean[max(0,m.start()-1500):m.end()+2500]))
+            if '1936' in window and '1937' in window and 'Educación Pública' in window:
+              recs.append({'href':href,'context':window[:1200]})
+          # Also harvest simple Record IDs anywhere nearby.
+          for rid in re.findall(r'/vufind/Record/(\d+)',clean):
+            href=f'https://buscador.adabi.org.mx/vufind/Record/{rid}'
+            if not any(x['href']==href for x in recs):
+              pass
+          report={'search_url':url,'status':st,'final':final,'content_type':ct,'bytes':len(body),'candidate_records':recs}
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          for i,r in enumerate(recs[:10]):
+            st2,f2,ct2,b2=fetch(r['href']); t2=html.unescape(b2.decode('utf-8',errors='replace'))
+            links=[]
+            for hm in re.finditer(r'href=["\']([^"\']+)["\']',t2,re.I):
+              u=urllib.parse.urljoin(f2,hm.group(1))
+              if any(k in u.lower() for k in ['pdf','download','digital','image','imagen','file','media']): links.append(u)
+            images=[urllib.parse.urljoin(f2,x) for x in re.findall(r'<img[^>]+src=["\']([^"\']+)["\']',t2,re.I)]
+            plain=re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',t2))
+            report.setdefault('records',[]).append({'url':r['href'],'status':st2,'bytes':len(b2),'interesting_links':list(dict.fromkeys(links))[:30],'images':list(dict.fromkeys(images))[:30],'text_excerpt':plain[:6000]})
+            print('\nRECORD',r['href'],'status',st2,'links',json.dumps(list(dict.fromkeys(links))[:30],ensure_ascii=False),'images',json.dumps(list(dict.fromkeys(images))[:10],ensure_ascii=False))
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+      - name: Upload one-day ADABI report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-adabi-record
+          path: d074-adabi/
+          retention-days: 1
+          if-no-files-found: error
