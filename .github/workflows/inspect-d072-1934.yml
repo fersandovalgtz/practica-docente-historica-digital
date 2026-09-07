@@ -1,0 +1,55 @@
+name: Inspect 1934 Tome I surrogate candidate
+
+on:
+  push:
+    branches:
+      - work/d072-primary-recovery-20260907
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect ITESO 1934 record and Google full-view objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re,urllib.request,urllib.parse,html,json
+          UA='Mozilla/5.0 PDHD-research/0.1'
+          def get(u):
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(u,headers={'User-Agent':UA,'Accept-Language':'es-MX,es;q=0.9'}),timeout=45) as r:
+                      return r.status,r.headers.get('content-type',''),r.geturl(),r.read()
+              except Exception as e: return None,'','',repr(e).encode()
+          def txt(b):
+              s=b.decode('utf-8','replace'); s=re.sub(r'<script.*?</script>|<style.*?</style>',' ',s,flags=re.I|re.S); s=re.sub(r'<[^>]+>',' ',s); return re.sub(r'\s+',' ',html.unescape(s)).strip()
+
+          rid='000505122'
+          print('=== ITESO 1934 candidate ===')
+          for suf in ['', '/Description','/Details','/Holdings','/RDF']:
+              st,ct,final,b=get(f'https://opac.biblio.iteso.mx/vufind/Record/{rid}'+suf)
+              print('\n',suf or '/',st,ct,len(b),final)
+              print(txt(b)[:6500])
+
+          print('\n=== Google Books direct HTML objects ===')
+          for vid in ['mHgQAAAAYAAJ','_nkQAAAAYAAJ','6aYQAAAAYAAJ']:
+              u=f'https://books.google.com/books?id={vid}&printsec=frontcover'
+              st,ct,final,b=get(u); s=b.decode('utf-8','replace')
+              print('\nID',vid,'HTTP',st,ct,'bytes',len(b),'final',final)
+              # print only bibliographic diagnostics / links, not whole source text
+              for pat in [r'<title>(.*?)</title>', r'books\.googleusercontent\.com[^\"\']+', r'https?[^\"\'<> ]+&jscmd=SearchWithinVolume2[^\"\'<> ]*']:
+                  vals=re.findall(pat,s,flags=re.I|re.S)
+                  for x in vals[:10]: print('MATCH',re.sub(r'\s+',' ',html.unescape(x))[:1000])
+              print('has_download', 'download' in s.lower(), 'has_pdf', '.pdf' in s.lower(), 'has_books_content','books/content' in s)
+
+          print('\n=== Google SearchWithinVolume2 on 1934 Vol II for mission/normal themes ===')
+          for vid in ['mHgQAAAAYAAJ','_nkQAAAAYAAJ']:
+              for q in ['misiones culturales','escuelas normales','misiones culturales escuelas normales','maestros rurales preparación']:
+                  u='https://books.google.com/books?'+urllib.parse.urlencode({'jscmd':'SearchWithinVolume2','q':q,'vid':vid})
+                  st,ct,final,b=get(u)
+                  print(vid,q,'HTTP',st,ct,'bytes',len(b),'body',b[:1800].decode('utf-8','replace'))
+          PY
