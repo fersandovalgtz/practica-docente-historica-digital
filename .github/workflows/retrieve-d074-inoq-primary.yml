@@ -1,0 +1,88 @@
+name: Inspect InoQ as possible D074 primary surrogate
+
+on:
+  push:
+    branches: [work/d074-canonical-page-recovery]
+    paths: [.github/workflows/retrieve-d074-inoq-primary.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download public Google Books PDF and locate identity/target pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          mkdir -p d074-inoq-review/rendered
+          python - <<'PY'
+          import html, pathlib, re, urllib.request
+          vid='InoQAAAAYAAJ'
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          page=f'https://books.google.com/books?id={vid}&printsec=frontcover'
+          req=urllib.request.Request(page,headers=headers)
+          with urllib.request.urlopen(req,timeout=90) as r: text=html.unescape(r.read().decode('utf-8',errors='replace')).replace('\\/','/').replace('\\u0026','&')
+          links=re.findall(r'https?://books\.google\.[^/]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',text)
+          if not links: raise SystemExit('no public PDF link exposed')
+          pdf=links[0].replace('&amp;','&')
+          req=urllib.request.Request(pdf,headers=headers)
+          with urllib.request.urlopen(req,timeout=300) as r: body=r.read()
+          if not body.startswith(b'%PDF') or len(body)<100000: raise SystemExit(f'invalid PDF bytes={len(body)}')
+          pathlib.Path('d074-inoq-review/volume.pdf').write_bytes(body)
+          pathlib.Path('d074-inoq-review/download.txt').write_text(f'{vid}\nbytes={len(body)}\n',encoding='utf-8')
+          print('downloaded',vid,'bytes',len(body))
+          PY
+          pdfinfo d074-inoq-review/volume.pdf | tee d074-inoq-review/pdfinfo.txt
+          pdftotext -layout d074-inoq-review/volume.pdf d074-inoq-review/volume.txt
+          python - <<'PY'
+          import json, pathlib, re, unicodedata
+          p=pathlib.Path('d074-inoq-review')
+          text=(p/'volume.txt').read_text(encoding='utf-8',errors='replace')
+          pages=text.split('\f')
+          if pages and not pages[-1].strip(): pages.pop()
+          def norm(s):
+            s=unicodedata.normalize('NFD',s.lower())
+            s=''.join(c for c in s if unicodedata.category(c)!='Mn')
+            return re.sub(r'\s+',' ',s)
+          pats={
+            'identity_title':'memoria de la secretaria de educacion publica',
+            'identity_sep1936':'septiembre de 1936',
+            'identity_aug1937':'agosto de 1937',
+            'identity_tomo_ii':'tomo ii',
+            'A_integral':'educacion integral del alumno',
+            'A_manual':'trabajo manual',
+            'B_consejo':'consejo nacional de la educacion superior',
+            'D_becas':'distribucion de becas',
+            'C_bibliotecas':'bibliotecas',
+          }
+          hits=[]
+          for i,pg in enumerate(pages,1):
+            n=norm(pg); matched=[k for k,v in pats.items() if v in n]
+            if matched:
+              lines=[re.sub(r'\s+',' ',x).strip() for x in pg.splitlines() if x.strip()]
+              hits.append({'physical_pdf_page':i,'matched':matched,'first_lines':lines[:10],'last_lines':lines[-6:]})
+          (p/'hits.json').write_text(json.dumps(hits,ensure_ascii=False,indent=2),encoding='utf-8')
+          print('PHYSICAL_PAGES',len(pages))
+          print(json.dumps(hits,ensure_ascii=False,indent=2))
+          selected=set(range(1,min(16,len(pages))+1))
+          for h in hits:
+            if any(k.startswith(('identity_','A_','B_','D_')) for k in h['matched']):
+              selected.add(h['physical_pdf_page'])
+          (p/'render-pages.txt').write_text('\n'.join(map(str,sorted(selected))),encoding='utf-8')
+          PY
+          while read -r n; do
+            [ -n "$n" ] || continue
+            pdftoppm -f "$n" -l "$n" -singlefile -jpeg -r 180 d074-inoq-review/volume.pdf "d074-inoq-review/rendered/physical-$(printf '%04d' "$n")" >/dev/null 2>&1
+          done < d074-inoq-review/render-pages.txt
+      - name: Upload one-day primary review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-inoq-primary-review
+          path: d074-inoq-review/
+          retention-days: 1
+          if-no-files-found: error
