@@ -1,0 +1,45 @@
+name: Inspect 7Od primary title identity for D074
+
+on:
+  push:
+    branches: [work/d074-canonical-page-recovery]
+    paths: [.github/workflows/retrieve-d074-7od-identity.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download public PDF and inspect title/front matter only
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          mkdir -p d074-7od-identity
+          python - <<'PY'
+          import html, pathlib, re, urllib.request
+          vid='7OdDbshzWaUC'; headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.8'}
+          req=urllib.request.Request(f'https://books.google.com/books?id={vid}&printsec=frontcover',headers=headers)
+          with urllib.request.urlopen(req,timeout=90) as r: text=html.unescape(r.read().decode('utf-8',errors='replace')).replace('\\/','/').replace('\\u0026','&')
+          links=re.findall(r'https?://books\.google\.[^/]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',text)
+          if not links: raise SystemExit('no public PDF link')
+          req=urllib.request.Request(links[0].replace('&amp;','&'),headers=headers)
+          with urllib.request.urlopen(req,timeout=300) as r: body=r.read()
+          if not body.startswith(b'%PDF') or len(body)<100000: raise SystemExit(f'invalid PDF {len(body)}')
+          pathlib.Path('d074-7od-identity/volume.pdf').write_bytes(body); print('downloaded',len(body))
+          PY
+          pdfinfo d074-7od-identity/volume.pdf | tee d074-7od-identity/pdfinfo.txt
+          pdftotext -f 1 -l 30 -layout d074-7od-identity/volume.pdf d074-7od-identity/front.txt
+          echo '--- FRONT MATTER ---'
+          grep -Ein -A8 -B3 'MEMORIA|SEPTIEMBRE|AGOSTO|MEXICO|TOMO' d074-7od-identity/front.txt || true
+      - name: Upload one-day identity artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-7od-identity
+          path: d074-7od-identity/
+          retention-days: 1
+          if-no-files-found: error
