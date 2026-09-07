@@ -6,6 +6,16 @@ Current contents include the frozen 24-document pilot selection, deterministic a
 
 Historical quotation, facsimile, page image or third-party OCR must not be added here unless its reuse status has been verified and recorded. When a source is handled as `metadata_only` or `coder_local_text`, the public repository stores only the rights-compatible locator and PDHD-derived methodological metadata.
 
+## Human calibration package
+
+The completed 96-fragment frozen pilot is now partitioned for the first human-validation stage: **12 fragments for calibration and 84 remaining fragments for the later independent reliability round**. This is a methodological partition of the existing 96 fragments, not an expansion of the corpus.
+
+`calibration_manifest_0_1.csv` records the deterministic researcher-facing selection under seed `PDHD-CAL-0.1-20260907`. `calibration_coder_sheet_0_1.csv` is the blind coder-facing projection: it omits A-D slot, era, publication, place, selection role, semantic locator slug and preparation notes, and contains no proposed labels. `codebook_registry.csv` pins the exact pre-calibration manual and taxonomy blobs as `PDHD-CB-0.2-calibration`.
+
+`scripts/build_calibration_package.py --check` reproduces the committed selection and coder sheet byte for byte. `scripts/validate_calibration_package.py` enforces the structural quotas, blinding, blank response fields, codebook hashes and non-overlap with any future `reliability_manifest_0_1.csv`.
+
+The 12 calibration items do not enter the formal reliability calculation. Two real human coders must first complete independent first-pass sheets; only after those responses are frozen and discussed may PDHD version and freeze the codebook for the 84-item reliability round.
+
 ## Evidence-promotion chain
 
 `pilot_content_leads.csv` records content-level discoveries before or during page localization. A row marked `promoted_to_fragment_locator` must now carry an explicit `promoted_fragment_id`. `scripts/validate_content_leads.py` verifies that this ID exists in the logical union of `fragment_locator_progress*.csv`, belongs to the same pilot document and is not claimed by a second content lead.
