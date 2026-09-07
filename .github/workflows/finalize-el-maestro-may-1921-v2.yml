@@ -1,0 +1,59 @@
+name: Finalize El Maestro May 1921 primary batch v2
+
+on:
+  push:
+    branches: [freeze-el-maestro-may-1921]
+    paths:
+      - '.github/workflows/finalize-el-maestro-may-1921-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reuse tested scientific mutation from v1
+        run: |
+          python -m pip install --quiet pyyaml
+          python - <<'PY'
+          import pathlib, subprocess, yaml
+          workflow = yaml.safe_load(pathlib.Path('.github/workflows/finalize-el-maestro-may-1921.yml').read_text(encoding='utf-8'))
+          steps = workflow['jobs']['finalize']['steps']
+          step = next(s for s in steps if s.get('name') == 'Promote F41-F43 from direct primary inspection')
+          script = step['run']
+          tmp = pathlib.Path('/tmp/promote_el_maestro_may1921.py')
+          tmp.write_text(script, encoding='utf-8')
+          subprocess.run(['python', str(tmp)], check=True)
+          PY
+      - name: Validate complete PDHD suite
+        run: |
+          python scripts/validate_repository.py
+          python scripts/validate_object_aliases.py
+          python scripts/validate_content_leads.py
+          python scripts/validate_retrieval_attempts.py
+          python scripts/validate_fragment_shards.py
+          python scripts/validate_freeze_conversion_queue.py
+          python scripts/prepare_freeze_review.py --check
+          python scripts/validate_status_counts.py
+          python scripts/annotation_agreement.py --self-test
+          python scripts/build_fragment_manifest.py --check
+      - name: Gate persistent diff including untracked shard and commit scientific batch
+        run: |
+          allowed='README.md data/catalog/object_aliases.csv data/samples/fragment_locator_progress_el_maestro_secondary_w7.csv data/samples/fragment_locator_progress_threshold64_w8.csv data/samples/frozen_fragments_el_maestro_may1921_w26.csv data/samples/retrieval_attempts.csv docs/OBJECT_CROSSWALK_LOG.md docs/PDHD_U1_COHORT_STATUS.md'
+          actual=$( (git diff --name-only; git ls-files --others --exclude-standard) | grep -v '^.github/workflows/' | sort -u | tr '\n' ' ' | sed 's/ $//')
+          expected=$(printf '%s\n' $allowed | sort | tr '\n' ' ' | sed 's/ $//')
+          echo "ACTUAL=$actual"
+          echo "EXPECTED=$expected"
+          test "$actual" = "$expected"
+          git config user.name 'Fernando Sandoval'
+          git config user.email 'fernando.sandoval@uacj.mx'
+          git add README.md data/catalog/object_aliases.csv data/samples/fragment_locator_progress_el_maestro_secondary_w7.csv data/samples/fragment_locator_progress_threshold64_w8.csv data/samples/frozen_fragments_el_maestro_may1921_w26.csv data/samples/retrieval_attempts.csv docs/OBJECT_CROSSWALK_LOG.md docs/PDHD_U1_COHORT_STATUS.md
+          git commit -m 'Freeze El Maestro May 1921 analytical batch'
+          git push origin HEAD:freeze-el-maestro-may-1921
