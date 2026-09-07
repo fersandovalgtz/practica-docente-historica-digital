@@ -1,0 +1,154 @@
+name: Probe D074 primary snippet mosaic
+
+on:
+  push:
+    branches:
+      - work/d074-primary-freeze
+
+permissions:
+  contents: read
+
+jobs:
+  mosaic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Discover target-page hits and save signed primary snippet images
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p d074-snippet-mosaic/images
+          python3 - <<'PY'
+          import html, json, pathlib, re, time, urllib.parse, urllib.request, hashlib
+
+          VID='KRV2_jMW8-wC'
+          OUT=pathlib.Path('d074-snippet-mosaic')
+          IMG=OUT/'images'
+          headers={
+            'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
+            'Accept-Language':'es-MX,es;q=0.9,en;q=0.8',
+          }
+          targets={
+            'A': {'page':'PA372','queries':[
+              'trabajo manual',
+              'trabajo manual esencialmente práctico',
+              'educación integral del alumno',
+              'resultados educativos formas de trabajo',
+              'alumno manifieste su gusto artístico',
+              'finalidad esencial de estas actividades',
+              'realización material de la obra',
+              'capacitar al alumno',
+            ]},
+            'B': {'page':'PA21','queries':[
+              'Consejo Nacional',
+              'Consejo Nacional Educación Superior',
+              'órgano de consulta necesaria',
+              'Gobierno Federal todo lo concerniente',
+              'Artículo 2 Consejo tendrá',
+              'misión estudiar condiciones necesidades',
+              'cultura superior República',
+            ]},
+            'C': {'page':'PA444','queries':[
+              'usuarios', 'asistencia', 'asistencia usuarios', 'lectores',
+              'bibliotecas usuarios', 'bibliotecas asistencia',
+              'primeros seis meses', 'seis primeros meses', 'primer semestre 1937',
+              '1937 usuarios', '1937 bibliotecas', 'Departamento de Bibliotecas',
+              'servicio bibliotecas', 'lectura pública', 'concurrencia bibliotecas',
+              'asistentes bibliotecas', 'lectores 1937', 'usuarios 1937 bibliotecas',
+              'enero junio 1937', 'enero a junio', 'estadística bibliotecas',
+            ]},
+            'D': {'page':'PA35','queries':[
+              'becas', 'distribución becas', 'entidades federativas',
+              'clases de trabajadores', 'obreros ejidatarios organizados',
+              'censos industrial ejidal', '10 de abril de 1935',
+              'mil becas', '45.00 mensuales', 'hijos de maestros rurales',
+              'libre del trabajo asalariado etapa educativa',
+            ]},
+          }
+
+          def fetch(url, timeout=60, accept=None, referer=None):
+            h=dict(headers)
+            if accept: h['Accept']=accept
+            if referer: h['Referer']=referer
+            req=urllib.request.Request(url,headers=h)
+            with urllib.request.urlopen(req,timeout=timeout) as r:
+              return r.status,r.headers.get('Content-Type',''),r.geturl(),r.read()
+
+          report={'volume_id':VID,'targets':{}}
+          for slot,cfg in targets.items():
+            rows=[]
+            for qi,q in enumerate(cfg['queries'],1):
+              sw=f'https://books.google.com/books?id={VID}&jscmd=SearchWithinVolume2&q={urllib.parse.quote(q)}'
+              row={'query':q,'search_url':sw,'results':[],'target_hit':False,'images':[]}
+              try:
+                st,ct,final,body=fetch(sw,accept='application/json,*/*;q=0.8')
+                data=json.loads(body.decode('utf-8',errors='replace'))
+                results=data.get('search_results',[]) or []
+                row['results']=[{'page_id':r.get('page_id'),'page_number':r.get('page_number'),'snippet_text':r.get('snippet_text')} for r in results]
+                hit=next((r for r in results if r.get('page_id')==cfg['page']),None)
+                row['target_hit']=bool(hit)
+                if hit:
+                  pageurl=f'https://books.google.com/books?id={VID}&pg={cfg["page"]}&dq={urllib.parse.quote(q)}&hl=es'
+                  pst,pct,pfinal,pbody=fetch(pageurl)
+                  text=html.unescape(pbody.decode('utf-8',errors='replace')).replace('\\/','/').replace('\\u0026','&')
+                  urls=re.findall(r'https://books\.google\.com/books/content\?[^"\'<> ]+',text)
+                  # retain signed snippet URLs for the exact target page, exclude front covers
+                  urls=[u for u in dict.fromkeys(urls) if f'pg={cfg["page"]}' in u and 'printsec=frontcover' not in u and ('sig=' in u or 'imgtk=' in u)]
+                  for ui,u in enumerate(urls,1):
+                    try:
+                      ist,ict,ifinal,ib=fetch(u,accept='image/*,*/*;q=0.8',referer=pageurl)
+                      rec={'url':u,'status':ist,'content_type':ict,'bytes':len(ib),'sha256':hashlib.sha256(ib).hexdigest()}
+                      if ist==200 and ict.startswith('image/') and len(ib)>1000:
+                        ext='.png' if 'png' in ict else '.jpg'
+                        name=f'{slot}-{cfg["page"]}-q{qi:02d}-{ui:02d}{ext}'
+                        (IMG/name).write_bytes(ib); rec['saved']=name
+                      row['images'].append(rec)
+                    except Exception as e:
+                      row['images'].append({'url':u,'error':f'{type(e).__name__}: {e}'})
+              except Exception as e:
+                row['error']=f'{type(e).__name__}: {e}'
+              rows.append(row)
+              print('SLOT',slot,'TARGET',cfg['page'],'QUERY',repr(q),'HIT',row['target_hit'])
+              for r in row.get('results',[]):
+                print(' ',r.get('page_id'),'p.',r.get('page_number'),'::',r.get('snippet_text'))
+              for im in row.get('images',[]): print(' IMAGE',im.get('saved'),im.get('bytes'),im.get('sha256'),im.get('error'))
+              time.sleep(.25)
+            report['targets'][slot]={'page':cfg['page'],'queries':rows}
+
+          (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          print('SAVED IMAGES',len(list(IMG.glob('*'))))
+          PY
+
+      - name: Build visual contact sheets without OCR
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image,ImageOps,ImageDraw
+          root=Path('d074-snippet-mosaic/images')
+          out=Path('d074-snippet-mosaic')
+          for slot in ['A','B','C','D']:
+            files=sorted(root.glob(f'{slot}-*'))
+            if not files: continue
+            ims=[]
+            for f in files:
+              im=Image.open(f).convert('RGB')
+              canvas=Image.new('RGB',(max(900,im.width+20),im.height+60),'white')
+              canvas.paste(im,(10,40))
+              ImageDraw.Draw(canvas).text((10,10),f.name,fill='black')
+              ims.append(canvas)
+            w=max(i.width for i in ims); h=sum(i.height for i in ims)
+            sheet=Image.new('RGB',(w,h),'white'); y=0
+            for im in ims: sheet.paste(im,(0,y)); y+=im.height
+            sheet.save(out/f'{slot}-contact-sheet.jpg',quality=92)
+            print(slot,'contact sheet',len(files),'images',w,h)
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-primary-snippet-mosaic
+          path: d074-snippet-mosaic/
+          retention-days: 1
+          if-no-files-found: error
