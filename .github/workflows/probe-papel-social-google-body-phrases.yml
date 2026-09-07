@@ -1,0 +1,82 @@
+name: Probe body phrases in Google Books scan for El papel social del maestro rural
+
+on:
+  push:
+    branches: [freeze-papel-social-maestro-rural-control]
+    paths:
+      - ".github/workflows/probe-papel-social-google-body-phrases.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Search exact body-language targets in public Google Books index
+        shell: python
+        run: |
+          import json,pathlib,re,urllib.parse,urllib.request,http.cookiejar
+          out=pathlib.Path('body-phrase-probe'); out.mkdir()
+          gid='PhRQAAAAMAAJ'
+          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36','Accept-Language':'es-MX,es;q=0.9,en;q=0.7'}
+          cj=http.cookiejar.CookieJar(); opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+          queries=[
+            'dos misiones que cumplir',
+            'respecto al niño',
+            'respecto a la comunidad',
+            'educándolo',
+            'mejorándola',
+            'funciones como educador',
+            'el maestro rural tiene',
+            'sociedad conjunto armonioso',
+            'familia célula social',
+            'comunidad mejorándola',
+            'misiones que cumplir',
+            'educador necesita',
+          ]
+          report={}; discovered=[]
+          for q in queries:
+              url='https://books.google.com/books?'+urllib.parse.urlencode({'jscmd':'SearchWithinVolume2','q':q,'vid':gid})
+              item={'url':url}
+              try:
+                  req=urllib.request.Request(url,headers=headers)
+                  with opener.open(req,timeout=90) as r: body=r.read(); item.update(status=r.status,final_url=r.geturl(),bytes=len(body))
+                  text=body.decode('utf-8',errors='replace')
+                  obj=json.loads(text)
+                  item['response']=obj
+                  for x in obj.get('search_results',[]) if isinstance(obj,dict) else []:
+                      pid=x.get('page_id');
+                      if pid and pid not in discovered: discovered.append(pid)
+              except Exception as exc:
+                  item['error']=repr(exc)
+              report[q]=item
+          # For every discovered page, verify whether the public reader exposes an exact signed image URL.
+          pages={}
+          for pid in discovered:
+              page_url='https://books.google.com/books?'+urllib.parse.urlencode({'id':gid,'pg':pid,'hl':'es','focus':'viewport'})
+              p={'page_url':page_url}
+              try:
+                  req=urllib.request.Request(page_url,headers=headers)
+                  with opener.open(req,timeout=90) as r: body=r.read(); p.update(status=r.status,final_url=r.geturl(),bytes=len(body))
+                  text=body.decode('utf-8',errors='replace').replace('\\u0026','&').replace('&amp;','&')
+                  signed=[]
+                  for u in re.findall(r'https://books\.google\.com/books/content\?[^"\' <>]+',text,re.I):
+                      qs=urllib.parse.parse_qs(urllib.parse.urlparse(u).query)
+                      if qs.get('id',[''])[0]==gid and qs.get('pg',[''])[0]==pid and qs.get('img',[''])[0]=='1' and qs.get('sig',[''])[0]:
+                          signed.append(u)
+                  p['signed_urls']=list(dict.fromkeys(signed))
+              except Exception as exc:
+                  p['error']=repr(exc)
+              pages[pid]=p
+          compact={'queries':{q:{'status':v.get('status'),'response':v.get('response'),'error':v.get('error')} for q,v in report.items()},'discovered_page_ids':discovered,'pages':pages}
+          (out/'report.json').write_text(json.dumps(compact,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(compact,ensure_ascii=False,indent=2))
+      - name: Upload body-phrase probe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-papel-social-google-body-phrase-probe
+          path: body-phrase-probe/
+          retention-days: 1
