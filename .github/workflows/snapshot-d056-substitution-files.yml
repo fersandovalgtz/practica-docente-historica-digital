@@ -1,0 +1,34 @@
+name: Snapshot D056 substitution files
+
+on:
+  push:
+    branches:
+      - "work/d053-explicit-pedagogical-act"
+    paths:
+      - ".github/workflows/snapshot-d056-substitution-files.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stage canonical substitution inputs
+        run: |
+          mkdir -p substitution-snapshot/data/samples substitution-snapshot/docs
+          cp data/samples/*.csv substitution-snapshot/data/samples/
+          cp README.md substitution-snapshot/
+          cp docs/PDHD_U1_COHORT_STATUS.md substitution-snapshot/docs/
+          cp docs/FRAGMENT_FREEZE_PROTOCOL.md substitution-snapshot/docs/
+          cp scripts/validate_*.py substitution-snapshot/
+          cp scripts/build_fragment_manifest.py substitution-snapshot/
+      - name: Upload one-day snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d056-substitution-snapshot
+          path: substitution-snapshot/
+          retention-days: 1
+          if-no-files-found: error
