@@ -1,0 +1,188 @@
+name: Refine D074 canonical remap
+
+on:
+  push:
+    branches:
+      - "work/d074-primary-freeze"
+    paths:
+      - ".github/workflows/refine-d074-canonical-remap.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query exact slot passages and probe related Google Books copies
+        shell: python
+        run: |
+          import html
+          import json
+          import pathlib
+          import re
+          import time
+          import urllib.parse
+          import urllib.request
+
+          canonical = "KRV2_jMW8-wC"
+          related_ids = [
+              "1HsQAAAAYAAJ", "3X8QAAAAYAAJ", "7OdDbshzWaUC", "InoQAAAAYAAJ",
+              "KH0QAAAAYAAJ", "N3wQAAAAYAAJ", "Xd0U5ozjxNgC", "e3wQAAAAYAAJ", "03wQAAAAYAAJ"
+          ]
+          out = pathlib.Path("d074-refine")
+          out.mkdir(exist_ok=True)
+          headers = {
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+              "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
+          }
+
+          def fetch(url, timeout=60):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=timeout) as response:
+                  return response.status, response.headers.get("Content-Type", ""), response.geturl(), response.read()
+
+          queries = {
+              "A": [
+                  "trabajo manual medio alumno manifieste gusto artistico",
+                  "finalidad esencial actividades realizacion material obra",
+                  "capacitar alumno trabajo manual",
+                  "geometria debe ensenarse forma intuitiva practica",
+                  "problemas reales medicion geometria",
+              ],
+              "B": [
+                  "organo de consulta necesaria del Gobierno Federal",
+                  "Articulo 2 Consejo tendra",
+                  "Consejo Nacional Educacion Superior Investigacion Cientifica pp 21",
+              ],
+              "C": [
+                  "Funcion social de las Bibliotecas Prueba escrita",
+                  "bibliotecas escolares prueba escrita",
+                  "Departamento de Bibliotecas documentos",
+                  "organizacion funcionamiento bibliotecas escolares",
+                  "propaganda favor lectura",
+                  "bibliotecas ambulantes",
+                  "servicio bibliotecas",
+              ],
+              "D": [
+                  "distribucion de las becas por entidades federativas y por clases de trabajadores",
+                  "DISTRIBUCION DE BECAS EN LA REPUBLICA",
+                  "becas correspondiente a cada Entidad Federativa",
+              ],
+          }
+
+          query_report = {}
+          for slot, slot_queries in queries.items():
+              rows = []
+              for q in slot_queries:
+                  url = f"https://books.google.com/books?id={canonical}&jscmd=SearchWithinVolume2&q={urllib.parse.quote(q)}"
+                  row = {"query": q}
+                  try:
+                      status, ctype, final_url, body = fetch(url)
+                      data = json.loads(body.decode("utf-8", errors="replace"))
+                      row["status"] = status
+                      row["number_of_results"] = data.get("number_of_results")
+                      row["results"] = [
+                          {
+                              "page_id": r.get("page_id"),
+                              "page_number": r.get("page_number"),
+                              "snippet_text": r.get("snippet_text"),
+                          }
+                          for r in data.get("search_results", [])[:10]
+                      ]
+                  except Exception as exc:
+                      row["error"] = f"{type(exc).__name__}: {exc}"
+                  rows.append(row)
+              query_report[slot] = rows
+
+          # Probe related Google Books IDs using selected-page HTML. A related
+          # object is useful only if it exposes a public PDF; identity is then
+          # checked from the PDF itself in the next step.
+          sibling_report = {}
+          for volume_id in related_ids:
+              row = {"volume_id": volume_id, "pdf_candidates": []}
+              selected = f"https://books.google.com/books?id={volume_id}&pg=PA21"
+              try:
+                  status, ctype, final_url, body = fetch(selected)
+                  text = html.unescape(body.decode("utf-8", errors="replace")).replace("\\/", "/").replace("\\u0026", "&")
+                  row.update({"status": status, "content_type": ctype, "bytes": len(body)})
+                  title_patterns = [
+                      r'<meta[^>]+(?:name|property)=["\'](?:citation_title|og:title)["\'][^>]+content=["\']([^"\']+)',
+                      r'<title[^>]*>(.*?)</title>',
+                  ]
+                  for pat in title_patterns:
+                      m = re.search(pat, text, flags=re.I|re.S)
+                      if m:
+                          row["title_hint"] = re.sub(r"\s+", " ", m.group(1)).strip()[:300]
+                          break
+                  pdfs = re.findall(
+                      r'https?://books\.google\.[^/]+/books/download/[^"\'<> ]+?\.pdf\?[^"\'<> ]+',
+                      text,
+                  )
+                  dedup = []
+                  seen = set()
+                  for u in pdfs:
+                      if u not in seen:
+                          seen.add(u); dedup.append(u)
+                  row["pdf_candidates"] = dedup[:5]
+                  if dedup:
+                      try:
+                          pstatus, pctype, pfinal, pbody = fetch(dedup[0], timeout=180)
+                          row["pdf_attempt"] = {
+                              "status": pstatus,
+                              "content_type": pctype,
+                              "bytes": len(pbody),
+                              "final_url": pfinal,
+                          }
+                          if pstatus == 200 and pctype.startswith("application/pdf") and pbody.startswith(b"%PDF") and len(pbody) > 1000000:
+                              dest = out / f"related-{volume_id}.pdf"
+                              dest.write_bytes(pbody)
+                              row["pdf_attempt"]["saved"] = dest.name
+                      except Exception as exc:
+                          row["pdf_error"] = f"{type(exc).__name__}: {exc}"
+              except Exception as exc:
+                  row["error"] = f"{type(exc).__name__}: {exc}"
+              sibling_report[volume_id] = row
+              time.sleep(0.35)
+
+          report = {"canonical": canonical, "query_report": query_report, "related": sibling_report}
+          (out / "refine-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+          print("=== CANONICAL QUERY RESULTS ===")
+          for slot, rows in query_report.items():
+              print(f"SLOT {slot}")
+              for row in rows:
+                  print("QUERY", row["query"])
+                  if row.get("error"):
+                      print(" ERROR", row["error"])
+                  for r in row.get("results", []):
+                      print(" ", r.get("page_id"), "p.", r.get("page_number"), "::", r.get("snippet_text"))
+          print("=== RELATED COPY PROBE ===")
+          for vid, row in sibling_report.items():
+              print(vid, "title=", row.get("title_hint"), "pdfs=", len(row.get("pdf_candidates", [])), "pdf_attempt=", row.get("pdf_attempt"), "error=", row.get("error") or row.get("pdf_error"))
+
+      - name: Inspect identities of any recovered related PDFs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v pdftotext >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq poppler-utils
+          fi
+          shopt -s nullglob
+          for pdf in d074-refine/related-*.pdf; do
+            base="${pdf%.pdf}"
+            pdftotext -f 1 -l 20 -layout "$pdf" "${base}-front.txt" || true
+            echo "=== IDENTITY $(basename "$pdf") ==="
+            grep -Eina "1936|1937|1938|1939|TOMO|MEMORIA|SECRETARIA|EDUCACION" "${base}-front.txt" | head -80 || true
+          done
+
+      - name: Upload one-day refinement artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdhd-d074-refinement
+          path: d074-refine/
+          retention-days: 1
+          if-no-files-found: error
