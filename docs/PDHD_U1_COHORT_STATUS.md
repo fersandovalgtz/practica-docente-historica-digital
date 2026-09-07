@@ -14,10 +14,10 @@ Reference cut: **2026-09-06**
 | Frozen pilot documents | 24 | document-selection gate passed |
 | Target fixed fragments | 96 | preparation active |
 | Fragment locator rows resolved/candidate | **95 / 96** | 99.0% of reliability slots localized
-| Fully frozen fragments | **83 / 96** | page-resolved conversion phase active |
+| Fully frozen fragments | **84 / 96** | page-resolved conversion phase active |
 | Human-validated pedagogical fragments | 0 | not started |
 
-The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **95 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. **83 units** have crossed the stronger frozen-fragment gate.
+The 75-object cohort remains a stabilization corpus, not a national representative sample. PDHD-U1 now has **95 of the 96 deterministic reliability slots** tied to a documented page, scan or section target. **84 units** have crossed the stronger frozen-fragment gate.
 
 ## Sampling status
 
@@ -25,7 +25,7 @@ The first reliability corpus remains frozen in `data/samples/pilot_document_sele
 
 ## Frozen-fragment evidence
 
-**20 selected documents** now have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
+**21 selected documents** now have complete four-slot batches. `PDHD-D000002`, *El Escolar Mexicano* of 2 September 1888, contributes `PDHD-F000013`–`PDHD-F000016`. `PDHD-D000001`, *La Enseñanza Objetiva* of 12 December 1891, contributes `PDHD-F000017`–`PDHD-F000020`. `PDHD-D000055`, the first 1921 number of *El Maestro. Revista de Cultura Nacional*, contributes `PDHD-F000053`–`PDHD-F000056`.
 
 `PDHD-D000064`, *El Instructor* of 1 January 1889, now contributes a complete A–D batch from the exact HNDM issue cross-walked from UNAM-RI `750865`. The recovery exposes a second HNDM interface hazard: supplying anio/mes/dia in the viewer URL silently returned the 1 May 1888 issue, so that first artifact was rejected after masthead inspection. UNAM's structured record supplied persistent `item_first_page_id` `558a3e407d1ed64f17176fc2`; entering through that ID and enforcing an `1889-01-01` identity gate recovered exactly eight unique primary pages. Direct inspection fixes F000005 on p. 5 as a learner-directed grammatical prescription, confirms F000006 on p. 8 as an institutional prize-distribution span, fixes a distinct p. 8 source-critical representation of women's education for F000007, and uses the p. 1 publication-conditions block as F000008 control.
 
@@ -46,9 +46,9 @@ The first reliability corpus remains frozen in `data/samples/pilot_document_sele
 
 `PDHD-D000052`, *El Maestro. Revista de Cultura Nacional*, núm. 4 (julio de 1921), now contributes a complete A–D batch from Internet Archive container `elmaestrorevista146mexi`. Direct images identify printed p. 341 at `n26`, p. 351 at `n36`, p. 352 at `n37`, and pp. 363–365 at `n48`–`n50`; the already frozen control remains `n4`. F000045 deliberately replaces its verified-but-weak Montelongo target with numbered item 7 of *Mejores maestros* on p. 352, where a controlled `guide` act is explicit. F000046 fixes item 3 on p. 351 as an institutional relation around teacher selection, and F000047 fixes the first p. 341 paragraph of *Historia de México* as source-critical ideological framing.
 
-Internet Archive contributes four additional image-verified controls plus the institutional region of *El Maestro*. `PDHD-F000050` and `PDHD-F000052` are fixed from BookReader leaves `n237` and `n236` in tomo II, núm. 3. `PDHD-F000044` uses the issue-II cover cartouche at `n104`; `PDHD-F000048` uses the issue-IV cover cartouche at `n4`. These conversions preserve `reader_page_target != analytical_span`: the reader route supported retrieval, while the final boundary came only from visual inspection of the primary image.
+Internet Archive now supplies a complete four-slot batch for the substituted pilot position 13. Exhaustive review of the outgoing December 1921 issue (`PDHD-D000053`) confirmed that *El Cardo* and the remaining lexical candidates do not satisfy deterministic slot A without weakening the explicit-act rule. The pilot therefore substitutes `PDHD-D000056`, *El Maestro*, tomo II, núm. I, October 1921. The substitution preserves E3, México, document type `issue` and the four-document publication concentration.
 
-The corrected tomo II, núm. 3 recovery now adds `PDHD-F000051` from printed p. 294 / BookReader `n305` as a directly inspected source-critical span in *Democracia Criolla*. The same inspection maps *El Cardo* to pp. 299–300 / `n310`–`n311`, strengthening `PDHD-F000049` to a direct primary locator while deliberately leaving it unfrozen: the visible literary school-reading unit does not itself satisfy slot A’s explicit pedagogical-act requirement. This preserves a failed-fit decision rather than converting mere educational context into a positive pedagogical fragment.
+Direct primary inspection fixes `PDHD-F000049` on printed p. 83 / BookReader `n86` in *La enseñanza del dibujo*, where a compact sequence specifies teacher demonstrations, pupil drawings, a cinematograph visit and subsequent reproduction of what was observed. `PDHD-F000050` fixes the SEP/Talleres institutional imprint at `n5`; `PDHD-F000051` fixes a source-critical passage in Gabriela Mistral’s letter to José Vasconcelos on printed p. 57 / `n60`; and `PDHD-F000052` fixes the October 1921 bibliographic cover at `n4` as the control. The failed December fit remains versioned as provenance, while its former pilot-ID links are retired.
 
 `PDHD-D000066`, *El esfuerzo educativo en México* (1928), contributes `PDHD-F000060` as a frozen title-page control. Google Books directly exposes `PR5`. A dedicated recovery workflow fetched the live PR5 HTML, resolved its public PDF link, downloaded a valid 29.9 MB primary PDF and rendered the relevant front matter. Direct inspection fixes only the bibliographic title-page core.
 
@@ -75,7 +75,7 @@ The `PDHD-F000033` recovery established the post-sprint exact-pointer workflow: 
 
 ## Remaining localization work
 
-The union of all `fragment_locator_progress*.csv` shards contains **95/96** pilot slots. Eighty-three are frozen. The remaining **12** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **1 slots remain without a locator.**
+The union of all `fragment_locator_progress*.csv` shards contains **95/96** pilot slots. Eighty-four are frozen. The remaining **11** located rows include exact scholarly page pointers, section starts, reproduced facsimiles and snippet-resolved candidates that have not yet crossed the exact-boundary primary-inspection gate. **1 slots remain without a locator.**
 
 The dedicated direct-primary freeze-conversion queue remains empty after its P1–P4 cohort was exhausted. The active phase now converts strong page-resolved candidates through direct historical-object inspection and opportunistically fills missing deterministic slots when the same inspected page provides structurally distinct evidence.
 
@@ -113,7 +113,7 @@ Mandatory distinctions remain:
 
 Human annotation has **not** started. The target remains 96 frozen reliability fragments, four per selected document, followed by a separate 12-fragment calibration set. Every reliability fragment must retain an immutable ID, source identity, page/localizer, fixed boundary, access/rights basis and selection role.
 
-The current 77 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with an alternate primary scan. They do not justify coder labeling before the package is complete.
+The current 84 frozen units demonstrate that the pipeline works across HNDM, BVMC, Internet Archive and Google Books primary interfaces and can reconcile independent issue identity with an alternate primary scan. They do not justify coder labeling before the package is complete.
 
 ## Rights constraint
 
@@ -123,4 +123,4 @@ Primary-source access does not equal republication permission. HNDM remains `met
 
 PDHD-U1 remains in **active pilot freezing**. Issue #1 stays open through completion of the 96-fragment package and the first independent human reliability round.
 
-The project is now at **95/96 localized** and **83/96 frozen**. Recent primary-object recovery has expanded the frozen package while preserving the unlocalized complement at 1. The next quantitative localization checkpoint is **95/96**, while the stronger scientific priority remains completing document batches without weakening the evidence hierarchy.
+The project is now at **95/96 localized** and **84/96 frozen**. Recent primary-object recovery has expanded the frozen package while preserving the unlocalized complement at 1. The next quantitative localization checkpoint is **95/96**, while the stronger scientific priority remains completing document batches without weakening the evidence hierarchy.
