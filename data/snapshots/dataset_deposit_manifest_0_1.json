@@ -10,10 +10,10 @@
   "package_base_commit": "9df8415056b2198be7a4bbe8e2270b9a63e4d3a7",
   "dataset_payload_commit": "e83df0e874d394dc9d66e124799d9d3222895283",
   "zenodo_record": {
-    "doi": null,
+    "doi": "10.5281/zenodo.22659767",
     "concept_doi": null,
     "record_url": null,
-    "status": "prepared_not_published"
+    "status": "doi_reserved_not_published"
   },
   "scientific_state": {
     "selected_pilot_documents": 24,
@@ -60,9 +60,9 @@
     "full_third_party_transcriptions_in_deposit": false
   },
   "integrity": {
-    "archive_sha256": null,
-    "archive_filename": null,
-    "verification_status": "dataset_payload_commit_fixed; final_archive_checksum_pending"
+    "archive_sha256": "1484838be4c7d29c491f65b88ce65fa8be4a437c64c376ee24e89faf9383ac35",
+    "archive_filename": "PDHD-U1-dataset-0.1.0-prevalidation.zip",
+    "verification_status": "archive_verified; doi_reserved_not_published"
   },
-  "notes": "dataset_payload_commit identifies the commit where the dataset payload and deposit metadata were fixed. The final uploaded archive is independently locked by its filename and checksum, avoiding a self-referential commit field. DOI and archive checksum remain null until the authenticated Zenodo draft and final archive exist. Human semantic validation remains a separate gate."
+  "notes": "The Zenodo DOI is reserved but was not publicly resolvable when recorded. The exact deposit archive is independently locked by filename and SHA-256. dataset_payload_commit identifies the commit where the dataset payload and deposit metadata were fixed; the archive checksum identifies the exact file intended for Zenodo. Human semantic validation remains a separate gate."
 }
