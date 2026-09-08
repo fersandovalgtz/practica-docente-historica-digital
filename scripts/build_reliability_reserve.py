@@ -29,6 +29,17 @@ def fragment_id(selection_order: int, slot: str) -> str:
     return f"PDHD-F{((selection_order - 1) * 4 + 1 + SLOTS.index(slot)):06d}"
 
 
+def frozen_union() -> set[str]:
+    frozen: set[str] = set()
+    for path in sorted(SAMPLES.glob("frozen_fragments*.csv")):
+        for row in read_csv(path):
+            fid = row["fragment_id"]
+            if fid in frozen:
+                raise RuntimeError(f"duplicate frozen fragment across shards: {fid}")
+            frozen.add(fid)
+    return frozen
+
+
 def expected_rows() -> list[dict[str, str]]:
     calibration = {r["fragment_id"] for r in read_csv(SAMPLES / "calibration_manifest_0_1.csv")}
     selected = [r for r in read_csv(SAMPLES / "pilot_document_selection_0_1.csv") if r["status"] == "selected"]
@@ -54,16 +65,22 @@ def expected_rows() -> list[dict[str, str]]:
                 }
             )
 
+    reserve = {r["fragment_id"] for r in rows}
+    frozen = frozen_union()
     if len(calibration) != 12:
         raise RuntimeError(f"expected 12 calibration fragments, got {len(calibration)}")
     if len(rows) != 84:
         raise RuntimeError(f"expected 84 reserve fragments, got {len(rows)}")
-    if len({r["fragment_id"] for r in rows}) != 84:
+    if len(reserve) != 84:
         raise RuntimeError("duplicate fragment in reliability reserve")
-    if calibration & {r["fragment_id"] for r in rows}:
+    if calibration & reserve:
         raise RuntimeError("calibration/reliability reserve overlap")
-    if len(calibration | {r["fragment_id"] for r in rows}) != 96:
-        raise RuntimeError("calibration plus reserve does not reconstruct the frozen 96")
+    if calibration | reserve != frozen:
+        missing = sorted(frozen - (calibration | reserve))
+        extra = sorted((calibration | reserve) - frozen)
+        raise RuntimeError(f"calibration plus reserve does not equal frozen union; missing={missing} extra={extra}")
+    if len(frozen) != 96:
+        raise RuntimeError(f"expected frozen union of 96 fragments, got {len(frozen)}")
     return rows
 
 
@@ -97,7 +114,7 @@ def main() -> int:
         actual = OUT.read_text(encoding="utf-8") if OUT.exists() else None
         if actual != expected:
             raise SystemExit("reliability reserve is not reproducible")
-        print("PDHD reliability reserve check passed (84 fragments; zero calibration overlap)")
+        print("PDHD reliability reserve check passed (84 fragments; exact frozen complement; zero calibration overlap)")
         return 0
     OUT.write_text(expected, encoding="utf-8")
     print(OUT.relative_to(ROOT))
