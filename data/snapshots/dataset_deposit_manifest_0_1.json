@@ -1,0 +1,68 @@
+{
+  "deposit_id": "PDHD-U1-DATASET-0.1-20260908",
+  "resource_type": "dataset",
+  "version": "0.1.0-prevalidation",
+  "reference_date_local": "2026-09-08",
+  "repository": "https://github.com/fersandovalgtz/practica-docente-historica-digital",
+  "scientific_snapshot_id": "PDHD-U1-PREVALIDATION-0.1-20260907",
+  "scientific_snapshot_commit": "513d64ee6b8ba053ceed0f204bc1419f37954365",
+  "scientific_snapshot_tree": "21d5ac4245d52254ae0cbd14828386f01d5d0842",
+  "package_base_commit": "9df8415056b2198be7a4bbe8e2270b9a63e4d3a7",
+  "canonical_deposit_commit": null,
+  "zenodo_record": {
+    "doi": null,
+    "concept_doi": null,
+    "record_url": null,
+    "status": "prepared_not_published"
+  },
+  "scientific_state": {
+    "selected_pilot_documents": 24,
+    "target_fragments": 96,
+    "localized_fragments": 96,
+    "frozen_fragments": 96,
+    "calibration_fragments": 12,
+    "reliability_reserve_fragments": 84,
+    "human_coded_fragments": 0,
+    "formal_reliability_round_started": false,
+    "gold_labels": 0
+  },
+  "minimum_archival_surfaces": [
+    "data/catalog/documents.csv",
+    "data/catalog/sources.csv",
+    "data/catalog/rights_registry.csv",
+    "data/catalog/object_aliases.csv",
+    "data/catalog/chronology_conflicts.csv",
+    "data/samples/pilot_document_selection_0_1.csv",
+    "data/samples/frozen_fragments_0_1.csv",
+    "data/samples/pilot_document_substitutions_0_1.csv",
+    "data/samples/retrieval_attempts.csv",
+    "data/samples/calibration_manifest_0_1.csv",
+    "data/samples/reliability_reserve_0_1.csv",
+    "data/samples/codebook_registry.csv",
+    "data/snapshots/prevalidation_snapshot_0_1.json",
+    "schemas/document.schema.json",
+    "schemas/pedagogical_fragment.schema.json",
+    "schemas/annotation.schema.json",
+    "schemas/machine_candidate.schema.json",
+    "schemas/gold_annotation.schema.json",
+    "docs/DATASET_CARD_0_1.md",
+    "docs/DATA_DICTIONARY.md",
+    "docs/SCHEMA_GUIDE_0_1.md",
+    "PROVENANCE.md",
+    "RIGHTS.md",
+    "DATA_LICENSE.md",
+    "CITATION.cff"
+  ],
+  "license_boundary": {
+    "pdhd_original_derived_data": "CC BY 4.0 where licensable by PDHD",
+    "third_party_source_materials": "not relicensed by PDHD; source-specific rights apply",
+    "source_facsimiles_in_deposit": false,
+    "full_third_party_transcriptions_in_deposit": false
+  },
+  "integrity": {
+    "archive_sha256": null,
+    "archive_filename": null,
+    "verification_status": "pending_canonical_deposit_commit_and_archive"
+  },
+  "notes": "The null DOI, canonical deposit commit and archive checksum fields are intentional until the Zenodo draft is created and the immutable archive is generated. They must not be interpreted as missing scientific validation. Human semantic validation remains a separate gate."
+}
