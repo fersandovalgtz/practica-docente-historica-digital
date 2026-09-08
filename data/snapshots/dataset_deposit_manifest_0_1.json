@@ -8,7 +8,7 @@
   "scientific_snapshot_commit": "513d64ee6b8ba053ceed0f204bc1419f37954365",
   "scientific_snapshot_tree": "21d5ac4245d52254ae0cbd14828386f01d5d0842",
   "package_base_commit": "9df8415056b2198be7a4bbe8e2270b9a63e4d3a7",
-  "canonical_deposit_commit": "e83df0e874d394dc9d66e124799d9d3222895283",
+  "dataset_payload_commit": "e83df0e874d394dc9d66e124799d9d3222895283",
   "zenodo_record": {
     "doi": null,
     "concept_doi": null,
@@ -62,7 +62,7 @@
   "integrity": {
     "archive_sha256": null,
     "archive_filename": null,
-    "verification_status": "canonical_deposit_commit_fixed; archive_checksum_pending"
+    "verification_status": "dataset_payload_commit_fixed; final_archive_checksum_pending"
   },
-  "notes": "The canonical deposit commit is fixed. DOI and archive checksum remain null until the authenticated Zenodo draft is created and the immutable source archive for this commit is generated. Human semantic validation remains a separate gate."
+  "notes": "dataset_payload_commit identifies the commit where the dataset payload and deposit metadata were fixed. The final uploaded archive is independently locked by its filename and checksum, avoiding a self-referential commit field. DOI and archive checksum remain null until the authenticated Zenodo draft and final archive exist. Human semantic validation remains a separate gate."
 }
