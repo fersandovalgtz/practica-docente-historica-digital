@@ -44,7 +44,13 @@ jobs:
         run: python scripts/validate_calibration_package.py
       - name: Check pre-registered 84-fragment reliability reserve
         run: python scripts/build_reliability_reserve.py --check
+      - name: Assert formal reliability human gate state
+        run: python scripts/build_formal_reliability_package.py --check-state
+      - name: Self-test formal reliability gate
+        run: python scripts/build_formal_reliability_package.py --self-test
       - name: Self-test blind coder-copy generator
         run: python scripts/prepare_calibration_coder_copy.py --self-test
       - name: Self-test completed calibration sheet validator
         run: python scripts/validate_completed_calibration_sheet.py --self-test
+      - name: Self-test calibration disagreement comparator
+        run: python scripts/compare_calibration_sheets.py --self-test
