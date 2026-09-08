@@ -13,8 +13,8 @@
   "zenodo_record": {
     "doi": "10.5281/zenodo.22659767",
     "concept_doi": null,
-    "record_url": null,
-    "status": "doi_reserved_not_published"
+    "record_url": "https://zenodo.org/records/22659767",
+    "status": "published_public"
   },
   "scientific_state": {
     "selected_pilot_documents": 24,
@@ -63,7 +63,7 @@
   "integrity": {
     "archive_sha256": "1484838be4c7d29c491f65b88ce65fa8be4a437c64c376ee24e89faf9383ac35",
     "archive_filename": "PDHD-U1-dataset-0.1.0-prevalidation.zip",
-    "verification_status": "archive_verified; doi_reserved_not_published"
+    "verification_status": "archive_verified; zenodo_published_public"
   },
-  "notes": "The Zenodo DOI is reserved but was not publicly resolvable when recorded. archive_source_commit identifies the exact repository state from which the canonical ZIP was generated. Future packaging must reconstruct that commit and verify the fixed SHA-256 rather than package mutable main. dataset_payload_commit identifies the earlier commit where the dataset payload and deposit metadata were first fixed. Human semantic validation remains a separate gate."
+  "notes": "The creator confirmed publication of the Zenodo record on 2026-09-08 at https://zenodo.org/records/22659767. archive_source_commit identifies the exact repository state from which the canonical ZIP was generated, and future packaging must reconstruct that commit and verify the fixed SHA-256 rather than package mutable main. dataset_payload_commit identifies the earlier commit where the dataset payload and deposit metadata were first fixed. concept_doi remains null until it is independently retrieved from Zenodo metadata. Human semantic validation remains a separate gate."
 }
