@@ -42,6 +42,8 @@ jobs:
         run: python scripts/build_calibration_package.py --check
       - name: Validate calibration blinding and codebook provenance
         run: python scripts/validate_calibration_package.py
+      - name: Check pre-registered 84-fragment reliability reserve
+        run: python scripts/build_reliability_reserve.py --check
       - name: Self-test blind coder-copy generator
         run: python scripts/prepare_calibration_coder_copy.py --self-test
       - name: Self-test completed calibration sheet validator
