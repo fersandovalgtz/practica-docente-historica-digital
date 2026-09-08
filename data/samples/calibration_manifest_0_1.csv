@@ -1,0 +1,13 @@
+item_id,calibration_order,fragment_id,document_id,selection_order,era_code,slot,publication,place,document_type,codebook_version,selection_seed,selection_basis,status
+CAL001,1,PDHD-F000086,PDHD-D000073,22,E3,B,Memoria relativa al estado que guarda el ramo de educación pública,México,official_report,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL002,2,PDHD-F000007,PDHD-D000064,2,E1,C,El Instructor,"Aguascalientes, Aguascalientes",hemerographic_object,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL003,3,PDHD-F000009,PDHD-D000063,3,E1,A,México intelectual,"Xalapa, Veracruz",hemerographic_object,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL004,4,PDHD-F000018,PDHD-D000001,5,E1,B,La Enseñanza Objetiva,Ciudad de México,issue,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL005,5,PDHD-F000027,PDHD-D000003,7,E1,C,La Enseñanza primaria,México,issue,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL006,6,PDHD-F000080,PDHD-D000071,20,E3,D,"Las misiones culturales, 1932-1933",México,institutional_monograph,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL007,7,PDHD-F000081,PDHD-D000078,21,E3,A,Memoria que indica el estado que guarda el ramo de educación pública,México,official_report,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL008,8,PDHD-F000040,PDHD-D000031,10,E1,D,La Enseñanza Moderna,"México, D.F.",issue,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL009,9,PDHD-F000041,PDHD-D000051,11,E3,A,El Maestro. Revista de Cultura Nacional,México,issue,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL010,10,PDHD-F000047,PDHD-D000052,12,E3,C,El Maestro. Revista de Cultura Nacional,México,issue,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL011,11,PDHD-F000062,PDHD-D000076,16,E3,B,Cómo dar a todo México un idioma,México,teacher_guidance,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
+CAL012,12,PDHD-F000092,PDHD-D000077,23,E4,D,Memoria de la Secretaría de Educación Pública,México,official_report,PDHD-CB-0.2-calibration,PDHD-CAL-0.1-20260907,metadata_only_structural_hash,selected_for_calibration
