@@ -1,0 +1,44 @@
+name: Source access / link problem
+description: Report an unavailable, moved, restricted or unstable public source URL.
+title: "[source] "
+labels: []
+body:
+  - type: input
+    id: identifier
+    attributes:
+      label: Related PDHD identifier
+      description: Source, document, alias, retrieval-attempt or fragment identifier when known.
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL
+    validations:
+      required: true
+  - type: dropdown
+    id: observed
+    attributes:
+      label: Observed condition
+      options:
+        - 404 / 410
+        - 401 / 403 / access restricted
+        - 429 / rate limited
+        - 5xx server error
+        - timeout
+        - DNS / TLS / network error
+        - redirect or moved object
+        - page loads but object is not accessible
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Include date/time, browser or command context, and any stable replacement locator if known.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "A broken URL is evidence about the URL, not proof that the historical source does not exist. PDHD preserves catalog identity separately from link health."

@@ -1,0 +1,47 @@
+name: Documentary correction
+description: Propose a correction to metadata, chronology, source identity, provenance or rights evidence.
+title: "[data] "
+labels: []
+body:
+  - type: input
+    id: identifier
+    attributes:
+      label: PDHD identifier
+      description: Provide the affected source/document/fragment/conflict/attempt identifier when known.
+      placeholder: PDHD-D000000
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current record
+      description: Quote only the minimal field/value needed to identify the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed correction
+    validations:
+      required: true
+  - type: input
+    id: evidence
+    attributes:
+      label: Primary evidence or repository locator
+      description: Prefer the primary object/catalog record. Secondary evidence may be supplied as discovery support, not as a substitute for primary inspection when the protocol requires it.
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale and uncertainty
+      description: Explain why the correction is stronger and whether a conflict should remain registered rather than normalized away.
+    validations:
+      required: true
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: Rights check
+      options:
+        - label: I have not attached restricted facsimiles or long source transcriptions without a documented redistribution basis.
+          required: true

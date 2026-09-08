@@ -1,0 +1,42 @@
+name: Technical defect
+description: Report a reproducibility, validation, dashboard or tooling problem.
+title: "[bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: "Use this form for technical defects. For documentary corrections or source-access problems, use the dedicated forms."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is failing or behaving incorrectly?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Include commands, identifiers, commit SHA, workflow run or browser context as applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: scientific
+    attributes:
+      label: Scientific impact
+      description: Could this affect provenance, rights, human/machine separation, counts, frozen boundaries or published outputs?
+    validations:
+      required: true
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Security check
+      options:
+        - label: This report does not expose credentials or a security exploit; security-sensitive reports follow SECURITY.md.
+          required: true
