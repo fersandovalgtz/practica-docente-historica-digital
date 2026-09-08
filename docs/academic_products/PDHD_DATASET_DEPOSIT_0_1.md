@@ -9,7 +9,8 @@
 **ORCID:** https://orcid.org/0000-0002-3168-6725  
 **Repository:** https://github.com/fersandovalgtz/practica-docente-historica-digital  
 **Scientific snapshot:** `PDHD-U1-PREVALIDATION-0.1-20260907`  
-**DOI:** to be reserved in Zenodo before publication of the deposit.
+**Reserved DOI:** `10.5281/zenodo.22659767`  
+**DOI status:** reserved in Zenodo; public publication/resolution not yet independently confirmed.
 
 ## Scientific state represented
 
@@ -19,7 +20,7 @@ The dataset therefore documents corpus construction, source identity, provenance
 
 ## Canonical archival contents
 
-The Zenodo deposit must archive the immutable GitHub source archive corresponding to the canonical deposit commit together with this deposit specification. The following files are the minimum scientific surfaces that define the dataset:
+The Zenodo deposit uses the verified archive `PDHD-U1-dataset-0.1.0-prevalidation.zip`, SHA-256 `1484838be4c7d29c491f65b88ce65fa8be4a437c64c376ee24e89faf9383ac35`. The following files are the minimum scientific surfaces that define the dataset:
 
 ### Corpus and catalog
 
@@ -69,24 +70,28 @@ Práctica Docente Histórica Digital (PDHD-U1) is a provenance-first historical 
 
 history of education; teaching practice; digital humanities; historical corpus; Mexico; provenance; reproducibility; FAIR data; source criticism; teacher education
 
-## Recommended citation before DOI assignment
+## Citation while DOI is reserved
 
-Sandoval Gutiérrez, Fernando. (2026). *Práctica Docente Histórica Digital (PDHD-U1): pre-validation corpus and provenance package for Mexican teaching-practice history* (Version 0.1.0-prevalidation) [Data set]. GitHub. Cite the immutable deposit commit and `PDHD-U1-PREVALIDATION-0.1-20260907`.
+The DOI `10.5281/zenodo.22659767` is reserved for this dataset but should not be described as an active public citation until the Zenodo record is published and resolves publicly.
+
+Provisional repository citation:
+
+Sandoval Gutiérrez, Fernando. (2026). *Práctica Docente Histórica Digital (PDHD-U1): pre-validation corpus and provenance package for Mexican teaching-practice history* (Version 0.1.0-prevalidation) [Data set]. GitHub. Scientific snapshot `PDHD-U1-PREVALIDATION-0.1-20260907`.
 
 ## Citation after Zenodo publication
 
-Replace the provisional GitHub citation with the Zenodo-generated citation and DOI. The DOI must identify this dataset record, not the associated data paper.
+Once publication is confirmed, use the Zenodo-generated citation with DOI `10.5281/zenodo.22659767`. The DOI identifies this dataset record, not the associated data paper.
 
 ## Deposit procedure
 
-1. Create a **new manual upload** in Zenodo and choose resource type **Dataset**.
-2. Reserve the DOI before publication.
+1. A manual Zenodo dataset deposit has been created and DOI `10.5281/zenodo.22659767` reserved.
+2. Upload the verified archive `PDHD-U1-dataset-0.1.0-prevalidation.zip` if it has not already been uploaded.
 3. Use the metadata in `docs/academic_products/PDHD_ZENODO_METADATA_0_1.json`.
-4. Upload the immutable source archive corresponding to the canonical deposit commit.
-5. Verify that no restricted source facsimiles or third-party historical transcriptions were introduced.
-6. Preview the record and verify creator name, ORCID, version, license, keywords and related GitHub repository.
-7. Publish the Zenodo record only after the archive checksum and commit identity have been recorded in `data/snapshots/dataset_deposit_manifest_0_1.json`.
-8. Add the assigned DOI back to the repository and to the data-paper manuscript in a subsequent versioned change.
+4. Verify that no restricted source facsimiles or third-party historical transcriptions were introduced.
+5. Preview the record and verify creator name, ORCID, version, license, keywords and related GitHub repository.
+6. Verify the uploaded file against SHA-256 `1484838be4c7d29c491f65b88ce65fa8be4a437c64c376ee24e89faf9383ac35` where the interface or local tooling permits.
+7. Publish the Zenodo record.
+8. After public resolution is confirmed, update `zenodo_record.status`, `record_url`, any concept DOI exposed by Zenodo, and the final dataset citation in the repository.
 
 ## Scientific boundary
 
