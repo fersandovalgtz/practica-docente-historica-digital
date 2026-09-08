@@ -9,6 +9,7 @@
   "scientific_snapshot_tree": "21d5ac4245d52254ae0cbd14828386f01d5d0842",
   "package_base_commit": "9df8415056b2198be7a4bbe8e2270b9a63e4d3a7",
   "dataset_payload_commit": "e83df0e874d394dc9d66e124799d9d3222895283",
+  "archive_source_commit": "0daec7850325f08dbb37e3fa053fb182e0e4093a",
   "zenodo_record": {
     "doi": "10.5281/zenodo.22659767",
     "concept_doi": null,
@@ -64,5 +65,5 @@
     "archive_filename": "PDHD-U1-dataset-0.1.0-prevalidation.zip",
     "verification_status": "archive_verified; doi_reserved_not_published"
   },
-  "notes": "The Zenodo DOI is reserved but was not publicly resolvable when recorded. The exact deposit archive is independently locked by filename and SHA-256. dataset_payload_commit identifies the commit where the dataset payload and deposit metadata were fixed; the archive checksum identifies the exact file intended for Zenodo. Human semantic validation remains a separate gate."
+  "notes": "The Zenodo DOI is reserved but was not publicly resolvable when recorded. archive_source_commit identifies the exact repository state from which the canonical ZIP was generated. Future packaging must reconstruct that commit and verify the fixed SHA-256 rather than package mutable main. dataset_payload_commit identifies the earlier commit where the dataset payload and deposit metadata were first fixed. Human semantic validation remains a separate gate."
 }
