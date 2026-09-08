@@ -1,0 +1,36 @@
+{
+  "snapshot_id": "PDHD-U1-PREVALIDATION-0.1-20260907",
+  "snapshot_type": "prevalidation_scientific_state",
+  "project_version": "0.1.0-dev",
+  "reference_date_local": "2026-09-07",
+  "repository": "https://github.com/fersandovalgtz/practica-docente-historica-digital",
+  "commit_sha": "513d64ee6b8ba053ceed0f204bc1419f37954365",
+  "tree_sha": "21d5ac4245d52254ae0cbd14828386f01d5d0842",
+  "commit_signature_verified_by_github": true,
+  "ci": {
+    "workflow": "Validate PDHD",
+    "run_number": 296,
+    "run_id": 34173543724,
+    "conclusion": "success"
+  },
+  "documentary_state": {
+    "selected_pilot_documents": 24,
+    "target_fragments": 96,
+    "localized_fragments": 96,
+    "frozen_fragments": 96,
+    "unlocalized_fragments": 0
+  },
+  "validation_state": {
+    "calibration_fragments": 12,
+    "calibration_selection_version": "PDHD-CAL-0.1-20260907",
+    "reliability_reserve_fragments": 84,
+    "reliability_reserve_version": "PDHD-RR-0.1-20260907",
+    "codebook_baseline": "PDHD-CB-0.2-calibration",
+    "human_coded_fragments": 0,
+    "formal_reliability_round_started": false,
+    "gold_labels": 0
+  },
+  "analysis_plan": "docs/ANALYSIS_PLAN_0_1.md",
+  "human_gate_protocol": "docs/FUTURE_HUMAN_GATE_PROTOCOL_0_1.md",
+  "notes": "This snapshot identifies a reproducible pre-validation state. It is not the final v0.1.0 release and does not claim human semantic validation or formal inter-coder reliability."
+}

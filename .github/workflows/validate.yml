@@ -54,3 +54,5 @@ jobs:
         run: python scripts/validate_completed_calibration_sheet.py --self-test
       - name: Self-test calibration disagreement comparator
         run: python scripts/compare_calibration_sheets.py --self-test
+      - name: Validate FAIR metadata and pre-validation snapshot
+        run: python scripts/validate_project_metadata.py
