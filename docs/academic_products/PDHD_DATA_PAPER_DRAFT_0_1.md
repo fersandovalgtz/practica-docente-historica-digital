@@ -5,7 +5,7 @@
 **ORCID:** https://orcid.org/0000-0002-3168-6725  
 **Project:** Práctica Docente Histórica Digital (PDHD)  
 **Repository:** https://github.com/fersandovalgtz/practica-docente-historica-digital  
-**Dataset DOI (reserved; publication pending):** https://doi.org/10.5281/zenodo.22659767  
+**Dataset DOI:** https://doi.org/10.5281/zenodo.22659767  
 **Scientific state described:** `PDHD-U1-PREVALIDATION-0.1-20260907`
 
 ## Abstract
@@ -92,7 +92,7 @@ The dataset is also deliberately incomplete at the semantic level. No claim abou
 
 The development repository is publicly available at https://github.com/fersandovalgtz/practica-docente-historica-digital. The canonical project citation is maintained in `CITATION.cff`. The exact pre-validation scientific state is recorded in `data/snapshots/prevalidation_snapshot_0_1.json`.
 
-A Zenodo DOI has been reserved for the PDHD-U1 pre-validation dataset: https://doi.org/10.5281/zenodo.22659767. At the time of this manuscript update, the DOI is reserved but the Zenodo record has not yet been independently confirmed as publicly published/resolvable. The exact deposit archive is `PDHD-U1-dataset-0.1.0-prevalidation.zip`, SHA-256 `1484838be4c7d29c491f65b88ce65fa8be4a437c64c376ee24e89faf9383ac35`. The archival deposit preserves the distinction between PDHD-created metadata and third-party historical source materials that PDHD is not licensed to redistribute.
+The PDHD-U1 pre-validation dataset was published in Zenodo on 8 September 2026 at https://zenodo.org/records/22659767 with DOI https://doi.org/10.5281/zenodo.22659767. The exact deposit archive is `PDHD-U1-dataset-0.1.0-prevalidation.zip`, SHA-256 `1484838be4c7d29c491f65b88ce65fa8be4a437c64c376ee24e89faf9383ac35`. The archival deposit preserves the distinction between PDHD-created metadata and third-party historical source materials that PDHD is not licensed to redistribute. Publication of the archival dataset does not alter the scientific validation state: human-coded fragments and gold labels remain at zero.
 
 ## Ethics and rights statement
 
