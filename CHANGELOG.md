@@ -19,6 +19,19 @@ All notable changes to PDHD are documented here.
 - `docs/DATASET_CARD_0_1.md` documenting intended uses, unsupported claims, rights constraints, coverage limitations and the distinction between documentary completion and semantic validation.
 - `codemeta.json` for interoperable FAIR software metadata.
 - Executable metadata consistency validation tying `VERSION`, `CITATION.cff`, CodeMeta, the pre-validation snapshot and the canonical 96/12/84 state together.
+- Public static metadata dashboard under `docs/`, with live distributions for era, documentary type, place, source repository, rights, retrieval provenance and versioned substitutions while exposing no semantic labels.
+- Comprehensive `docs/DATA_DICTIONARY.md`, `docs/SCHEMA_GUIDE_0_1.md` and a repository-quality audit documenting field semantics, schema responsibilities and residual maintenance debt.
+- Separate JSON field contracts for structural frozen fragments, human annotations, future human-adjudicated gold annotations and experimental `machine_candidate` annotations.
+- Scheduled/manual non-blocking source-link audit that distinguishes URL failure from historical-source existence and publishes a 30-day artifact rather than blocking canonical CI.
+- Leakage-aware 96-item machine-input gate: 12 neutral-boundary items are currently ready and 84 remain explicitly blocked from model coding until neutral boundaries exist.
+- Experimental machine-run registry and quarantine validator that prohibits coder/gold fields in model outputs.
+- Fully gated phase-5 descriptive pipeline with document-cluster bootstrap intervals, tabular outputs and standalone SVG figures; the current pre-validation state is required to remain closed.
+
+### Changed
+
+- `pedagogical_fragment.schema.json` now describes only structural/source-critical frozen-fragment evidence; semantic annotation fields were removed and moved to a dedicated annotation schema.
+- Historical one-off source-retrieval workflows are archived outside `.github/workflows` after the 96/96 freeze milestone, reducing accidental rerun risk while preserving provenance.
+- Canonical CI adds schema-separation, dashboard-boundary, link-classifier, machine-quarantine and phase-5 gate checks.
 
 ### State
 

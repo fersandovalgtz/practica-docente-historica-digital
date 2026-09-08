@@ -1,22 +1,31 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/fersandovalgtz/practica-docente-historica-digital/schemas/pedagogical_fragment.schema.json",
-  "title": "PDHD pedagogical fragment",
+  "title": "PDHD frozen pedagogical fragment",
+  "description": "Structural/source-critical record for a fixed fragment. It deliberately excludes semantic annotation decisions, which belong to annotation.schema.json.",
   "type": "object",
-  "required": ["fragment_id", "document_id", "fragment_locator", "dimension", "normativity", "validation_status", "rights_status"],
+  "required": ["fragment_id", "document_id", "fragment_locator", "locator_evidence_url", "boundary_definition", "freeze_status"],
   "properties": {
     "fragment_id": {"type": "string", "pattern": "^PDHD-F[0-9]{6}$"},
     "document_id": {"type": "string", "pattern": "^PDHD-D[0-9]{6}$"},
-    "fragment_locator": {"type": "string", "minLength": 1},
+    "slot": {"enum": ["A", "B", "C", "D"]},
     "page": {"type": ["integer", "string", "null"]},
-    "transcription_status": {"enum": ["none", "local_ocr_unverified", "human_transcribed", "text_verified"]},
-    "pedagogical_act": {"type": ["string", "null"]},
-    "dimension": {"type": "string", "minLength": 1},
-    "actor": {"type": ["string", "null"]},
-    "target": {"type": ["string", "null"]},
-    "normativity": {"enum": ["prescriptive", "descriptive", "reported_practice", "observed_practice", "analytical", "unclear"]},
-    "validation_status": {"enum": ["unvalidated", "human_validated", "rejected", "needs_review"]},
-    "rights_status": {"type": "string"}
+    "fragment_locator": {"type": "string", "minLength": 1},
+    "locator_evidence_url": {"type": "string", "format": "uri"},
+    "boundary_definition": {"type": "string", "minLength": 1},
+    "transcription_status": {
+      "enum": ["source_text_verified", "ocr_human_corrected", "ocr_unverified", "manual_transcription_unverified", "not_transcribed", "not_started"]
+    },
+    "access_basis": {"type": ["string", "null"]},
+    "public_text_status": {
+      "enum": ["public_text_permitted", "short_excerpt_only", "coder_local_text", "metadata_only", "access_unresolved"]
+    },
+    "selection_role": {
+      "enum": ["explicit_pedagogical_act", "institutional_relation", "source_criticism_salient", "control"]
+    },
+    "freeze_status": {"const": "frozen"},
+    "preparation_note": {"type": ["string", "null"]},
+    "checked_at": {"type": ["string", "null"]}
   },
   "additionalProperties": true
 }

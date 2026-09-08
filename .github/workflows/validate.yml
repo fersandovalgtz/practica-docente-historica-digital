@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -56,3 +56,19 @@ jobs:
         run: python scripts/compare_calibration_sheets.py --self-test
       - name: Validate FAIR metadata and pre-validation snapshot
         run: python scripts/validate_project_metadata.py
+      - name: Validate schema and lifecycle separation
+        run: python scripts/validate_schema_alignment.py
+      - name: Validate public dashboard safety boundary
+        run: python scripts/validate_public_dashboard.py
+      - name: Self-test non-blocking source-link classifier
+        run: python scripts/audit_source_links.py --self-test
+      - name: Check leakage-aware machine input gate
+        run: python scripts/build_machine_input_manifest.py --check-state
+      - name: Validate machine-candidate quarantine
+        run: python scripts/validate_machine_candidates.py
+      - name: Self-test machine-candidate validator
+        run: python scripts/validate_machine_candidates.py --self-test
+      - name: Assert phase-5 human-gold gate remains closed
+        run: python scripts/run_phase5_analysis.py --expect-closed
+      - name: Self-test phase-5 analysis engine
+        run: python scripts/run_phase5_analysis.py --self-test
