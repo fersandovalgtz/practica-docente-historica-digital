@@ -1,0 +1,112 @@
+name: Package PDHD academic dataset
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/package-dataset.yml
+      - data/snapshots/dataset_deposit_manifest_0_1.json
+      - docs/academic_products/PDHD_DATASET_DEPOSIT_0_1.md
+      - docs/academic_products/PDHD_ZENODO_METADATA_0_1.json
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Build deterministic Zenodo-ready archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import shutil
+          import zipfile
+
+          root = pathlib.Path('.')
+          dist = root / 'dist'
+          package_root = dist / 'PDHD-U1-dataset-0.1.0-prevalidation'
+          if dist.exists():
+              shutil.rmtree(dist)
+          package_root.mkdir(parents=True)
+
+          manifest_path = root / 'data/snapshots/dataset_deposit_manifest_0_1.json'
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+
+          files = list(manifest['minimum_archival_surfaces'])
+          files.extend([
+              'data/snapshots/dataset_deposit_manifest_0_1.json',
+              'docs/academic_products/PDHD_DATASET_DEPOSIT_0_1.md',
+              'docs/academic_products/PDHD_ZENODO_METADATA_0_1.json',
+          ])
+          files = sorted(set(files))
+
+          missing = [p for p in files if not (root / p).is_file()]
+          if missing:
+              raise SystemExit('Missing archival surfaces: ' + ', '.join(missing))
+
+          for rel in files:
+              src = root / rel
+              dst = package_root / rel
+              dst.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(src, dst)
+
+          readme = package_root / 'README_DEPOSIT.txt'
+          readme.write_text(
+              'PDHD-U1 academic dataset archive\n'
+              'Version: 0.1.0-prevalidation\n'
+              f'Dataset payload commit: {manifest["dataset_payload_commit"]}\n'
+              'Scientific snapshot: PDHD-U1-PREVALIDATION-0.1-20260907\n'
+              'Human-coded fragments: 0\n'
+              'Gold labels: 0\n'
+              'Rights: see DATA_LICENSE.md, RIGHTS.md and data/catalog/rights_registry.csv\n',
+              encoding='utf-8'
+          )
+
+          archive = dist / 'PDHD-U1-dataset-0.1.0-prevalidation.zip'
+          epoch = (1980, 1, 1, 0, 0, 0)
+          with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+              for path in sorted(p for p in package_root.rglob('*') if p.is_file()):
+                  rel = path.relative_to(dist).as_posix()
+                  info = zipfile.ZipInfo(rel, epoch)
+                  info.compress_type = zipfile.ZIP_DEFLATED
+                  info.external_attr = 0o100644 << 16
+                  zf.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+
+          digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+          checksum = dist / (archive.name + '.sha256')
+          checksum.write_text(f'{digest}  {archive.name}\n', encoding='utf-8')
+
+          verification = {
+              'archive_filename': archive.name,
+              'sha256': digest,
+              'dataset_payload_commit': manifest['dataset_payload_commit'],
+              'scientific_snapshot_id': manifest['scientific_snapshot_id'],
+              'file_count': len(files) + 1,
+          }
+          (dist / 'archive_verification.json').write_text(
+              json.dumps(verification, indent=2) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(verification, indent=2))
+          PY
+          unzip -t dist/PDHD-U1-dataset-0.1.0-prevalidation.zip
+
+      - name: Upload dataset package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pdhd-u1-zenodo-deposit-package
+          path: |
+            dist/PDHD-U1-dataset-0.1.0-prevalidation.zip
+            dist/PDHD-U1-dataset-0.1.0-prevalidation.zip.sha256
+            dist/archive_verification.json
+          if-no-files-found: error
+          retention-days: 90
