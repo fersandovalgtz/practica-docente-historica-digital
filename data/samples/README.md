@@ -16,6 +16,16 @@ The completed 96-fragment frozen pilot is now partitioned for the first human-va
 
 The 12 calibration items do not enter the formal reliability calculation. Two real human coders must first complete independent first-pass sheets; only after those responses are frozen and discussed may PDHD version and freeze the codebook for the 84-item reliability round.
 
+## Pre-registered reliability reserve
+
+`reliability_reserve_0_1.csv` fixes the **84-fragment complement** of the 12 calibration items before any human annotation exists. It is a reserve, not a completed reliability package: it deliberately carries no frozen independent-round codebook and no coder-facing labels.
+
+`scripts/build_reliability_reserve.py --check` reconstructs the reserve deterministically from the frozen 24-document pilot and requires the 12 calibration IDs plus the 84 reserve IDs to equal the complete 96-fragment frozen union exactly. Any overlap, missing fragment, extra fragment or silent reselection fails CI.
+
+The reserve is versioned as `PDHD-RR-0.1-20260907`. This freezes sample identity in advance and prevents later cherry-picking after human labels are observed. The compatible pre-label analysis decisions are documented separately in `docs/ANALYSIS_PLAN_0_1.md`.
+
+`reserved_for_formal_reliability_after_codebook_freeze != formal_reliability_round_started`
+
 ## Evidence-promotion chain
 
 `pilot_content_leads.csv` records content-level discoveries before or during page localization. A row marked `promoted_to_fragment_locator` must now carry an explicit `promoted_fragment_id`. `scripts/validate_content_leads.py` verifies that this ID exists in the logical union of `fragment_locator_progress*.csv`, belongs to the same pilot document and is not claimed by a second content lead.
