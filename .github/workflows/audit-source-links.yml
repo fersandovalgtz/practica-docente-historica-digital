@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: "17 11 * * 1"
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/audit-source-links.yml"
 
 permissions:
   contents: read
