@@ -6,6 +6,8 @@
 
 Esta tarjeta describe el estado **pre-validación** del piloto PDHD-U1. El proyecto permanece en `0.1.0-dev`; no constituye todavía el release final `v0.1.0` porque la validación semántica humana y la primera ronda formal de confiabilidad intercodificador no han ocurrido.
 
+El estado documental pre-validación sí cuenta con un depósito académico archivístico independiente publicado en Zenodo como dataset, versión `0.1.0-prevalidation`, DOI `10.5281/zenodo.22659767`. La existencia de ese DOI no modifica los gates de validación científica del repositorio.
+
 ## Estado del corpus
 
 El piloto documental contiene 24 documentos seleccionados y 96 fragmentos con localización y límites congelados. Los 96 fragmentos están trazados a una página, hoja, imagen o superficie primaria equivalente y conservan provenance de recuperación, acceso y derechos según la arquitectura del repositorio.
@@ -62,13 +64,21 @@ El estado científico pre-validación está fijado en `data/snapshots/prevalidat
 
 Los generadores y validadores del repositorio comprueban de forma determinista la selección de calibración, la reserva de confiabilidad, los fragmentos congelados, las compuertas de codebook y la integridad estructural del corpus.
 
+El depósito Zenodo utiliza el archivo canónico `PDHD-U1-dataset-0.1.0-prevalidation.zip`, SHA-256 `1484838be4c7d29c491f65b88ce65fa8be4a437c64c376ee24e89faf9383ac35`. El workflow de empaquetado reconstruye ese archivo desde un commit inmutable y rechaza cualquier divergencia de checksum.
+
 ## Derechos y licencias
 
 El software y los componentes propios del proyecto se rigen por los archivos de licencia y gobernanza del repositorio. Los metadatos y datos derivados tienen condiciones documentadas en `DATA_LICENSE.md`. Los derechos de fuentes históricas de terceros permanecen sujetos a la institución de origen y se registran por separado en `RIGHTS.md` y en el registro de derechos.
 
 ## Citación
 
-La referencia canónica del software/proyecto se mantiene en `CITATION.cff`. Mientras `VERSION` siga en `0.1.0-dev`, cualquier cita o depósito debe identificar el commit o snapshot utilizado además de la versión de desarrollo.
+La referencia canónica del software/proyecto se mantiene en `CITATION.cff`. Mientras `VERSION` siga en `0.1.0-dev`, cualquier cita del repositorio vivo debe identificar el commit o snapshot utilizado además de la versión de desarrollo.
+
+El dataset archivístico pre-validación es un objeto académico separado y debe citarse así:
+
+Sandoval Gutiérrez, Fernando. (2026). *Práctica Docente Histórica Digital (PDHD-U1): pre-validation corpus and provenance package for Mexican teaching-practice history* (Version 0.1.0-prevalidation) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.22659767
+
+El DOI del dataset no se reutiliza como DOI del software ni del futuro data paper.
 
 ## Próximo gate científico
 

@@ -4,7 +4,8 @@
   "publication_date": "2026-09-08",
   "version": "0.1.0-prevalidation",
   "doi": "10.5281/zenodo.22659767",
-  "deposit_status": "doi_reserved_not_published",
+  "record_url": "https://zenodo.org/records/22659767",
+  "deposit_status": "published_public",
   "creators": [
     {
       "name": "Sandoval Gutiérrez, Fernando",
@@ -33,5 +34,5 @@
       "resource_type": "software"
     }
   ],
-  "notes": "Scientific snapshot: PDHD-U1-PREVALIDATION-0.1-20260907. Human-coded fragments: 0. Gold labels: 0. Formal reliability round not started. DOI 10.5281/zenodo.22659767 has been reserved for this dataset record. Do not describe the record as published or publicly resolvable until Zenodo publication is confirmed."
+  "notes": "Scientific snapshot: PDHD-U1-PREVALIDATION-0.1-20260907. Human-coded fragments: 0. Gold labels: 0. Formal reliability round not started. DOI 10.5281/zenodo.22659767 was published by the creator on 2026-09-08 at https://zenodo.org/records/22659767. The concept DOI, if exposed for the record family, should be added only after independent retrieval from Zenodo metadata."
 }
