@@ -1,0 +1,16 @@
+# Normalize text files for reproducible diffs and hashes
+* text=auto eol=lf
+
+*.csv text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Do not treat archival/binary artifacts as text
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.zip binary

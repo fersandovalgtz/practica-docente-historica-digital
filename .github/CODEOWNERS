@@ -1,0 +1,13 @@
+# Default scientific/technical ownership
+* @fersandovalgtz
+
+# Evidence, rights and lifecycle-critical surfaces
+/data/ @fersandovalgtz
+/schemas/ @fersandovalgtz
+/scripts/ @fersandovalgtz
+/.github/workflows/ @fersandovalgtz
+/RIGHTS.md @fersandovalgtz
+/DATA_LICENSE.md @fersandovalgtz
+/GOVERNANCE.md @fersandovalgtz
+/PROVENANCE.md @fersandovalgtz
+/CITATION.cff @fersandovalgtz
