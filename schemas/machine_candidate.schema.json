@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fersandovalgtz/practica-docente-historica-digital/schemas/machine_candidate.schema.json",
+  "title": "PDHD machine candidate annotation",
+  "description": "Experimental model-generated semantic candidate. It is never human validation and is never gold evidence.",
+  "type": "object",
+  "required": ["machine_annotation_id", "run_id", "fragment_id", "document_id", "model_provider", "model_name", "model_version", "codebook_version", "prompt_sha256", "input_sha256", "candidate_status"],
+  "properties": {
+    "machine_annotation_id": {"type": "string", "pattern": "^PDHD-MANN-[A-Za-z0-9._-]+$"},
+    "run_id": {"type": "string", "pattern": "^PDHD-MRUN-[A-Za-z0-9._-]+$"},
+    "fragment_id": {"type": "string", "pattern": "^PDHD-F[0-9]{6}$"},
+    "document_id": {"type": "string", "pattern": "^PDHD-D[0-9]{6}$"},
+    "model_provider": {"type": "string", "minLength": 1},
+    "model_name": {"type": "string", "minLength": 1},
+    "model_version": {"type": "string", "minLength": 1},
+    "codebook_version": {"type": "string", "minLength": 1},
+    "prompt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "candidate_status": {"const": "machine_candidate"},
+    "pedagogical_act_primary": {"type": ["string", "null"]},
+    "pedagogical_act_secondary": {"type": ["string", "null"]},
+    "normativity": {"type": ["string", "null"]},
+    "actor": {"type": ["string", "null"]},
+    "target": {"type": ["string", "null"]},
+    "evidence_confidence": {"type": ["string", "null"]},
+    "access_problem": {"type": ["string", "null"]},
+    "notes": {"type": ["string", "null"]},
+    "generated_at": {"type": ["string", "null"]}
+  },
+  "patternProperties": {
+    "^dimension_[a-z_]+$": {"enum": ["0", "1", ""]}
+  },
+  "not": {
+    "anyOf": [
+      {"required": ["human_validated"]},
+      {"required": ["gold_label"]},
+      {"required": ["coder_id"]}
+    ]
+  },
+  "additionalProperties": false
+}

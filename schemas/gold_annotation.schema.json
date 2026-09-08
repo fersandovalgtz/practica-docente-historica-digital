@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fersandovalgtz/practica-docente-historica-digital/schemas/gold_annotation.schema.json",
+  "title": "PDHD human-adjudicated gold annotation",
+  "description": "Future adjudicated human benchmark record. This schema is preparatory; no gold records exist in the current pre-validation state.",
+  "type": "object",
+  "required": ["gold_annotation_id", "fragment_id", "document_id", "codebook_version", "adjudication_status"],
+  "properties": {
+    "gold_annotation_id": {"type": "string", "pattern": "^PDHD-GOLD-[A-Za-z0-9._-]+$"},
+    "fragment_id": {"type": "string", "pattern": "^PDHD-F[0-9]{6}$"},
+    "document_id": {"type": "string", "pattern": "^PDHD-D[0-9]{6}$"},
+    "codebook_version": {"type": "string", "minLength": 1},
+    "adjudication_status": {"const": "human_adjudicated_gold"},
+    "pedagogical_act_primary": {"type": ["string", "null"]},
+    "pedagogical_act_secondary": {"type": ["string", "null"]},
+    "normativity": {"type": ["string", "null"]},
+    "actor": {"type": ["string", "null"]},
+    "target": {"type": ["string", "null"]},
+    "evidence_confidence": {"type": ["string", "null"]},
+    "adjudicated_at": {"type": ["string", "null"]},
+    "adjudication_note": {"type": ["string", "null"]}
+  },
+  "patternProperties": {
+    "^dimension_[a-z_]+$": {"enum": ["0", "1", ""]}
+  },
+  "not": {
+    "anyOf": [
+      {"required": ["model_provider"]},
+      {"required": ["model_name"]},
+      {"required": ["machine_annotation_id"]},
+      {"required": ["candidate_status"]}
+    ]
+  },
+  "additionalProperties": false
+}

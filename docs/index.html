@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Tablero público de Práctica Docente Histórica Digital (PDHD): cobertura documental, fuentes, derechos, recuperación y trazabilidad del piloto PDHD-U1.">
+  <title>PDHD · Tablero público</title>
+  <link rel="stylesheet" href="dashboard/styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="shell">
+      <div class="eyebrow">Práctica Docente Histórica Digital · PDHD-U1</div>
+      <h1>Tablero público del corpus</h1>
+      <p class="lede">Cobertura documental, procedencia, derechos, recuperación y trazabilidad. Esta vista no contiene ni simula validación pedagógica humana.</p>
+      <div class="hero-actions">
+        <a class="button" href="https://github.com/fersandovalgtz/practica-docente-historica-digital">Repositorio</a>
+        <a class="button secondary" href="DATASET_CARD_0_1.md">Dataset Card</a>
+        <a class="button secondary" href="DATA_DICTIONARY.md">Diccionario de datos</a>
+      </div>
+      <div id="load-state" class="status">Cargando datos canónicos de <code>main</code>…</div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section aria-labelledby="estado-title">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Estado científico</div>
+          <h2 id="estado-title">Corte pre-validación</h2>
+        </div>
+        <p id="reference-date" class="muted"></p>
+      </div>
+      <div id="metrics" class="metric-grid" aria-live="polite"></div>
+      <div class="notice">
+        <strong>Lectura correcta:</strong> <span id="boundary-note">96 fragmentos documentales pueden estar completamente frozen y, al mismo tiempo, existir 0 fragmentos validados por humanos. Son capas distintas.</span>
+      </div>
+    </section>
+
+    <section aria-labelledby="cobertura-title">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Cobertura</div>
+          <h2 id="cobertura-title">Diseño del piloto documental</h2>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <article class="panel"><h3>Documentos por era</h3><div id="era-chart" class="bars"></div></article>
+        <article class="panel"><h3>Tipos documentales</h3><div id="type-chart" class="bars"></div></article>
+        <article class="panel"><h3>Procedencia geográfica</h3><div id="place-chart" class="bars"></div></article>
+        <article class="panel"><h3>Repositorios fuente del piloto</h3><div id="source-chart" class="bars"></div></article>
+      </div>
+    </section>
+
+    <section aria-labelledby="derechos-title">
+      <div class="section-head"><div><div class="eyebrow">Acceso y reutilización</div><h2 id="derechos-title">Derechos y recuperación</h2></div></div>
+      <div class="chart-grid">
+        <article class="panel"><h3>Política de derechos por fuente</h3><div id="rights-chart" class="bars"></div></article>
+        <article class="panel"><h3>Resultados de recuperación registrados</h3><div id="retrieval-chart" class="bars"></div></article>
+      </div>
+      <p class="muted small">Un enlace inaccesible no demuestra que una fuente histórica no exista. La auditoría automática de enlaces conserva esa distinción.</p>
+    </section>
+
+    <section aria-labelledby="trace-title">
+      <div class="section-head"><div><div class="eyebrow">Provenance</div><h2 id="trace-title">Trazabilidad del corpus</h2></div></div>
+      <div id="trace-metrics" class="metric-grid compact"></div>
+      <article class="panel table-panel">
+        <h3>Sustituciones versionadas del piloto</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Posición</th><th>Sale</th><th>Entra</th><th>Fecha</th></tr></thead>
+            <tbody id="substitution-table"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section aria-labelledby="docs-title">
+      <div class="section-head"><div><div class="eyebrow">Cohorte</div><h2 id="docs-title">24 documentos seleccionados</h2></div></div>
+      <article class="panel table-panel">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Publicación</th><th>Era</th><th>Tipo</th><th>Lugar</th><th>Fuente</th></tr></thead>
+            <tbody id="documents-table"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="method-note" aria-labelledby="method-title">
+      <div class="eyebrow">Límite metodológico</div>
+      <h2 id="method-title">Qué muestra y qué no muestra este tablero</h2>
+      <p>Muestra metadatos documentales, selección estructural, fuentes, derechos, recuperación y provenance. No muestra distribuciones de actos pedagógicos, dimensiones analíticas ni “hallazgos” históricos porque el benchmark humano todavía no existe.</p>
+      <p>Las futuras anotaciones por IA se conservarán exclusivamente como <code>machine_candidate</code>. No modificarán los indicadores de validación humana ni de gold labels.</p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-inner">
+      <span>PDHD · infraestructura abierta de investigación</span>
+      <span id="generated-note">Datos leídos en vivo desde el repositorio canónico.</span>
+    </div>
+  </footer>
+
+  <noscript><div class="shell notice">Este tablero necesita JavaScript para calcular las distribuciones desde los CSV canónicos.</div></noscript>
+  <script src="dashboard/app.js" defer></script>
+</body>
+</html>
