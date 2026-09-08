@@ -42,3 +42,7 @@ jobs:
         run: python scripts/build_calibration_package.py --check
       - name: Validate calibration blinding and codebook provenance
         run: python scripts/validate_calibration_package.py
+      - name: Self-test blind coder-copy generator
+        run: python scripts/prepare_calibration_coder_copy.py --self-test
+      - name: Self-test completed calibration sheet validator
+        run: python scripts/validate_completed_calibration_sheet.py --self-test

@@ -42,7 +42,25 @@ En cada fila:
 
 - `coder_id`: identificador pseudónimo estable;
 - `annotation_id`: `PDHD-CALANN-<coder_id>-<item_id>`, por ejemplo `PDHD-CALANN-C01-CAL001`;
-- `annotated_at`: fecha y hora ISO 8601 de finalización de esa decisión o de la sesión, según el flujo adoptado.
+- `annotated_at`: fecha y hora ISO 8601 con zona horaria explícita, por ejemplo `2026-09-08T09:30:00-06:00`.
+
+## Preparación segura de copias individuales
+
+La hoja maestra ciega **no se edita directamente**. Las copias locales se generan con `scripts/prepare_calibration_coder_copy.py`, que únicamente incorpora `coder_id` y los `annotation_id`; no rellena ninguna respuesta humana.
+
+Ejemplos:
+
+```bash
+python scripts/prepare_calibration_coder_copy.py \
+  --coder-id C01 \
+  --output ~/Desktop/PDHD_calibracion_C01.csv
+
+python scripts/prepare_calibration_coder_copy.py \
+  --coder-id C02 \
+  --output ~/Desktop/PDHD_calibracion_C02.csv
+```
+
+Por defecto, el script rechaza escribir una copia de trabajo dentro del repositorio y nunca permite sobreescribir `calibration_coder_sheet_0_1.csv`. El objetivo es que la primera pasada ocurra en archivos locales separados y que su incorporación posterior a provenance sea una decisión explícita.
 
 ## Regla de evidencia
 
@@ -101,6 +119,20 @@ Use `high`, `medium` o `low`. La confianza expresa seguridad del codificador en 
 ### `notes`
 
 Use notas breves únicamente cuando ayuden a explicar una frontera de codificación, una duda o un problema de evidencia. **No copie transcripciones extensas del documento histórico** ni reproduzca imágenes de la fuente en el repositorio.
+
+## Validación antes de congelar la primera pasada
+
+Una hoja entregada se valida antes de incorporarla como provenance. El validador no corrige respuestas ni propone etiquetas: sólo comprueba identidad, orden, codebook, vocabularios controlados y completitud.
+
+```bash
+python scripts/validate_completed_calibration_sheet.py \
+  ~/Desktop/PDHD_calibracion_C01.csv \
+  --expected-coder C01
+```
+
+Cuando `access_problem` está vacío, el validador exige una decisión primaria, las 16 dimensiones en `0`/`1`, `normativity`, `actor`, `target`, `evidence_confidence` y `annotated_at`. Cuando existe un problema real de acceso o legibilidad, permite dejar decisiones analíticas en blanco en vez de obligar a adivinar; cualquier decisión que sí se haya registrado debe seguir usando los vocabularios controlados.
+
+El validador exige que `annotated_at` sea ISO 8601 con zona horaria explícita. También detecta alteraciones de `fragment_id`, documento, página, URL, límite o versión del codebook.
 
 ## Procedimiento de primera pasada
 
