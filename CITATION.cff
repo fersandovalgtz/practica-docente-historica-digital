@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use PDHD, please cite the project using this metadata."
+message: "If you use the PDHD software/infrastructure, cite this repository metadata and the version or commit consulted. If you use the PDHD-U1 pre-validation dataset, cite https://doi.org/10.5281/zenodo.22659767."
 title: "Práctica Docente Histórica Digital (PDHD)"
 type: software
 authors:
