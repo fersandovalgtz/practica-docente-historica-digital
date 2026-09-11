@@ -2,7 +2,12 @@
 
 **Infraestructura abierta de investigación para estudiar históricamente la práctica docente en México mediante prensa pedagógica, manuales, revistas profesionales, publicaciones oficiales y otros impresos educativos.**
 
-> Estado: `v0.1.0-dev` · `PDHD-U1` con el primer piloto **96/96 congelado**; calibración humana pendiente.
+[![Dataset DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22659767.svg)](https://doi.org/10.5281/zenodo.22659767)
+
+> Estado del repositorio: `v0.1.0-dev` · `PDHD-U1` con el primer piloto **96/96 congelado**; calibración humana pendiente.  
+> Dataset citable publicado: `PDHD-U1 0.1.0-prevalidation` · Zenodo DOI **[10.5281/zenodo.22659767](https://doi.org/10.5281/zenodo.22659767)**.
+
+El DOI identifica el **dataset pre-validación archivado**, no una release final del software ni un gold standard. La publicación del dataset no modifica el gate científico del repositorio: `documentary_freeze_complete != semantic_validation_complete` y `dataset_doi != gold_standard`.
 
 ## Qué es PDHD
 
@@ -248,7 +253,12 @@ Con el paquete 96/96 completo, el siguiente gate es preparar el set de calibraci
 
 ## Autoría y citación
 
-Proyecto iniciado por **Fernando Sandoval Gutiérrez**. La forma normalizada de citación se mantiene en [`CITATION.cff`](CITATION.cff).
+Proyecto iniciado por **Fernando Sandoval Gutiérrez**.
+
+- **Dataset PDHD-U1 pre-validación:** Sandoval Gutiérrez, Fernando. *Práctica Docente Histórica Digital (PDHD-U1): dataset pre-validación*, versión `0.1.0-prevalidation`. Zenodo, 2026. DOI: **[10.5281/zenodo.22659767](https://doi.org/10.5281/zenodo.22659767)**.
+- **Software / infraestructura viva:** utilice la metadata mantenida en [`CITATION.cff`](CITATION.cff) y cite la versión o commit consultado.
+
+El DOI del dataset no debe reutilizarse como si fuera DOI del software. Una futura release de software sólo deberá recibir un identificador propio cuando cumpla el gate científico previsto y exista una decisión explícita de publicarla como objeto citable independiente.
 
 ## Licencias
 
